@@ -1,0 +1,35 @@
+from contextlib import asynccontextmanager
+from fastapi import FastAPI
+from .database import engine, Base
+
+
+from .routers import auth
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Create all tables on application startup
+    async with engine.begin() as connection:  # Create tables if they don't exist
+        await connection.run_sync(Base.metadata.create_all)
+    yield
+    # Dispose of the engine on application shutdown
+    await engine.dispose()
+
+
+app = FastAPI(lifespan=lifespan)
+
+app.include_router(
+    auth.router,
+)
+# Create DB tables if they don't exist
+
+
+# Base.metadata.create_all(bind=engine)  # Create tables if they don't exist
+# Or use the lifespan event to create tables on startup and dispose of the engine on shutdown
+
+
+@app.get("/")
+async def root():
+    return {
+        "message": "Social Media API is running!",
+    }
