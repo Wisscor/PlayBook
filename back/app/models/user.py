@@ -22,7 +22,10 @@ class User(Base):
         unique=True,
         nullable=False,
     )
-    bio = Column(Text, nullable=True)
+    bio = Column(
+        Text,
+        nullable=True,
+    )
     hashed_password = Column(
         String(255),
         nullable=False,

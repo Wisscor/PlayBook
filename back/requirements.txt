@@ -1,9 +1,21 @@
+# The Framework
 fastapi==0.141.1
+
+# Server to running Fastapi project
 uvicorn==0.52.4
+# ORM
 SQLAlchemy==2.0.52
-psycopg2-binary==2.9.12
+# Driver for Postgres
+asyncpg
+# To get .env
 python-dotenv==1.2.3
 
-passlib[bcrypt]
+# JWT encoding and decoding
 python-jose[cryptography]
+# Password hashing
+passlib[bcrypt]
+# Required for OAuth2 form data parsing
 python-multipart
+
+# To load `.env'
+dotenv

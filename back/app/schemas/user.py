@@ -14,6 +14,11 @@ class UserCreate(UserBase):
     password: str = Field(..., min_length=8, max_length=100)
 
 
+class UserLogin(BaseModel):
+    username_or_email: str
+    password: str
+
+
 class UserUpdate(BaseModel):
     username: str | None = Field(default=None, min_length=3, max_length=50)
     email: EmailStr | None = None
@@ -27,3 +32,13 @@ class UserResponse(UserBase):
     id: UUID
     created_at: datetime
     updated_at: datetime
+
+
+class TokenPair(BaseModel):
+    access_token: str
+    refresh_token: str
+    token_type: str = "bearer"
+
+
+class RefreshRequest(BaseModel):
+    refresh_token: str

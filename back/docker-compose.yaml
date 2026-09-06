@@ -1,0 +1,10 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: my-postgres
+    environment:
+      POSTGRES_USER: ziko
+      POSTGRES_PASSWORD: 1234pass
+      POSTGRES_DB: mydb
+    ports:
+      - "5000:5432"

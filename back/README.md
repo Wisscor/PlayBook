@@ -105,3 +105,9 @@ UPLOADS
   
 POST /upload/image
 ```
+
+## Resources
+
+* [Authentication-in-FastAPI](https://blog.rajpoot.dev/posts/fastapi/jwt-authentication-in-fastapi/)
+
+* [SqlAlchemy Doc](https://docs.sqlalchemy.org/en/21/core/engines.html#database-urls)
