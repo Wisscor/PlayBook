@@ -1,30 +1,30 @@
 import uuid
 from datetime import datetime, timezone
-from ..database import Base
-from sqlalchemy import Column, DateTime, UUID, ForeignKey
+from ..db.database import Base
+from sqlalchemy import DateTime, ForeignKey, UniqueConstraint
+from sqlalchemy.orm import Mapped, mapped_column
 
 
 class Like(Base):
     __tablename__ = "likes"
 
-    id = Column(
-        UUID(as_uuid=True),
+    id: Mapped[uuid.UUID] = mapped_column(
         primary_key=True,
         default=uuid.uuid4,
     )
-    post_id = Column(
-        UUID(as_uuid=True),
+    post_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("posts.id", ondelete="CASCADE"),
-        unique=True,
-        nullable=False,
     )
-    user_id = Column(
-        UUID(as_uuid=True),
+    user_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"),
-        nullable=False,
     )
-    created_at = Column(
-        DateTime(timezone=True),
-        default=lambda: datetime.now(timezone.utc),
-        nullable=False,
+    created_at: Mapped[datetime] = mapped_column(
+            DateTime(timezone=True),
+            default=lambda: datetime.now(timezone.utc),
+    )
+    # Ensures a user can only like a specific post once:
+    __table_args__ = (
+        UniqueConstraint(
+            "post_id", "user_id", name="uq_likes_post_id_user_id"
+        ),
     )

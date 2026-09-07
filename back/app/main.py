@@ -1,8 +1,7 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
-from .database import engine, Base
-
-
+from fastapi import FastAPI, Header, Response
+from .db.database import engine, Base
+from .core.config import settings
 from .routers import auth
 
 
@@ -16,7 +15,11 @@ async def lifespan(app: FastAPI):
     await engine.dispose()
 
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(
+    lifespan=lifespan,
+    title=settings.app_name,
+    debug=settings.debug,
+)
 
 app.include_router(
     auth.router,
@@ -28,8 +31,7 @@ app.include_router(
 # Or use the lifespan event to create tables on startup and dispose of the engine on shutdown
 
 
-@app.get("/")
-async def root():
-    return {
-        "message": "Social Media API is running!",
-    }
+@app.get("/header/{name}/{value}")
+def header(name: str, value: str, response: Response):
+    response.headers[name] = value
+    return "normal body"

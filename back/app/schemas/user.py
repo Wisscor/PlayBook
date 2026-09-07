@@ -10,7 +10,7 @@ class UserBase(BaseModel):
     bio: str | None = Field(default=None, max_length=500)
 
 
-class UserCreate(UserBase):
+class UserSigup(UserBase):
     password: str = Field(..., min_length=8, max_length=100)
 
 
@@ -34,11 +34,12 @@ class UserResponse(UserBase):
     updated_at: datetime
 
 
-class TokenPair(BaseModel):
-    access_token: str
-    refresh_token: str
-    token_type: str = "bearer"
+# # Token and Refresh Request Schemas
+# class TokenPair(BaseModel):
+#     access_token: str
+#     refresh_token: str
+#     token_type: str = "bearer"
 
 
-class RefreshRequest(BaseModel):
-    refresh_token: str
+# class RefreshRequest(BaseModel):
+#     refresh_token: str

@@ -106,8 +106,27 @@ UPLOADS
 POST /upload/image
 ```
 
+# Structure
+
+```
+back/
+├── app/
+│   ├── core/
+│   ├── db/
+│   ├── models/
+│   ├── schemas/
+│   ├── api/
+│   ├── realtime/
+│   └── database/
+├── .env
+
+```
+
 ## Resources
 
 * [Authentication-in-FastAPI](https://blog.rajpoot.dev/posts/fastapi/jwt-authentication-in-fastapi/)
 
 * [SqlAlchemy Doc](https://docs.sqlalchemy.org/en/21/core/engines.html#database-urls)
+
+* [RFC 6749 OAuth2](https://www.rfc-editor.org/info/rfc6749/) 
+* [duende OAuth2](https://duendesoftware.com/learn/a-step-by-step-guide-to-oauth-2-0)
