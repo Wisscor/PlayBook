@@ -13,9 +13,14 @@ python-dotenv==1.2.3
 # JWT encoding and decoding
 python-jose[cryptography]
 # Password hashing
-passlib[bcrypt]
+passlib
+bcrypt<4.1.0
+
 # Required for OAuth2 form data parsing
 python-multipart
 
 # To load `.env'
 dotenv
+
+# To validate data and settings
+pydantic-settings

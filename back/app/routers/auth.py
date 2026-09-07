@@ -3,8 +3,10 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from ..models import User
-from ..database import get_async_session
-from ..security import (
+from ..db.database import get_async_session
+from sqlalchemy.exc import IntegrityError
+
+from ..core.security import (
     create_access_token,
     create_refresh_token,
     decode_token,
@@ -14,8 +16,8 @@ from ..security import (
 
 from jose import jwt, JWTError
 
-# import jwt
-# from passlib.context import CryptContext
+
+from .deps import get_current_user
 
 SECRET_KEY = "your_secret"
 ALGORITHM = "HS256"
@@ -36,6 +38,7 @@ router = APIRouter(
 )
 
 
+# POST /auth/register
 @router.post(
     "/register",
     response_model=UserResponse,
@@ -45,43 +48,37 @@ async def register(
     user_data: UserCreate,
     db: AsyncSession = Depends(get_async_session),
 ) -> User:
-    existing_user = await db.execute(
-        select(User).where(
-            (User.username == user_data.username)
-            | (User.email == user_data.username)
-        )
-    )
-    if existing_user.one_or_none():
-        raise HTTPException(
-            status_code=409,
-            detail="A user with this username or email already exists.",
-        )
+
     user = User(
         username=user_data.username,
         email=user_data.email,
         hashed_password=hash_password(user_data.password),
     )
-    db.add(user)
-    await db.commit()
-    await db.refresh(user)
-    return user  # ! SEEEE MEEEE
-    # return UserResponse(
-    #     id=user.id,
-    #     username=user.username,
-    #     email=user.email,
-    # )
+    try:
+        db.add(user)
+        await db.commit()
+        await db.refresh(user)
+    except IntegrityError:
+        raise HTTPException(
+            status_code=409,
+            detail="A user with this username or email already exists.",
+        )
+    return user
 
 
+# POST /auth/login
 @router.post("/login", response_model=TokenPair)
 async def login(
-    form: OAuth2PasswordRequestForm,
+    form: OAuth2PasswordRequestForm = Depends(),
     db: AsyncSession = Depends(get_async_session),
 ):
     result = await db.execute(
         select(User).where(User.username == form.username)
     )
     user: None | User = result.scalar_one_or_none()
-    if not user or verify_password(form.password, str(user.hashed_password)):
+    if user is None or not verify_password(
+        form.password, str(user.hashed_password)
+    ):
         raise HTTPException(
             status_code=401, detail="Invalid username or password"
         )
@@ -91,11 +88,9 @@ async def login(
     )
 
 
-@router.post("/me")
-async def me():
-    pass
-
-
-# POST /auth/register
-# POST /auth/login
 # GET /auth/me
+# * the dependency runs on every request, validates the token,
+# * fetches the user, and hands it to your route.
+@router.get("/me", response_model=UserResponse)
+async def read_current_user(current_user: User = Depends(get_current_user)):
+    return current_user

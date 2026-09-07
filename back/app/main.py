@@ -1,8 +1,7 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
-from .database import engine, Base
-
-
+from .db.database import engine, Base
+from .core.config import settings
 from .routers import auth
 
 
@@ -16,7 +15,11 @@ async def lifespan(app: FastAPI):
     await engine.dispose()
 
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(
+    lifespan=lifespan,
+    title=settings.app_name,
+    debug=settings.debug,
+)
 
 app.include_router(
     auth.router,
@@ -33,3 +36,4 @@ async def root():
     return {
         "message": "Social Media API is running!",
     }
+    
