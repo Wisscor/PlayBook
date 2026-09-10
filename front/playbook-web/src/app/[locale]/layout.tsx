@@ -24,6 +24,7 @@ export default async function LocaleLayout({ children, params }: Props) {
       lang={locale}
       dir={locale === "ar" ? "rtl" : "ltr"}
       className={` h-full `}
+      data-scroll-behavior="smooth"
     >
       <body className={`  ${myTTFFont.className} min-h-full flex flex-col`}>
         <NextIntlClientProvider locale={locale} messages={messages}>

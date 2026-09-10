@@ -12,7 +12,7 @@ export const Home = () => {
       <main className="flex-1 justify-between flex flex-col  ">
         <Header />
 
-        <div className="flex-1 flex-col justify-center  flex ">
+        <div className="flex-1 flex-col justify-center 2xl:px-60   flex ">
           <div
             className={`flex flex-col lg:flex-row   justify-between ${windowWidth < 1024 && "flex-1"}    lg:rounded-4xl drop-shadow-2xl lg:bg-white100 overflow-hidden`}
           >
