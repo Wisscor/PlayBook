@@ -57,7 +57,7 @@ async def signup(
 
 
 # POST /auth/login
-@router.post("/login")
+@router.post("/login", response_model=UserResponse)
 async def login(
     data: UserLogin,
     response: Response,
@@ -66,12 +66,10 @@ async def login(
     # 1. Find user by 'username' or 'email'
     users = await db.execute(
         select(User).where(
-            # or_(
-            #     User.username == data.username_or_email,
-            #     User.email == data.username_or_email,
-            # )
-            User.username
-            == data.username_or_email
+            or_(
+                User.username == data.username_or_email,
+                User.email == data.username_or_email,
+            )
         )
     )
     user: Optional[User] = users.scalar_one_or_none()
@@ -104,13 +102,7 @@ async def login(
         samesite=settings.session_cookie_same_site,
     )
     # return {"message": "Login successful",}
-    return {
-        "message": "Login successful",
-        "user": {
-            "id": user.id,
-            "email": user.email,
-        },
-    }
+    return user
 
 
 # POST /logout
@@ -128,7 +120,16 @@ async def logout(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Not authenticated",
         )
-    sessions = db.execute(select(Session).where(Session.id == session_id))
+    try:
+        session_uuid = uuid.UUID(session_id)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid session ID format",
+        )
+    sessions = await db.execute(
+        select(Session).where(Session.id == session_uuid)
+    )
     session: Optional[Session] = sessions.scalar_one_or_none()
     if session is None:
         raise HTTPException(
@@ -151,12 +152,4 @@ async def logout(
 async def read_current_user(
     current_user: User = Depends(get_current_user),
 ):
-    # return current_user
-    return {
-        "id": current_user.id,
-        "username": current_user.username,
-        "email": current_user.email,
-        "bio": current_user.bio,
-        "created_at": current_user.created_at,
-        "updated_at": current_user.updated_at,
-    }
+    return current_user
