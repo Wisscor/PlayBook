@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from .db.database import engine, Base
 from .core.config import settings
 from .routers import auth
-
+from .realtime import ws as realtime_ws
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -24,6 +24,7 @@ app = FastAPI(
 app.include_router(
     auth.router,
 )
+app.include_router(realtime_ws.router)
 # Create DB tables if they don't exist
 
 
