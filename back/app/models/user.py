@@ -21,7 +21,7 @@ class User(Base):
     last_name: Mapped[str] = mapped_column(
         String(50),
     )
-    username: Mapped[str] = mapped_column(
+    user_name: Mapped[str] = mapped_column(
         String(50),
         unique=True,
         nullable=False,
@@ -30,12 +30,16 @@ class User(Base):
         String(255),
         unique=True,
     )
-    bio: Mapped[str | None] = mapped_column(
-        Text,
+    phone: Mapped[str | None] = mapped_column(
+        String(20),
         default=None,
     )
-    phone_number: Mapped[str | None] = mapped_column(
-        String(20),
+    avatar: Mapped[str | None] = mapped_column(
+        String(255),
+        default=None,
+    )
+    bio: Mapped[str | None] = mapped_column(
+        Text,
         default=None,
     )
     hashed_password: Mapped[str] = mapped_column(
@@ -46,12 +50,15 @@ class User(Base):
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),
     )
-    
+
     sessions: Mapped[list["Session"]] = relationship(
-        "Session",
         back_populates="user",
         cascade="all, delete-orphan",
     )
+    # sessions: Mapped[list["Session"]] = relationship(
+    #     back_populates="user",
+    #     cascade="all, delete-orphan",
+    # )
 
 
 # get_all() -> list[obj]
