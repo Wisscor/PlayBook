@@ -16,21 +16,19 @@ class Post(Base):
         ForeignKey("users.id", ondelete="CASCADE"),
         index=True,
     )
-    content: Mapped[str] = mapped_column(
+    like_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("likes.id", ondelete="CASCADE"),
+        index=True,
+    )
+    caption: Mapped[str] = mapped_column(
         Text,
     )
 
-    image_url: Mapped[str | None] = mapped_column(
+    media_url: Mapped[str | None] = mapped_column(
         String(255),
         default=None,
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),
-    )
-
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        default=lambda: datetime.now(timezone.utc),
-        onupdate=lambda: datetime.now(timezone.utc),
     )

@@ -15,9 +15,16 @@ class User(Base):
         primary_key=True,
         default=uuid.uuid4,
     )
+    first_name: Mapped[str] = mapped_column(
+        String(50),
+    )
+    last_name: Mapped[str] = mapped_column(
+        String(50),
+    )
     username: Mapped[str] = mapped_column(
         String(50),
         unique=True,
+        nullable=False,
     )
     email: Mapped[str] = mapped_column(
         String(255),
@@ -25,6 +32,10 @@ class User(Base):
     )
     bio: Mapped[str | None] = mapped_column(
         Text,
+        default=None,
+    )
+    phone_number: Mapped[str | None] = mapped_column(
+        String(20),
         default=None,
     )
     hashed_password: Mapped[str] = mapped_column(
@@ -35,16 +46,14 @@ class User(Base):
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),
     )
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        default=lambda: datetime.now(timezone.utc),
-        onupdate=lambda: datetime.now(timezone.utc),
-    )
+    
     sessions: Mapped[list["Session"]] = relationship(
         "Session",
         back_populates="user",
         cascade="all, delete-orphan",
     )
+
+
 # get_all() -> list[obj]
 # get_one() -> obj
 # create() -> obj
