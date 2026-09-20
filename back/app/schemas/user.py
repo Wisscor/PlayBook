@@ -1,16 +1,21 @@
 from pydantic import BaseModel, Field, EmailStr, ConfigDict
 from datetime import datetime
 from uuid import UUID
+from typing import Optional
 
 
 # DRY Principle
 class UserBase(BaseModel):
-    username: str = Field(..., max_length=100)
-    email: EmailStr = Field(..., max_length=100)
-    bio: str | None = Field(default=None, max_length=500)
+    firstname: Optional[str] = None
+    lastname: Optional[str] = None
+    username: str = Field(min_length=3, max_length=50)
+    email: EmailStr
+    phone: Optional[str] = None
+    avatar: Optional[str] = None
+    bio: Optional[str] = None
 
 
-class UserSigup(UserBase):
+class UserCreate(UserBase):
     password: str = Field(..., min_length=8, max_length=100)
 
 
@@ -20,10 +25,13 @@ class UserLogin(BaseModel):
 
 
 class UserUpdate(BaseModel):
-    username: str | None = Field(default=None, min_length=3, max_length=50)
-    email: EmailStr | None = None
-    bio: str | None = Field(default=None, max_length=500)
-    password: str | None = Field(default=None, min_length=8, max_length=128)
+    firstname: Optional[str] = None
+    lastname: Optional[str] = None
+    username: Optional[str] = Field(default=None, min_length=3, max_length=50)
+    email: Optional[EmailStr] = None
+    phone: Optional[str] = None
+    avatar: Optional[str] = None
+    bio: Optional[str] = None
 
 
 class UserResponse(UserBase):

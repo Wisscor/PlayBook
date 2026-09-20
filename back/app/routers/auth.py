@@ -19,7 +19,7 @@ from app.core.deps import get_current_user
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from ..models.session import Session
 from datetime import datetime, timedelta, timezone
-from ..schemas.user import UserSigup, UserLogin, UserResponse
+from ..schemas.user import UserCreate, UserLogin, UserResponse
 from ..core.security import hash_password, verify_password
 from app.core.config import settings
 
@@ -33,7 +33,7 @@ router = APIRouter(
 # POST /auth/signup
 @router.post("/signup", response_model=UserResponse)
 async def signup(
-    data: UserSigup,
+    data: UserCreate,
     db: AsyncSession = Depends(get_async_session),
 ) -> User:
     # Create user instance
@@ -67,7 +67,7 @@ async def login(
     users = await db.execute(
         select(User).where(
             or_(
-                User.username == data.username_or_email,
+                User.user_name == data.username_or_email,
                 User.email == data.username_or_email,
             )
         )
