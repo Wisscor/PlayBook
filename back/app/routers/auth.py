@@ -23,14 +23,12 @@ from ..schemas.user import UserCreate, UserLogin, UserResponse
 from ..core.security import hash_password, verify_password
 from app.core.config import settings
 
-# `tags` its for OpenAPI docs
 router = APIRouter(
     prefix="/auth",
     tags=["Auuthentication"],
 )
 
 
-# POST /auth/signup
 @router.post("/signup", response_model=UserResponse)
 async def signup(
     data: UserCreate,
@@ -56,7 +54,6 @@ async def signup(
     return user
 
 
-# POST /auth/login
 @router.post("/login", response_model=UserResponse)
 async def login(
     data: UserLogin,
@@ -105,7 +102,6 @@ async def login(
     return user
 
 
-# POST /logout
 @router.post("/logout")
 async def logout(
     response: Response,
@@ -145,9 +141,6 @@ async def logout(
     return {"message": "Logout successful"}
 
 
-# GET /auth/me
-# * the dependency runs on every request, validates the token,
-# * fetches the user, and hands it to your route.
 @router.get("/me", response_model=UserResponse)
 async def read_current_user(
     current_user: User = Depends(get_current_user),
