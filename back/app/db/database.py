@@ -18,7 +18,8 @@ engine = create_async_engine(
 # * Session =  a factory that produces a new AsyncSession (a "conversation"
 # * with the DB, tracks pending inserts/updates until commit).
 session_maker = async_sessionmaker(
-    engine,
+    bind=engine,
+    class_=AsyncSession,
     expire_on_commit=False,
 )
 

@@ -1,41 +1,36 @@
 import uuid
 from datetime import datetime, timezone
 from ..db.database import Base
-from sqlalchemy import Column, String, Text, DateTime, UUID, ForeignKey
+from sqlalchemy import String, Text, DateTime, ForeignKey
+from sqlalchemy.orm import Mapped, mapped_column
 
 
 class Post(Base):
     __tablename__ = "posts"
 
-    id = Column(
-        UUID(as_uuid=True),
+    id: Mapped[uuid.UUID] = mapped_column(
         primary_key=True,
         default=uuid.uuid4,
     )
-    user_id = Column(
-        UUID(as_uuid=True),
+    user_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"),
-        nullable=False,
         index=True,
     )
-    content = Column(
+    content: Mapped[str] = mapped_column(
         Text,
-        nullable=False,
     )
 
-    image_url = Column(
+    image_url: Mapped[str | None] = mapped_column(
         String(255),
-        nullable=True,
+        default=None,
     )
-    created_at = Column(
+    created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),
-        nullable=False,
     )
 
-    updated_at = Column(
+    updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),
-        nullable=False,
         onupdate=lambda: datetime.now(timezone.utc),
     )

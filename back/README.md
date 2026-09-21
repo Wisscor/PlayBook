@@ -121,6 +121,10 @@ back/
 ├── .env
 
 ```
+## Test Endpoints
+* /auth/signup
+`http -v POST localhost:8000/auth/signup username=zakaria email=zakaria@example.com password=pass1234`
+* /auth/login `http -v POST localhost:8000/auth/login username_or_email=zakaria  password=pass1234`
 
 ## Resources
 

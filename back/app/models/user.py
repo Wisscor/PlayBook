@@ -1,43 +1,53 @@
-import uuid
+# ##########################
 from datetime import datetime, timezone
+import uuid
+
+from sqlalchemy import DateTime, String, Text
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
 from ..db.database import Base
-from sqlalchemy import Column, String, Text, DateTime, UUID
 
 
 class User(Base):
     __tablename__ = "users"
 
-    id = Column(
-        UUID(as_uuid=True),
+    id: Mapped[uuid.UUID] = mapped_column(
         primary_key=True,
         default=uuid.uuid4,
     )
-    username = Column(
+    username: Mapped[str] = mapped_column(
         String(50),
         unique=True,
-        nullable=False,
     )
-    email = Column(
+    email: Mapped[str] = mapped_column(
         String(255),
         unique=True,
-        nullable=False,
     )
-    bio = Column(
+    bio: Mapped[str | None] = mapped_column(
         Text,
-        nullable=True,
+        default=None,
     )
-    hashed_password = Column(
+    hashed_password: Mapped[str] = mapped_column(
         String(255),
-        nullable=False,
     )
-    created_at = Column(
+
+    created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),
-        nullable=False,
     )
-    updated_at = Column(
+    updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),
         onupdate=lambda: datetime.now(timezone.utc),
-        nullable=False,
     )
+    sessions: Mapped[list["Session"]] = relationship(
+        "Session",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+# get_all() -> list[obj]
+# get_one() -> obj
+# create() -> obj
+# modify() -> obj
+# replace() -> obj
+# delete() -> bool
