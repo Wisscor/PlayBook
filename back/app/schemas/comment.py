@@ -6,7 +6,7 @@ from typing import Optional
 
 class CommentBase(BaseModel):
     content: str = Field(min_length=1)
-    comment_reply_to_id: Optional[int] = None
+    comment_reply_to_id: Optional[UUID] = None
 
 
 class CommentCreate(CommentBase):
@@ -20,8 +20,8 @@ class CommentUpdate(BaseModel):
 class CommentResponse(CommentBase):
     model_config = ConfigDict(from_attributes=True)
 
-    id: int
-    post_id: int
-    user_id: int
+    id: UUID
+    post_id: UUID
+    user_id: UUID
     created_at: datetime
     updated_at: datetime

@@ -15,15 +15,18 @@ class UserBase(BaseModel):
     bio: Optional[str] = None
 
 
+# What should the client provide?
 class UserCreate(UserBase):
     password: str = Field(..., min_length=8, max_length=100)
 
 
+# What should the client provide for login?
 class UserLogin(BaseModel):
     username_or_email: str
     password: str
 
 
+# What should the client update?
 class UserUpdate(BaseModel):
     firstname: Optional[str] = None
     lastname: Optional[str] = None
@@ -34,6 +37,7 @@ class UserUpdate(BaseModel):
     bio: Optional[str] = None
 
 
+# What should the client see?
 class UserResponse(UserBase):
     model_config = ConfigDict(from_attributes=True)
 
