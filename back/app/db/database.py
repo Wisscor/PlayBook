@@ -30,8 +30,7 @@ class Base(DeclarativeBase):
     pass
 
 
-# * get_async_session() — a dependency you'll plug into FastAPI routes; it opens
-# * a session, hands it to your route function, and closes it after
-async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
+# Create a new async session for each request
+async def get_db() -> AsyncGenerator[AsyncSession, None]:
     async with session_maker() as session:
         yield session

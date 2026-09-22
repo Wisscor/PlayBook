@@ -6,13 +6,13 @@ from typing import Optional
 
 # DRY Principle
 class UserBase(BaseModel):
-    firstname: Optional[str] = None
-    lastname: Optional[str] = None
-    username: str = Field(min_length=3, max_length=50)
+    firstname: str = Field(..., min_length=3, max_length=50)
+    lastname: str = Field(..., min_length=3, max_length=50)
+    username: str = Field(..., min_length=3, max_length=50)
     email: EmailStr
-    phone: Optional[str] = None
-    avatar: Optional[str] = None
-    bio: Optional[str] = None
+    phone: Optional[str] = Field(default=None, min_length=3, max_length=15)
+    avatar: Optional[str] = Field(default=None)
+    bio: Optional[str] = Field(default=None, min_length=3, max_length=500)
 
 
 # What should the client provide?
@@ -28,13 +28,13 @@ class UserLogin(BaseModel):
 
 # What should the client update?
 class UserUpdate(BaseModel):
-    firstname: Optional[str] = None
-    lastname: Optional[str] = None
+    firstname: Optional[str] = Field(default=None, min_length=3, max_length=50)
+    lastname: Optional[str] = Field(default=None, min_length=3, max_length=50)
     username: Optional[str] = Field(default=None, min_length=3, max_length=50)
     email: Optional[EmailStr] = None
-    phone: Optional[str] = None
-    avatar: Optional[str] = None
-    bio: Optional[str] = None
+    phone: Optional[str] = Field(default=None, min_length=3, max_length=15)
+    avatar: Optional[str] = Field(default=None)
+    bio: Optional[str] = Field(default=None, min_length=3, max_length=500)
 
 
 # What should the client see?
@@ -43,4 +43,3 @@ class UserResponse(UserBase):
 
     id: UUID
     created_at: datetime
-    updated_at: datetime

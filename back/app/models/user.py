@@ -15,13 +15,15 @@ class User(Base):
         primary_key=True,
         default=uuid.uuid4,
     )
-    first_name: Mapped[str] = mapped_column(
+    firstname: Mapped[str] = mapped_column(
         String(50),
+        nullable=True,
     )
-    last_name: Mapped[str] = mapped_column(
+    lastname: Mapped[str] = mapped_column(
         String(50),
+        nullable=True,
     )
-    user_name: Mapped[str] = mapped_column(
+    username: Mapped[str] = mapped_column(
         String(50),
         unique=True,
         nullable=False,
@@ -29,17 +31,21 @@ class User(Base):
     email: Mapped[str] = mapped_column(
         String(255),
         unique=True,
+        nullable=False,
     )
-    phone: Mapped[str | None] = mapped_column(
+    phone: Mapped[str] = mapped_column(
         String(20),
         default=None,
+        nullable=True,
     )
-    avatar: Mapped[str | None] = mapped_column(
+    avatar: Mapped[str] = mapped_column(
         String(255),
         default=None,
+        nullable=True,
     )
-    bio: Mapped[str | None] = mapped_column(
+    bio: Mapped[str] = mapped_column(
         Text,
+        nullable=True,
         default=None,
     )
     hashed_password: Mapped[str] = mapped_column(
@@ -51,14 +57,28 @@ class User(Base):
         default=lambda: datetime.now(timezone.utc),
     )
 
+    # Relationships
     sessions: Mapped[list["Session"]] = relationship(
         back_populates="user",
         cascade="all, delete-orphan",
     )
-    # sessions: Mapped[list["Session"]] = relationship(
-    #     back_populates="user",
+    posts: Mapped[list["Post"]] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+    comments: Mapped[list["Comment"]] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+    likes: Mapped[list["Like"]] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+    # messages: Mapped[list["Message"]] = relationship(
+    #     back_populates="sender",
     #     cascade="all, delete-orphan",
     # )
+ 
 
 
 # get_all() -> list[obj]

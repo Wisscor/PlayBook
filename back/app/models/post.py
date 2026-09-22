@@ -34,7 +34,6 @@ class Post(Base):
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),
     )
-
     # Relationships
     user: Mapped["User"] = relationship(back_populates="posts")
     media: Mapped[list["PostMedia"]] = relationship(

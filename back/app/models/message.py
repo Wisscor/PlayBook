@@ -33,4 +33,4 @@ class Message(Base):
 
     # Relationships
     chat: Mapped["PrivateChat"] = relationship(back_populates="messages")
-    sender: Mapped["User"] = relationship(back_populates="sent_messages")
+    sender: Mapped["User"] = relationship(back_populates="messages")

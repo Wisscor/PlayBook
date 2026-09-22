@@ -9,15 +9,14 @@ from fastapi import (
 
 import uuid
 from sqlalchemy import select, or_
-from ..models import User
-from ..db.database import get_async_session
+from ..models import Session, User
+from ..db.database import get_db
 from sqlalchemy.exc import IntegrityError
 
 # #####
 from typing import Optional
 from app.core.deps import get_current_user
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
-from ..models.session import Session
 from datetime import datetime, timedelta, timezone
 from ..schemas.user import UserCreate, UserLogin, UserResponse
 from ..core.security import hash_password, verify_password
@@ -32,13 +31,18 @@ router = APIRouter(
 @router.post("/signup", response_model=UserResponse)
 async def signup(
     data: UserCreate,
-    db: AsyncSession = Depends(get_async_session),
+    db: AsyncSession = Depends(get_db),
 ) -> User:
     # Create user instance
     user = User(
+        firstname=data.firstname,
+        lastname=data.lastname,
         username=data.username,
         email=data.email,
         hashed_password=hash_password(data.password),
+        phone=data.phone,
+        avatar=data.avatar,
+        bio=data.bio,
     )
     # Add the user to the database and commit the transaction
     # Handle potential IntegrityError if the username or email already exists
@@ -58,13 +62,13 @@ async def signup(
 async def login(
     data: UserLogin,
     response: Response,
-    db: AsyncSession = Depends(get_async_session),
+    db: AsyncSession = Depends(get_db),
 ):
     # 1. Find user by 'username' or 'email'
     users = await db.execute(
         select(User).where(
             or_(
-                User.user_name == data.username_or_email,
+                User.username == data.username_or_email,
                 User.email == data.username_or_email,
             )
         )
@@ -109,7 +113,7 @@ async def logout(
         default=None,
         alias=settings.session_cookie_name,
     ),
-    db: AsyncSession = Depends(get_async_session),
+    db: AsyncSession = Depends(get_db),
 ):
     if session_id is None:
         raise HTTPException(

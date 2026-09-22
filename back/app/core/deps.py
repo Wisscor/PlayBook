@@ -2,14 +2,14 @@
 import uuid
 from fastapi import Depends, Cookie, HTTPException, status
 from sqlalchemy import select
-from ..db.database import get_async_session
+from ..db.database import get_db
 from datetime import datetime, timezone
 
 from ..models import User
 from .config import settings
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional
-from ..models.session import Session
+from ..models import Session
 
 # oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
@@ -18,7 +18,7 @@ async def get_current_user(
     session_id: Optional[str] = Cookie(
         default=None, alias=settings.session_cookie_name
     ),
-    db: AsyncSession = Depends(get_async_session),
+    db: AsyncSession = Depends(get_db),
 ) -> User:  # ???
     if not session_id:
         raise HTTPException(

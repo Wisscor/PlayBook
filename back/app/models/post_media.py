@@ -26,6 +26,5 @@ class PostMedia(Base):
     media_url: Mapped[str] = mapped_column(String(500), nullable=False)
     media_type: Mapped[str] = mapped_column(String(20), nullable=False)
     position: Mapped[int] = mapped_column(Integer, default=0)
-
     # Relationships
     post: Mapped["Post"] = relationship(back_populates="media")

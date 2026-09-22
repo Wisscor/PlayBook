@@ -40,6 +40,7 @@ class Comment(Base):
     # Relationships
     post: Mapped["Post"] = relationship(back_populates="comments")
     user: Mapped["User"] = relationship(back_populates="comments")
+    
     # A self-referential relationship
     replies: Mapped[list["Comment"]] = relationship(
         back_populates="parent", cascade="all, delete-orphan"
