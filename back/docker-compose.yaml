@@ -1,10 +1,35 @@
+version: '3.8'
+
 services:
   postgres:
-    image: postgres:17
-    container_name: my-postgres
-    environment:
-      POSTGRES_USER: ziko
-      POSTGRES_PASSWORD: 1234pass
-      POSTGRES_DB: mydb
+    build:
+      context: .
+      dockerfile: Dockerfile.db
+    container_name: postgres
+    restart: always
     ports:
-      - "5000:5432"
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ziko -d my-postgres"]
+      interval: 1s
+      timeout: 3s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: playbook-api
+    restart: always
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
