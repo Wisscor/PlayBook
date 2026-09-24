@@ -14,7 +14,7 @@ from ..models import Session
 # oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 
-async def get_current_user(
+async def get_curr_user(
     session_id: Optional[str] = Cookie(
         default=None, alias=settings.session_cookie_name
     ),
@@ -63,5 +63,4 @@ async def get_current_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User not found",
         )
-
     return user

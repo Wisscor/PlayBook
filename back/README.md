@@ -22,35 +22,24 @@ A scalable, modular backend API service built with FastAPI, SQLAlchemy, Docker, 
 
 ### Current Layout
 
-```text
-back/
-├── app/
-│   ├── api/          # Route handlers & API routers
-│   ├── core/         # Core settings, security, and configurations
-│   ├── database/     # DB connections & engine initialization
-│   ├── db/           # Migrations & database session management
-│   ├── models/       # ORM / Database models
-│   ├── realtime/     # WebSockets / Real-time handlers
-│   └── schemas/      # Pydantic data schemas / validation
-└── .env              # Environment configuration
-```
-
-### Recommended App Module Layout
 
 ```text
 back/
-└── app/
-    ├── models/
-    │   ├── user.py
-    │   ├── post.py
-    │   ├── comment.py
-    │   └── message.py
-    ├── schemas/
-    │   ├── user.py
-    │   └── post.py
-    ├── api/
-    ├── realtime/
-    └── database/
+├── app
+│   ├── __init__.py
+│   ├── main.py
+│   ├── logging_conf.py
+│   ├── core/
+│   ├── database/
+│   ├── models/
+│   ├── realtime/
+│   ├── routers/
+│   └── schemas/
+├── docker-compose.yaml
+├── Dockerfile.api
+├── Dockerfile.db
+├── README.md
+└── requirements.txt
 ```
 
 ---
@@ -118,24 +107,86 @@ back/
 
 ## Getting Started
 
-### Running the Project via Docker
-
-Start the containerized stack in detached mode:
-
+### Environment Variables
+ 
+The `DATABASE_URL` differs depending on where Postgres is reached from. Keep your local `.env` pointed at the **local** URL — the **docker** URL is injected directly by `docker-compose.yml` for the `api` service, so you never need to edit `.env` when switching contexts.
+ 
 ```bash
-# Build and start services in the background
+# .env (local development)
+DATABASE_URL=postgresql+asyncpg://ziko:1234pass@0.0.0.0:5432/my-postgres
+```
+ 
+```yaml
+# docker-compose.yml (used only inside the containerized stack)
+services:
+  api:
+    environment:
+      DATABASE_URL: postgresql+asyncpg://ziko:1234pass@postgres:5432/my-postgres
+```
+ 
+> `environment:` in Compose overrides anything from `env_file:`, so the container always gets the `postgres` hostname regardless of what's in your local `.env`.
+ 
+### Option A — Local Development (recommended for coding)
+ 
+Run Postgres in Docker, but run the API directly on your machine so `--reload` works reliably.
+ 
+```bash
+# 1. Start only the database
+docker compose up -d postgres
+ 
+# 2. Run the API locally (from the back/ directory, so relative imports resolve)
+uvicorn app.main:app --reload
+ 
+# 3. When done for the day
+docker compose stop postgres
+```
+ 
+- No `--host`/`--port` needed locally — uvicorn defaults to `127.0.0.1:8000`.
+- Make sure the `postgres` service in `docker-compose.yml` exposes its port to the host (`ports: ["5432:5432"]`), otherwise `0.0.0.0:5432` won't be reachable from your machine.
+### Option B — Full Docker Stack (for DevOps / integration testing)
+ 
+Build and run the entire stack (API + Postgres) in containers, as DevOps will run it in staging/production.
+ 
+```bash
+# Build and start every service in the background
 docker compose up --build -d
-
+ 
 # Stream logs in real-time
 docker compose logs -f
-
+ 
 # Check container health status
 docker compose ps
-
+ 
 # Stop and remove containers
 docker compose down
 ```
-
+ 
+Inside the container, the API's `CMD` binds to all interfaces so it's reachable from outside the container:
+ 
+```bash
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+```
+ 
+---
+ 
+## Testing Endpoints
+ 
+Execute these CLI calls via [HTTPie](https://httpie.io/) to verify your local instance:
+ 
+### 1. User Registration (`/auth/signup`)
+```bash
+http -v POST localhost:8000/auth/signup \
+  username=zakaria \
+  email=zakaria@example.com \
+  password=pass1234
+```
+ 
+### 2. User Login (`/auth/login`)
+```bash
+http -v POST localhost:8000/auth/login \
+  username_or_email=zakaria \
+  password=pass1234
+```
 ---
 
 ## Testing Endpoints
@@ -162,3 +213,5 @@ http -v POST localhost:8000/auth/login \
 ## Resources & References
 
 - [SQLAlchemy Database URLs & Engine Documentation](https://docs.sqlalchemy.org/en/21/core/engines.html#database-urls)
+
+- [A complete guide to logging in FastAPI](https://apitally.io/blog/fastapi-logging-guide)

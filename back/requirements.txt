@@ -10,14 +10,17 @@ uvicorn==0.52.4
 # ORM
 SQLAlchemy==2.0.52
 # Driver for Postgres
-asyncpg
+asyncpg==0.31.0
+
 # To get .env
 python-dotenv==1.2.3
 # To hash passwords with Argon2
-argon2-cffi
+argon2-cffi==25.1.0
 
 dotenv
-pydantic-settings
+
+pydantic==2.13.5
+pydantic-settings==2.15.0
 pydantic[email]>=2.6.0
 
 # To log in JSON format

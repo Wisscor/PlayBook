@@ -1,12 +1,10 @@
-version: '3.8'
-
 services:
   postgres:
     build:
       context: .
       dockerfile: Dockerfile.db
     container_name: postgres
-    restart: always
+    # restart: always
     ports:
       - "5432:5432"
     volumes:
@@ -22,9 +20,12 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: playbook-api
-    restart: always
+    # restart: always
     ports:
       - "8000:8000"
+      # 'environment' attr has a higher priority than 'env_file' attr
+    environment:
+      DATABASE_URL: postgresql+asyncpg://ziko:1234pass@postgres:5432/my-postgres
     env_file:
       - .env
     depends_on:

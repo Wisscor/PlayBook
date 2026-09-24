@@ -15,7 +15,7 @@ from sqlalchemy.exc import IntegrityError
 
 # #####
 from typing import Optional
-from app.core.deps import get_current_user
+from app.core.deps import get_curr_user
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from datetime import datetime, timedelta, timezone
 from ..schemas.user import UserCreate, UserLogin, UserResponse
@@ -102,7 +102,6 @@ async def login(
         httponly=settings.session_cookie_http_only,
         samesite=settings.session_cookie_same_site,
     )
-    # return {"message": "Login successful",}
     return user
 
 
@@ -147,6 +146,6 @@ async def logout(
 
 @router.get("/me", response_model=UserResponse)
 async def read_current_user(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_curr_user),
 ):
     return current_user
