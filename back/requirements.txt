@@ -1,7 +1,9 @@
-httpie
-pytest==9.1.1
 # The Framework
-fastapi==0.141.1
+fastapi[standard]
+# To make HTTP requests
+httpie
+# To run tests
+pytest==9.1.1
 
 # Server to running Fastapi project
 uvicorn==0.52.4
@@ -11,19 +13,12 @@ SQLAlchemy==2.0.52
 asyncpg
 # To get .env
 python-dotenv==1.2.3
-
-# JWT encoding and decoding
-# python-jose[cryptography]
-# Password hashing
-passlib
-
+# To hash passwords with Argon2
 argon2-cffi
 
-# Required for OAuth2 form data parsing
-python-multipart
-
-# To load `.env'
 dotenv
-
-# To validate data and settings
 pydantic-settings
+pydantic[email]>=2.6.0
+
+# To log in JSON format
+python-json-logger>=2.0.7
