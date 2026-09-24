@@ -12,7 +12,7 @@ from sqlalchemy.orm import DeclarativeBase
 # * Engine = the actual connection pool to Postgres. One per app.
 engine = create_async_engine(
     settings.database_url,
-    echo=True,
+    # echo=True,
 )
 
 # * Session =  a factory that produces a new AsyncSession (a "conversation"
