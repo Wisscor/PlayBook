@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime, timezone
-from ..db.database import Base
+from ..database.database import Base
 from sqlalchemy import (
     ForeignKey,
     DateTime,

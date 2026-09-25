@@ -1,5 +1,5 @@
 import uuid
-from ..db.database import Base
+from ..database.database import Base
 from datetime import datetime, timezone
 from sqlalchemy import (
     String,

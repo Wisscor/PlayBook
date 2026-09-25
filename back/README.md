@@ -215,3 +215,4 @@ http -v POST localhost:8000/auth/login \
 - [SQLAlchemy Database URLs & Engine Documentation](https://docs.sqlalchemy.org/en/21/core/engines.html#database-urls)
 
 - [A complete guide to logging in FastAPI](https://apitally.io/blog/fastapi-logging-guide)
+- [How to Get Started with Logging in FastAPI](https://betterstack.com/community/guides/logging/logging-with-fastapi/)

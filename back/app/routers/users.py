@@ -10,7 +10,7 @@ from ..models import User
 from ..schemas.user import UserUpdate, UserResponse
 
 # #####
-from ..db.database import get_db
+from ..database.database import get_db
 from typing import Optional
 from app.core.deps import get_curr_user
 from sqlalchemy.ext.asyncio import AsyncSession

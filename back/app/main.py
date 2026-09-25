@@ -1,6 +1,6 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Header, Response
-from .db.database import engine, Base
+from .database.database import engine, Base
 from .core.config import settings
 from .routers import auth
 from .routers import users
@@ -44,12 +44,6 @@ async def health_check():
     Health check endpoint to verify the application's status.
     Returns a 200 OK response if the application is running.
     """
-    logger.debug("Health check endpoint called.")
-    logger.info("Health check endpoint called.")
-    logger.warning("Health check endpoint called.")
-    logger.error("Health check endpoint called.")
-    logger.critical("Health check endpoint called.")
-
     return {"status": "ok"}
 
 

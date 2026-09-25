@@ -10,7 +10,7 @@ from fastapi import (
 import uuid
 from sqlalchemy import select, or_
 from ..models import Session, User
-from ..db.database import get_db
+from ..database.database import get_db
 from sqlalchemy.exc import IntegrityError
 
 # #####

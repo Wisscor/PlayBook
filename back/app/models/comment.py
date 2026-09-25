@@ -1,5 +1,5 @@
 import uuid
-from ..db.database import Base
+from ..database.database import Base
 from datetime import datetime, timezone
 from sqlalchemy import (
     ForeignKey,
@@ -40,7 +40,7 @@ class Comment(Base):
     # Relationships
     post: Mapped["Post"] = relationship(back_populates="comments")
     user: Mapped["User"] = relationship(back_populates="comments")
-    
+
     # A self-referential relationship
     replies: Mapped[list["Comment"]] = relationship(
         back_populates="parent", cascade="all, delete-orphan"
@@ -48,7 +48,6 @@ class Comment(Base):
     parent: Mapped["Comment | None"] = relationship(
         back_populates="replies", remote_side=[id]
     )
-
 
 
 # One comment can have MANY replies. (One-to-Many)

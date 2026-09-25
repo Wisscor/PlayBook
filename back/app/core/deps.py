@@ -2,7 +2,7 @@
 import uuid
 from fastapi import Depends, Cookie, HTTPException, status
 from sqlalchemy import select
-from ..db.database import get_db
+from ..database.database import get_db
 from datetime import datetime, timezone
 
 from ..models import User

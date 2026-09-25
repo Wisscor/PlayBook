@@ -5,7 +5,7 @@ import uuid
 from sqlalchemy import DateTime, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from ..db.database import Base
+from ..database.database import Base
 
 
 class User(Base):
@@ -78,7 +78,6 @@ class User(Base):
     #     back_populates="sender",
     #     cascade="all, delete-orphan",
     # )
- 
 
 
 # get_all() -> list[obj]
