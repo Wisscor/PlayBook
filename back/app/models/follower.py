@@ -14,10 +14,12 @@ class Follower(Base):
     __tablename__ = "followers"
 
     follower_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("users.id"), primary_key=True
+        ForeignKey("users.id", ondelete="CASCADE"),
+        primary_key=True,
     )
     following_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("users.id"), primary_key=True
+        ForeignKey("users.id", ondelete="CASCADE"),
+        primary_key=True,
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
@@ -25,8 +27,10 @@ class Follower(Base):
 
     # Relationships
     follower: Mapped["User"] = relationship(
-        foreign_keys=[follower_id], back_populates="following"
+        foreign_keys=[follower_id],
+        back_populates="following",
     )
     following: Mapped["User"] = relationship(
-        foreign_keys=[following_id], back_populates="followers"
+        foreign_keys=[following_id],
+        back_populates="followers",
     )

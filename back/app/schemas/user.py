@@ -43,3 +43,20 @@ class UserResponse(UserBase):
 
     id: UUID
     created_at: datetime
+
+
+class UserSummaryResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    username: str
+    firstname: Optional[str] = None
+    lastname: Optional[str] = None
+    avatar: Optional[str] = None
+
+
+class UserProfileResponse(UserResponse):
+    followers_count: int = 0
+    following_count: int = 0
+    # posts_count: int = 0
+    is_following: Optional[bool] = None

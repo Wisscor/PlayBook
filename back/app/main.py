@@ -4,6 +4,8 @@ from .database.database import engine, Base
 from .core.config import settings
 from .routers import auth
 from .routers import users
+# from .routers import post
+from .routers import followers
 import logging
 
 from .logging_conf import setup_logging
@@ -35,6 +37,12 @@ app.include_router(
 )
 app.include_router(
     users.router,
+)
+# app.include_router(
+#     post.router,
+# )
+app.include_router(
+    followers.router,
 )
 
 

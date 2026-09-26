@@ -1,4 +1,3 @@
-# ##########################
 from datetime import datetime, timezone
 import uuid
 
@@ -62,27 +61,31 @@ class User(Base):
         back_populates="user",
         cascade="all, delete-orphan",
     )
-    posts: Mapped[list["Post"]] = relationship(
-        back_populates="user",
+    # posts: Mapped[list["Post"]] = relationship(
+    #     back_populates="user",
+    #     cascade="all, delete-orphan",
+    # )
+    # comments: Mapped[list["Comment"]] = relationship(
+    #     back_populates="user",
+    #     cascade="all, delete-orphan",
+    # )
+    # likes: Mapped[list["Like"]] = relationship(
+    #     back_populates="user",
+    #     cascade="all, delete-orphan",
+    # )
+    following: Mapped[list["Follower"]] = relationship(
+        "Follower",
+        foreign_keys="Follower.follower_id",
+        back_populates="follower",
         cascade="all, delete-orphan",
     )
-    comments: Mapped[list["Comment"]] = relationship(
-        back_populates="user",
-        cascade="all, delete-orphan",
-    )
-    likes: Mapped[list["Like"]] = relationship(
-        back_populates="user",
+    followers: Mapped[list["Follower"]] = relationship(
+        "Follower",
+        foreign_keys="Follower.following_id",
+        back_populates="following",
         cascade="all, delete-orphan",
     )
     # messages: Mapped[list["Message"]] = relationship(
     #     back_populates="sender",
     #     cascade="all, delete-orphan",
     # )
-
-
-# get_all() -> list[obj]
-# get_one() -> obj
-# create() -> obj
-# modify() -> obj
-# replace() -> obj
-# delete() -> bool
