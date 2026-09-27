@@ -2,3 +2,5 @@
 .env
 __pycache__/
 *.pyc
+REALTIME_PLAN.md
+DAY2_WALKTHROUGH.md
