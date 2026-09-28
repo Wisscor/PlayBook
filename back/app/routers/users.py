@@ -16,7 +16,7 @@ from ..database.database import get_db
 from ..models import (
     User,
     Follower,
-    # Post,
+    Post,
 )
 from ..schemas.user import (
     UserUpdate,
@@ -62,14 +62,14 @@ async def get_my_profile(
         or 0
     )
 
-    # posts_count = await db.scalar(
-    #     select(func.count()).select_from(Post).where(Post.user_id == curr_user.id)
-    # ) or 0
+    posts_count = await db.scalar(
+        select(func.count()).select_from(Post).where(Post.user_id == curr_user.id)
+    ) or 0
 
     profile = UserProfileResponse.model_validate(curr_user)
     profile.followers_count = followers_count
     profile.following_count = following_count
-    # profile.posts_count = posts_count
+    profile.posts_count = posts_count
     profile.is_following = None
     return profile
 

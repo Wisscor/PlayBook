@@ -1,5 +1,4 @@
 import uuid
-from datetime import datetime, timezone
 from ..database.database import Base
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import (
@@ -23,12 +22,3 @@ class Like(Base):
 
     user: Mapped["User"] = relationship(back_populates="likes")
     post: Mapped["Post"] = relationship(back_populates="likes")
-
-
-# CREATE TABLE likes (
-#         post_id UUID NOT NULL,
-#         user_id UUID NOT NULL,
-#         PRIMARY KEY (post_id, user_id),
-#         FOREIGN KEY(post_id) REFERENCES posts (id) ON DELETE CASCADE,
-#         FOREIGN KEY(user_id) REFERENCES users (id) ON DELETE CASCADE
-# )

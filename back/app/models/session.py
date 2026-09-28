@@ -17,13 +17,11 @@ class Session(Base):
         primary_key=True,
         default=uuid.uuid4,
     )
-
     user_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"),
         index=True,
         nullable=False,
     )
-
     expires_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
@@ -32,8 +30,8 @@ class Session(Base):
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),
     )
-
-    # user = relationship("User", backref="sessions")
-    # 'back_populates': establish a bidirectional relationship.
-    # user: Mapped["User"] = relationship(back_populates="sessions")
-    user: Mapped["User"] = relationship("User", back_populates="sessions")
+    # Relationships
+    user: Mapped["User"] = relationship(
+        "User",
+        back_populates="sessions",
+    )

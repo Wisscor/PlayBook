@@ -61,18 +61,18 @@ class User(Base):
         back_populates="user",
         cascade="all, delete-orphan",
     )
-    # posts: Mapped[list["Post"]] = relationship(
-    #     back_populates="user",
-    #     cascade="all, delete-orphan",
-    # )
-    # comments: Mapped[list["Comment"]] = relationship(
-    #     back_populates="user",
-    #     cascade="all, delete-orphan",
-    # )
-    # likes: Mapped[list["Like"]] = relationship(
-    #     back_populates="user",
-    #     cascade="all, delete-orphan",
-    # )
+    posts: Mapped[list["Post"]] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+    comments: Mapped[list["Comment"]] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+    likes: Mapped[list["Like"]] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
     following: Mapped[list["Follower"]] = relationship(
         "Follower",
         foreign_keys="Follower.follower_id",

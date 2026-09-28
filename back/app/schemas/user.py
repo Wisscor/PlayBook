@@ -58,5 +58,5 @@ class UserSummaryResponse(BaseModel):
 class UserProfileResponse(UserResponse):
     followers_count: int = 0
     following_count: int = 0
-    # posts_count: int = 0
+    posts_count: int = 0
     is_following: Optional[bool] = None
