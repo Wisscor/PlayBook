@@ -207,7 +207,6 @@ async def list_posts(
     stmt = stmt.offset(offset).limit(limit)
     res = await db.execute(stmt)
     posts = res.scalars().all()
-    db.
     return await _enrich_posts(posts, curr_user, db)
 
 
