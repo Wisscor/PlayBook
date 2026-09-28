@@ -1,20 +1,32 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
+from ..db.database import session_maker
+from . import frames
+from .ws_auth import authenticate_socket
+
 router = APIRouter()
 
-#notes bellow is for me to not forget 
+
 @router.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
-    # accept() completes the handshake. Until you call it, the
-    # connection is not open and you cannot send anything.
     await websocket.accept()
+
+    async with session_maker() as db:
+        user = await authenticate_socket(websocket, db)
+    if user is None:
+        return
+
+    await websocket.send_json(
+        {
+            "type": frames.READY,
+            "user_id": str(user.id),
+            "username": user.username,
+        }
+    )
+
     try:
         while True:
-            # receive_text() waits here until the client sends something.
-            text = await websocket.receive_text()
-            await websocket.send_text(f"echo: {text}")
+            frame = await websocket.receive_json()
+            await websocket.send_json({"type": "echo", "received": frame})
     except WebSocketDisconnect:
-        # The client closed the tab, lost network, or the browser
-        # crashed. This is normal, not an error. If you do not catch
-        # it, your logs fill with tracebacks for ordinary behaviour.
         pass
