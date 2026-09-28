@@ -1,13 +1,14 @@
 import logging
 import sys
 from pythonjsonlogger import jsonlogger
-
+from .core.config import settings
 
 def setup_logging():
     # 1. Root logger
     logger = logging.getLogger()
-    logger.setLevel(logging.WARNING)
 
+    logger.setLevel(settings.log_level)
+    
     # 2. Console stream handler (stdout for Docker)
     log_handler = logging.StreamHandler(sys.stdout)
 
@@ -30,7 +31,7 @@ def setup_logging():
         "sqlalchemy.engine",
     ):
         lg = logging.getLogger(name)
-        lg.setLevel(logging.WARNING)
+        lg.setLevel(settings.log_level)
         lg.handlers.clear()
         lg.addHandler(log_handler)
         lg.propagate = False
