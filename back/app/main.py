@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from .db.database import engine, Base
 from .core.config import settings
 from .routers import auth
+from .realtime import models as realtime_models
 from .realtime import ws as realtime_ws
 
 @asynccontextmanager
