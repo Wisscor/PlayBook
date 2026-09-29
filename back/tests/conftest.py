@@ -1,0 +1,50 @@
+import uuid
+from datetime import datetime, timezone
+import pytest
+from unittest.mock import AsyncMock
+
+from app.models import User
+from app.core.security import hash_password
+
+
+@pytest.fixture
+def test_password():
+    return "password123"
+
+
+@pytest.fixture
+def mock_user_1(test_password):
+    return User(
+        id=uuid.uuid4(),
+        firstname="John",
+        lastname="Doe",
+        username="john_doe",
+        email="john@example.com",
+        phone="1234567890",
+        avatar="https://example.com/john.png",
+        bio="Athlete and sports lover",
+        hashed_password=hash_password(test_password),
+        created_at=datetime.now(timezone.utc),
+    )
+
+
+@pytest.fixture
+def mock_user_2(test_password):
+    return User(
+        id=uuid.uuid4(),
+        firstname="Sarah",
+        lastname="Connor",
+        username="sarah_c",
+        email="sarah@example.com",
+        phone="0987654321",
+        avatar="https://example.com/sarah.png",
+        bio="Basketball coach",
+        hashed_password=hash_password(test_password),
+        created_at=datetime.now(timezone.utc),
+    )
+
+
+@pytest.fixture
+def mock_db():
+    db = AsyncMock()
+    return db

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
-from ..db.database import session_maker
+from ..database.database import session_maker
 from . import frames
 from . import registry
 from .ws_auth import authenticate_socket

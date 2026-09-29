@@ -12,7 +12,7 @@ from sqlalchemy.orm import DeclarativeBase
 # * Engine = the actual connection pool to Postgres. One per app.
 engine = create_async_engine(
     settings.database_url,
-    echo=True,
+    # echo=True,
 )
 
 # * Session =  a factory that produces a new AsyncSession (a "conversation"
@@ -30,8 +30,7 @@ class Base(DeclarativeBase):
     pass
 
 
-# * get_async_session() — a dependency you'll plug into FastAPI routes; it opens
-# * a session, hands it to your route function, and closes it after
-async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
+# Create a new async session for each request
+async def get_db() -> AsyncGenerator[AsyncSession, None]:
     async with session_maker() as session:
         yield session

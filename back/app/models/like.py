@@ -1,30 +1,24 @@
 import uuid
-from datetime import datetime, timezone
-from ..db.database import Base
-from sqlalchemy import DateTime, ForeignKey, UniqueConstraint
-from sqlalchemy.orm import Mapped, mapped_column
+from ..database.database import Base
+from sqlalchemy import ForeignKey
+from sqlalchemy.orm import (
+    Mapped,
+    mapped_column,
+    relationship,
+)
 
 
 class Like(Base):
+    """Pure junction table: composite PK enforces one like per user per post."""
+
     __tablename__ = "likes"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        primary_key=True,
-        default=uuid.uuid4,
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id"), primary_key=True
     )
     post_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("posts.id", ondelete="CASCADE"),
+        ForeignKey("posts.id"), primary_key=True
     )
-    user_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("users.id", ondelete="CASCADE"),
-    )
-    created_at: Mapped[datetime] = mapped_column(
-            DateTime(timezone=True),
-            default=lambda: datetime.now(timezone.utc),
-    )
-    # Ensures a user can only like a specific post once:
-    __table_args__ = (
-        UniqueConstraint(
-            "post_id", "user_id", name="uq_likes_post_id_user_id"
-        ),
-    )
+
+    user: Mapped["User"] = relationship(back_populates="likes")
+    post: Mapped["Post"] = relationship(back_populates="likes")

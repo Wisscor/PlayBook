@@ -9,38 +9,40 @@ from fastapi import (
 
 import uuid
 from sqlalchemy import select, or_
-from ..models import User
-from ..db.database import get_async_session
+from ..models import Session, User
+from ..database.database import get_db
 from sqlalchemy.exc import IntegrityError
 
 # #####
 from typing import Optional
-from app.core.deps import get_current_user
+from app.core.deps import get_curr_user
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
-from ..models.session import Session
 from datetime import datetime, timedelta, timezone
-from ..schemas.user import UserSigup, UserLogin, UserResponse
+from ..schemas.user import UserCreate, UserLogin, UserResponse
 from ..core.security import hash_password, verify_password
 from app.core.config import settings
 
-# `tags` its for OpenAPI docs
 router = APIRouter(
     prefix="/auth",
     tags=["Auuthentication"],
 )
 
 
-# POST /auth/signup
 @router.post("/signup", response_model=UserResponse)
 async def signup(
-    data: UserSigup,
-    db: AsyncSession = Depends(get_async_session),
+    data: UserCreate,
+    db: AsyncSession = Depends(get_db),
 ) -> User:
     # Create user instance
     user = User(
+        firstname=data.firstname,
+        lastname=data.lastname,
         username=data.username,
         email=data.email,
         hashed_password=hash_password(data.password),
+        phone=data.phone,
+        avatar=data.avatar,
+        bio=data.bio,
     )
     # Add the user to the database and commit the transaction
     # Handle potential IntegrityError if the username or email already exists
@@ -56,12 +58,11 @@ async def signup(
     return user
 
 
-# POST /auth/login
 @router.post("/login", response_model=UserResponse)
 async def login(
     data: UserLogin,
     response: Response,
-    db: AsyncSession = Depends(get_async_session),
+    db: AsyncSession = Depends(get_db),
 ):
     # 1. Find user by 'username' or 'email'
     users = await db.execute(
@@ -101,11 +102,9 @@ async def login(
         httponly=settings.session_cookie_http_only,
         samesite=settings.session_cookie_same_site,
     )
-    # return {"message": "Login successful",}
     return user
 
 
-# POST /logout
 @router.post("/logout")
 async def logout(
     response: Response,
@@ -113,7 +112,7 @@ async def logout(
         default=None,
         alias=settings.session_cookie_name,
     ),
-    db: AsyncSession = Depends(get_async_session),
+    db: AsyncSession = Depends(get_db),
 ):
     if session_id is None:
         raise HTTPException(
@@ -145,11 +144,8 @@ async def logout(
     return {"message": "Logout successful"}
 
 
-# GET /auth/me
-# * the dependency runs on every request, validates the token,
-# * fetches the user, and hands it to your route.
 @router.get("/me", response_model=UserResponse)
 async def read_current_user(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_curr_user),
 ):
     return current_user

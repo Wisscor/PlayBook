@@ -1,10 +1,36 @@
 services:
   postgres:
-    image: postgres:17
-    container_name: my-postgres
-    environment:
-      POSTGRES_USER: ziko
-      POSTGRES_PASSWORD: 1234pass
-      POSTGRES_DB: mydb
+    build:
+      context: .
+      dockerfile: Dockerfile.db
+    container_name: postgres
+    # restart: always
     ports:
-      - "5000:5432"
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ziko -d my-postgres"]
+      interval: 1s
+      timeout: 3s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: playbook-api
+    # restart: always
+    ports:
+      - "8000:8000"
+      # 'environment' attr has a higher priority than 'env_file' attr
+    environment:
+      DATABASE_URL: postgresql+asyncpg://ziko:1234pass@postgres:5432/my-postgres
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:

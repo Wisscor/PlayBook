@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     secret_key: str
     access_token_expire_minutes: int = 15
     refresh_token_expire_days: int = 7
+    log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "DEBUG"
 
     # Session
     session_cookie_name: str = "session_id"
