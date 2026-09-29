@@ -2,6 +2,7 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 from ..db.database import session_maker
 from . import frames
+from . import registry
 from .ws_auth import authenticate_socket
 
 router = APIRouter()
@@ -16,17 +17,20 @@ async def websocket_endpoint(websocket: WebSocket):
     if user is None:
         return
 
-    await websocket.send_json(
-        {
-            "type": frames.READY,
-            "user_id": str(user.id),
-            "username": user.username,
-        }
-    )
-
+    registry.register(user.id, websocket)
     try:
+        await websocket.send_json(
+            {
+                "type": frames.READY,
+                "user_id": str(user.id),
+                "username": user.username,
+            }
+        )
+
         while True:
             frame = await websocket.receive_json()
             await websocket.send_json({"type": "echo", "received": frame})
     except WebSocketDisconnect:
         pass
+    finally:
+        registry.unregister(user.id, websocket)
