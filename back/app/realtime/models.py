@@ -1,7 +1,10 @@
 import uuid
 from datetime import datetime, timezone
+from uuid import UUID
+from pydantic import BaseModel
 from sqlalchemy import DateTime, ForeignKey, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
+
 from ..database.database import Base
 
 
@@ -35,3 +38,6 @@ class Message(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), index=True
     )
+
+class ConversationCreate(BaseModel):
+    peer_id: UUID

@@ -4,6 +4,7 @@ from .database.database import engine, Base
 from .core.config import settings
 from .routers import auth
 from .realtime import models as realtime_models
+from .realtime import rest as realtime_rest
 from .realtime import ws as realtime_ws
 from .routers import users
 from .routers import post
@@ -36,6 +37,7 @@ app = FastAPI(
 app.include_router(
     auth.router,
 )
+app.include_router(realtime_rest.router)
 app.include_router(realtime_ws.router)
 app.include_router(
     users.router,
