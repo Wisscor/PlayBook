@@ -5,7 +5,7 @@ from ..database.database import get_db
 from ..models.user import User
 from ..core.deps import get_curr_user
 from . import service
-from .models import ConversationCreate
+from .schemas import ConversationCreate
 
 
 router = APIRouter(prefix="/realtime", tags=["realtime"])
