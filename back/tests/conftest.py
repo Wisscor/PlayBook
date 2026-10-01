@@ -1,7 +1,12 @@
+import sys
 import uuid
 from datetime import datetime, timezone
+from pathlib import Path
 import pytest
 from unittest.mock import AsyncMock
+
+# Ensure project root is in sys.path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from app.models import User
 from app.core.security import hash_password
