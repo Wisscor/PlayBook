@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from pydantic import ValidationError
 
@@ -14,6 +16,16 @@ async def _reject(ws: WebSocket, reason: str) -> None:
     await ws.send_json({"type": frames.ERROR, "reason": reason})
 
 
+async def _announce(contacts: set[UUID], user_id: UUID, online: bool) -> None:
+    frame = {
+        "type": frames.PRESENCE,
+        "user_id": str(user_id),
+        "online": online,
+    }
+    for contact_id in contacts:
+        await registry.send_to_user(contact_id, frame)
+
+
 @router.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
@@ -23,7 +35,9 @@ async def websocket_endpoint(websocket: WebSocket):
     if user is None:
         return
 
+    first_socket = not registry.connections_for(user.id)
     registry.register(user.id, websocket)
+    contacts = set()
     try:
         await websocket.send_json(
             {
@@ -32,6 +46,17 @@ async def websocket_endpoint(websocket: WebSocket):
                 "username": user.username,
             }
         )
+        async with session_maker() as db:
+            contacts = await service.get_contact_ids(db, user.id)
+        online_contacts = contacts & registry.online_user_ids()
+        await websocket.send_json(
+            {
+                "type": frames.PRESENCE_SNAPSHOT,
+                "online": [str(contact_id) for contact_id in online_contacts],
+            }
+        )
+        if first_socket:
+            await _announce(contacts, user.id, True)
 
         while True:
             try:
@@ -91,3 +116,5 @@ async def websocket_endpoint(websocket: WebSocket):
         pass
     finally:
         registry.unregister(user.id, websocket)
+        if not registry.connections_for(user.id):
+            await _announce(contacts, user.id, False)

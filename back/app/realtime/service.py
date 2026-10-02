@@ -77,6 +77,19 @@ async def list_conversations(db, me: UUID) -> list[dict]:
     return [{"id": c, "peer_id": p, "peer_username": u} for c, p, u in rows.all()]
 
 
+async def get_contact_ids(db, user_id: UUID) -> set[UUID]:
+    mine = select(ConversationParticipant.conversation_id).where(
+        ConversationParticipant.user_id == user_id
+    )
+    rows = await db.execute(
+        select(ConversationParticipant.user_id)
+        .where(ConversationParticipant.conversation_id.in_(mine))
+        .where(ConversationParticipant.user_id != user_id)
+        .distinct()
+    )
+    return {contact_id for (contact_id,) in rows.all()}
+
+
 async def has_messages(db, conversation_id: UUID) -> bool:
     return bool(
         await db.scalar(
