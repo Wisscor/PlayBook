@@ -46,10 +46,13 @@ async def websocket_endpoint(websocket: WebSocket):
                     case frames.MESSAGE_SEND:
                         data = MessageSend.model_validate(frame)
                         async with session_maker() as db:
+                            is_first = not await service.has_messages(
+                                db, data.conversation_id
+                            )
                             message = await service.create_message(
                                 db, user.id, data.conversation_id, data.body
                             )
-                            participant_ids = await service.get_participant_ids(
+                            participants = await service.get_participants(
                                 db, message.conversation_id
                             )
 
@@ -61,7 +64,20 @@ async def websocket_endpoint(websocket: WebSocket):
                             "body": message.body,
                             "created_at": message.created_at.isoformat(),
                         }
-                        for pid in participant_ids:
+                        if is_first:
+                            for pid, _ in participants:
+                                peer_id, peer_username = next(
+                                    (participant_id, username)
+                                    for participant_id, username in participants
+                                    if participant_id != pid
+                                )
+                                await registry.send_to_user(
+                                    pid,
+                                    service.conversation_new_payload(
+                                        message.conversation_id, peer_id, peer_username
+                                    ),
+                                )
+                        for pid, _ in participants:
                             await registry.send_to_user(pid, payload)
                     case _:
                         await _reject(websocket, "unknown_type")

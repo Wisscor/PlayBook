@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from sqlalchemy import func, select
+from sqlalchemy import exists, func, select
 from sqlalchemy.orm import aliased
 
 from ..models import Follower
@@ -34,13 +34,15 @@ async def mutual_follow_exists(db, a: UUID, b: UUID) -> bool:
     return await _follows(db, a, b) and await _follows(db, b, a)
 
 
-def conversation_new_payload(conversation_id: UUID, peer: User) -> dict:
-    """The frame for ONE recipient. `peer` is the OTHER user, from that recipient's point of view."""
+def conversation_new_payload(
+    conversation_id: UUID, peer_id: UUID, peer_username: str
+) -> dict:
+    """Build the conversation row for ONE recipient, describing the other user."""
     return {
         "type": frames.CONVERSATION_NEW,
         "id": str(conversation_id),
-        "peer_id": str(peer.id),
-        "peer_username": peer.username,
+        "peer_id": str(peer_id),
+        "peer_username": peer_username,
     }
 
 
@@ -66,10 +68,39 @@ async def list_conversations(db, me: UUID) -> list[dict]:
         .join(mine, mine.conversation_id == Conversation.id)
         .join(other, (other.conversation_id == Conversation.id) & (other.user_id != me))
         .join(User, User.id == other.user_id)
-        .where(mine.user_id == me)
+        .where(
+            mine.user_id == me,
+            exists().where(Message.conversation_id == Conversation.id),
+        )
         .order_by(Conversation.created_at.desc())
     )
     return [{"id": c, "peer_id": p, "peer_username": u} for c, p, u in rows.all()]
+
+
+async def has_messages(db, conversation_id: UUID) -> bool:
+    return bool(
+        await db.scalar(
+            select(exists().where(Message.conversation_id == conversation_id))
+        )
+    )
+
+
+async def get_participants(db, conversation_id: UUID) -> list[tuple[UUID, str]]:
+    rows = await db.execute(
+        select(ConversationParticipant.user_id, User.username)
+        .join(User, User.id == ConversationParticipant.user_id)
+        .where(ConversationParticipant.conversation_id == conversation_id)
+    )
+    return [(user_id, username) for user_id, username in rows.all()]
+
+
+async def get_participant_ids(db, conversation_id: UUID) -> list[UUID]:
+    rows = await db.execute(
+        select(ConversationParticipant.user_id).where(
+            ConversationParticipant.conversation_id == conversation_id
+        )
+    )
+    return [user_id for (user_id,) in rows.all()]
 
 
 async def create_message(db, sender_id, conversation_id, body: str) -> Message:
@@ -86,11 +117,3 @@ async def create_message(db, sender_id, conversation_id, body: str) -> Message:
     await db.commit()
     await db.refresh(message)
     return message
-
-async def get_participant_ids(db, conversation_id) -> list[UUID]:
-    rows = await db.execute(
-        select(ConversationParticipant.user_id).where(
-            ConversationParticipant.conversation_id == conversation_id
-        )
-    )
-    return [r for (r,) in rows.all()]
