@@ -7,5 +7,17 @@
   "continue-intra": "Continue with intra",
   "or": "or",
   "signup": "Signup",
-  "login": "Login"
+  "login": "Login",
+  "username": "Username",
+  "password": "Password",
+  "are-you-new": "If you are new,",
+  "signup-now": "Sign up now",
+
+  "firstName": "First Name",
+  "lastName": "Last Name",
+  "confirm-password": "Confirm Password",
+  "already-have-account": "Already have an account?",
+  "create-account": "Create an account",
+  "signUp": "Sign Up",
+  "welcome-message": "Welcome to our platform! Please fill in the details below to create your account."
 }

@@ -2,7 +2,7 @@ import { languages } from "@/lib/constants";
 import Image from "next/image";
 import React from "react";
 import { PlayText } from "../ui/Text";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useLocale } from "next-intl";
 
 export const LanguageSwitcher: React.FC<{
@@ -12,9 +12,11 @@ export const LanguageSwitcher: React.FC<{
   const locale = useLocale();
 
   const router = useRouter();
+  const pathname = usePathname();
 
-  const changeRouteLanguage = (locale: string) => {
-    router.push(`/${locale}`);
+  const changeRouteLanguage = (old: string, locale: string) => {
+    const newPathname = pathname.replace(`${old}`, `${locale}`);
+    router.replace(newPathname);
   };
 
   return (
@@ -26,7 +28,7 @@ export const LanguageSwitcher: React.FC<{
           return (
             <button
               onClick={() => {
-                changeRouteLanguage(lang.value);
+                changeRouteLanguage(locale, lang.value);
                 changeLanguage(lang);
               }}
               type="button"

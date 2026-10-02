@@ -18,3 +18,9 @@ export const languages = [
     value: "ar",
   },
 ];
+
+export const ROUTES = {
+  HOME: "/",
+  SIGNIN: "/auth?mode=signin",
+  SIGNUP: "/auth?mode=signup",
+} as const;

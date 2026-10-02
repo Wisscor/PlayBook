@@ -7,5 +7,18 @@
   "continue-intra": "المتابعة عبر Intra",
   "or": "أو",
   "signup": "إنشاء حساب",
-  "login": "تسجيل الدخول"
+  "login": "تسجيل الدخول",
+
+  "username": "اسم المستخدم",
+  "password": "كلمة المرور",
+  "are-you-new": "إذا كنت جديداً،",
+  "signup-now": "سجل الآن",
+
+  "firstName": "الاسم الأول",
+  "lastName": "اسم العائلة",
+  "confirm-password": "تأكيد كلمة المرور",
+  "already-have-account": "هل لديك حساب بالفعل؟",
+  "create-account": "إنشاء حساب",
+  "signUp": "تسجيل",
+  "welcome-message": "مرحباً بك في منصتنا! يرجى ملء التفاصيل أدناه لإنشاء حسابك."
 }
