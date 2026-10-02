@@ -17,3 +17,14 @@ def connections_for(user_id: UUID) -> set[WebSocket]:
 
 def online_user_ids() -> set[UUID]:
     return set(_connections.keys())
+
+
+async def send_to_user(user_id: UUID, payload: dict) -> int:
+    reached = 0
+    for ws in connections_for(user_id):
+        try:
+            await ws.send_json(payload)
+            reached += 1
+        except Exception:
+            unregister(user_id, ws)
+    return reached

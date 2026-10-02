@@ -49,6 +49,20 @@ async def websocket_endpoint(websocket: WebSocket):
                             message = await service.create_message(
                                 db, user.id, data.conversation_id, data.body
                             )
+                            participant_ids = await service.get_participant_ids(
+                                db, message.conversation_id
+                            )
+
+                        payload = {
+                            "type": frames.MESSAGE_NEW,
+                            "id": str(message.id),
+                            "conversation_id": str(message.conversation_id),
+                            "sender_id": str(message.sender_id),
+                            "body": message.body,
+                            "created_at": message.created_at.isoformat(),
+                        }
+                        for pid in participant_ids:
+                            await registry.send_to_user(pid, payload)
                     case _:
                         await _reject(websocket, "unknown_type")
             except ValidationError:

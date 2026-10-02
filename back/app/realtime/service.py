@@ -55,3 +55,11 @@ async def create_message(db, sender_id, conversation_id, body: str) -> Message:
     await db.commit()
     await db.refresh(message)
     return message
+
+async def get_participant_ids(db, conversation_id) -> list[UUID]:
+    rows = await db.execute(
+        select(ConversationParticipant.user_id).where(
+            ConversationParticipant.conversation_id == conversation_id
+        )
+    )
+    return [r for (r,) in rows.all()]
