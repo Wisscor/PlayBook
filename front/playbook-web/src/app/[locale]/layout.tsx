@@ -1,11 +1,11 @@
-import "./globals.css";
+import "@/public/globals.css";
 
 import { Providers } from "@/hooks/contexts/contextsProviders";
 import { NextIntlClientProvider } from "next-intl";
 import { notFound } from "next/navigation";
 import { ReactNode } from "react";
 import { Locale, locales } from "../../../i18n";
-import { myTTFFont } from "./fonts";
+import { myTTFFont } from "../../../public/fonts";
 
 type Props = {
   readonly children: ReactNode;

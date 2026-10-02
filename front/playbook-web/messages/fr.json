@@ -7,5 +7,17 @@
   "continue-intra": "Continuer avec Intra",
   "or": "ou",
   "signup": "S'inscrire",
-  "login": "Se connecter"
+  "login": "Se connecter",
+  "username": "Nom d'utilisateur",
+  "password": "Mot de passe",
+  "are-you-new": "Si vous êtes nouveau,",
+  "signup-now": "Inscrivez-vous maintenant",
+
+  "firstName": "Prénom",
+  "lastName": "Nom de famille",
+  "confirm-password": "Confirmer le mot de passe",
+  "already-have-account": "Vous avez déjà un compte ?",
+  "create-account": "Créer un compte",
+  "signUp": "S'inscrire",
+  "welcome-message": "Bienvenue sur notre plateforme ! Veuillez remplir les détails ci-dessous pour créer votre compte."
 }

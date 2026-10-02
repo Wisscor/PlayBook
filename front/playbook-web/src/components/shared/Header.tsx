@@ -7,13 +7,13 @@ import { LanguageSwitcher } from "./languageSwitcher";
 import { languages } from "@/lib/constants";
 import { useLocale } from "next-intl";
 
-export const Header: React.FC = () => {
+export const Header: React.FC<{}> = ({}) => {
   const { windowWidth } = useResize();
   const [isOpen, setIsOpen] = useState(false);
   const locale = useLocale();
 
   return (
-    <div className={"flex relative flex-row justify-between items-center"}>
+    <div className={"flex relative flex-row justify-between items-center "}>
       <Image
         loading="eager"
         alt="app-logo"

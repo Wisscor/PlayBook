@@ -19,7 +19,10 @@ const Primary: React.FC<{
       )}
       type={type ?? "button"}
     >
-      <PlayText.Primary id={title} className={`text-black ${textClassName}`} />
+      <PlayText.Primary
+        id={title}
+        className={twMerge(clsx("text-black", textClassName))}
+      />
     </button>
   );
 };

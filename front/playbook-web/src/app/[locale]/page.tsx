@@ -4,6 +4,8 @@ import { Header } from "@/components/shared/Header";
 import { PlayerButton } from "@/components/ui/Button";
 import { PlayText } from "@/components/ui/Text";
 import { useResize } from "@/hooks/contexts/resizeContext";
+import { ROUTES } from "@/lib/constants";
+import { Link } from "../../../i18n/navigation";
 
 export const Home = () => {
   const { windowWidth } = useResize();
@@ -32,11 +34,15 @@ export const Home = () => {
                 <div className="flex-1 h-px bg-white100 " />
               </div>
               <div className="flex flex-col lg:flex-row gap-4 mt-4">
-                <PlayerButton.Secondary
-                  title="signup"
-                  textClassName="text-white"
-                />
-                <PlayerButton.Primary title="login" />
+                <Link href={ROUTES.SIGNUP} className="w-full">
+                  <PlayerButton.Secondary
+                    title="signup"
+                    textClassName="text-white"
+                  />
+                </Link>
+                <Link href={ROUTES.SIGNIN} className="w-full">
+                  <PlayerButton.Primary title="login" />
+                </Link>
               </div>
             </div>
           </div>
