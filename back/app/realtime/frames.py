@@ -6,6 +6,7 @@ PING = "ping"                # client → server every 20s; the server answers P
 # ── server → client ───────────────────────────────────────────
 READY = "ready"
 MESSAGE_NEW = "message.new"
+CONVERSATION_NEW = "conversation.new"  # a conversation was newly created with you in it
 PRESENCE = "presence"
 PRESENCE_SNAPSHOT = "presence.snapshot"  # which contacts are online, on connect
 NOTIFICATION = "notification"

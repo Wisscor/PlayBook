@@ -5,6 +5,7 @@ from sqlalchemy.orm import aliased
 
 from ..models import Follower
 from ..models.user import User
+from . import frames
 from .models import Conversation, ConversationParticipant, Message
 
 
@@ -31,6 +32,16 @@ async def _follows(db, follower: UUID, followed: UUID) -> bool:
 
 async def mutual_follow_exists(db, a: UUID, b: UUID) -> bool:
     return await _follows(db, a, b) and await _follows(db, b, a)
+
+
+def conversation_new_payload(conversation_id: UUID, peer: User) -> dict:
+    """The frame for ONE recipient. `peer` is the OTHER user, from that recipient's point of view."""
+    return {
+        "type": frames.CONVERSATION_NEW,
+        "id": str(conversation_id),
+        "peer_id": str(peer.id),
+        "peer_username": peer.username,
+    }
 
 
 async def get_or_create_direct(db, me: UUID, peer: UUID) -> Conversation:

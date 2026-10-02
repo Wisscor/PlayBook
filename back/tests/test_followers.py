@@ -8,7 +8,8 @@ from app.main import app
 from app.database.database import get_db
 from app.core.deps import get_curr_user
 from app.models import Follower
-from app.realtime import service
+from app.realtime import service, frames
+from app.realtime import registry
 
 
 def test_follow_user_success(mock_user_1, mock_user_2, mock_db):
@@ -216,3 +217,24 @@ def test_create_realtime_conversation_requires_mutual_follow(mock_user_1, mock_u
     assert "follow each other" in res.json()["detail"].lower()
 
     app.dependency_overrides.clear()
+
+
+def test_registry_connections_for_returns_a_copy():
+    user_id = uuid.uuid4()
+    ws = MagicMock()
+    registry._connections[user_id] = {ws}
+
+    result = registry.connections_for(user_id)
+    result.add(MagicMock())
+
+    assert len(registry._connections[user_id]) == 1
+    assert ws in registry._connections[user_id]
+
+
+def test_conversation_new_payload_has_expected_shape(mock_user_1):
+    payload = service.conversation_new_payload(uuid.uuid4(), mock_user_1)
+
+    assert payload["type"] == frames.CONVERSATION_NEW
+    assert payload["id"]
+    assert payload["peer_id"] == str(mock_user_1.id)
+    assert payload["peer_username"] == mock_user_1.username
