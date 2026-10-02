@@ -1,11 +1,14 @@
 import uuid
 from unittest.mock import AsyncMock, MagicMock
+
+import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
 from app.database.database import get_db
 from app.core.deps import get_curr_user
 from app.models import Follower
+from app.realtime import service
 
 
 def test_follow_user_success(mock_user_1, mock_user_2, mock_db):
@@ -179,5 +182,37 @@ def test_get_following_target_not_found(mock_db):
     res = client.get(f"/users/{random_id}/following")
     assert res.status_code == 404
     assert "user not found" in res.json()["detail"].lower()
+
+    app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_mutual_follow_exists_checks_both_directions(mock_db):
+    user_a = uuid.uuid4()
+    user_b = uuid.uuid4()
+    mock_db.scalar.side_effect = [1, 1]
+
+    result = await service.mutual_follow_exists(mock_db, user_a, user_b)
+
+    assert result is True
+    assert mock_db.scalar.call_count == 2
+
+
+def test_create_realtime_conversation_requires_mutual_follow(mock_user_1, mock_user_2, mock_db):
+    client = TestClient(app)
+    mock_db.get.return_value = mock_user_2
+
+    execute_result = MagicMock()
+    execute_result.scalars.return_value.first.return_value = None
+    mock_db.execute.return_value = execute_result
+    mock_db.scalar.side_effect = [0, 0]
+
+    app.dependency_overrides[get_curr_user] = lambda: mock_user_1
+    app.dependency_overrides[get_db] = lambda: mock_db
+
+    res = client.post("/realtime/conversations", json={"peer_id": str(mock_user_2.id)})
+
+    assert res.status_code == 403
+    assert "follow each other" in res.json()["detail"].lower()
 
     app.dependency_overrides.clear()

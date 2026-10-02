@@ -1,12 +1,14 @@
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import aliased
 
+from ..models import Follower
 from ..models.user import User
-from .models import Conversation, ConversationParticipant , Message
+from .models import Conversation, ConversationParticipant, Message
 
-async def get_or_create_direct(db, me: UUID, peer: UUID) -> Conversation:
+
+async def find_direct(db, me: UUID, peer: UUID) -> Conversation | None:
     a, b = aliased(ConversationParticipant), aliased(ConversationParticipant)
     found = await db.execute(
         select(Conversation)
@@ -14,7 +16,25 @@ async def get_or_create_direct(db, me: UUID, peer: UUID) -> Conversation:
         .join(b, b.conversation_id == Conversation.id)
         .where(a.user_id == me, b.user_id == peer)
     )
-    conversation = found.scalars().first()
+    return found.scalars().first()
+
+
+async def _follows(db, follower: UUID, followed: UUID) -> bool:
+    count = await db.scalar(
+        select(func.count()).select_from(Follower).where(
+            Follower.follower_id == follower,
+            Follower.following_id == followed,
+        )
+    )
+    return count > 0
+
+
+async def mutual_follow_exists(db, a: UUID, b: UUID) -> bool:
+    return await _follows(db, a, b) and await _follows(db, b, a)
+
+
+async def get_or_create_direct(db, me: UUID, peer: UUID) -> Conversation:
+    conversation = await find_direct(db, me, peer)
     if conversation is None:
         conversation = Conversation()
         db.add(conversation)

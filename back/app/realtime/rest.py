@@ -20,7 +20,16 @@ async def create_conversation(
         raise HTTPException(status_code=422, detail="cannot start a conversation with yourself")
     if await db.get(User, body.peer_id) is None:
         raise HTTPException(status_code=404, detail="user not found")
-    conversation = await service.get_or_create_direct(db, current_user.id, body.peer_id)
+
+    conversation = await service.find_direct(db, current_user.id, body.peer_id)
+    if conversation is None:
+        if not await service.mutual_follow_exists(db, current_user.id, body.peer_id):
+            raise HTTPException(
+                status_code=403,
+                detail="you can only start a conversation with someone you follow each other with",
+            )
+        conversation = await service.get_or_create_direct(db, current_user.id, body.peer_id)
+
     return {"id": conversation.id, "peer_id": body.peer_id}
 
 @router.get("/conversations")
