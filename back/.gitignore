@@ -4,7 +4,7 @@ __pycache__/
 .venv/
 venv/
 
-
+AGENTS.md
 .pytest_cache/
 .ruff_cache/
 .mypy_cache/
