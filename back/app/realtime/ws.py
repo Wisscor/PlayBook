@@ -4,7 +4,7 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from pydantic import ValidationError
 
 from ..database.database import session_maker
-from . import frames, service
+from . import frames, service, delivery
 from . import registry
 from .schemas import MessageSend
 from .ws_auth import authenticate_socket
@@ -74,30 +74,7 @@ async def websocket_endpoint(websocket: WebSocket):
                             result = await service.send_message(
                                 db, user.id, data.conversation_id, data.body
                             )
-
-                        payload = {
-                            "type": frames.MESSAGE_NEW,
-                            "id": str(result.id),
-                            "conversation_id": str(result.conversation_id),
-                            "sender_id": str(result.sender_id),
-                            "body": result.body,
-                            "created_at": result.created_at.isoformat(),
-                        }
-                        if result.is_first:
-                            for pid, _ in result.participants:
-                                peer_id, peer_username = next(
-                                    (participant_id, username)
-                                    for participant_id, username in result.participants
-                                    if participant_id != pid
-                                )
-                                await registry.send_to_user(
-                                    pid,
-                                    service.conversation_new_payload(
-                                        result.conversation_id, peer_id, peer_username
-                                    ),
-                                )
-                        for pid, _ in result.participants:
-                            await registry.send_to_user(pid, payload)
+                        await delivery.deliver_message(result)
                     case _:
                         await _reject(websocket, "unknown_type")
             except ValidationError:
