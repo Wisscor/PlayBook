@@ -10,6 +10,7 @@ CONVERSATION_NEW = "conversation.new"  # sent with the first message in the conv
 PRESENCE = "presence"
 PRESENCE_SNAPSHOT = "presence.snapshot"  # which contacts are online, on connect
 NOTIFICATION = "notification"
+NOTIFICATION_COUNT = "notification.count"  # unread badge count update
 ERROR = "error"              # {"type": "error", "reason": "..."}; the socket stays open
 PONG = "pong"                # server → client, only ever a reply to PING
 
