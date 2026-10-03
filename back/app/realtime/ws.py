@@ -47,6 +47,15 @@ async def websocket_endpoint(websocket: WebSocket):
             }
         )
         async with session_maker() as db:
+            pending = await service.take_pending_messages(db, user.id)
+            for row, message in pending:
+                await websocket.send_json(service.message_payload(message))
+            if pending:
+                await service.mark_pending_delivered(
+                    db, [row.id for row, _ in pending]
+                )
+
+        async with session_maker() as db:
             contacts = await service.get_contact_ids(db, user.id)
         online_contacts = contacts & registry.online_user_ids()
         await websocket.send_json(
@@ -74,7 +83,12 @@ async def websocket_endpoint(websocket: WebSocket):
                             result = await service.send_message(
                                 db, user.id, data.conversation_id, data.body
                             )
-                        await delivery.deliver_message(result)
+                        unreached = await delivery.deliver_message(result)
+                        if unreached:
+                            async with session_maker() as db:
+                                await service.create_pending_messages(
+                                    db, unreached, result.id
+                                )
                     case _:
                         await _reject(websocket, "unknown_type")
             except ValidationError:

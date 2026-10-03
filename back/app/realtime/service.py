@@ -1,14 +1,14 @@
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from uuid import UUID
 
-from sqlalchemy import exists, func, select
+from sqlalchemy import exists, func, select, update
 from sqlalchemy.orm import aliased
 
 from ..models import Follower
 from ..models.user import User
 from . import frames
-from .models import Conversation, ConversationParticipant, Message
+from .models import Conversation, ConversationParticipant, Message, PendingMessage
 
 
 async def find_direct(db, me: UUID, peer: UUID) -> Conversation | None:
@@ -134,9 +134,41 @@ async def create_message(db, sender_id, conversation_id, body: str) -> Message:
     return message
 
 
+async def create_pending_messages(
+    db, user_ids: list[UUID], message_id: UUID
+) -> None:
+    db.add_all(
+        [PendingMessage(user_id=user_id, message_id=message_id) for user_id in user_ids]
+    )
+    await db.commit()
+
+
+async def take_pending_messages(
+    db, user_id: UUID
+) -> list[tuple[PendingMessage, Message]]:
+    rows = await db.execute(
+        select(PendingMessage, Message)
+        .join(Message, Message.id == PendingMessage.message_id)
+        .where(
+            PendingMessage.user_id == user_id,
+            PendingMessage.delivered_at.is_(None),
+        )
+        .order_by(PendingMessage.created_at.asc())
+    )
+    return rows.all()
+
+
+async def mark_pending_delivered(db, pending_ids: list[UUID]) -> None:
+    await db.execute(
+        update(PendingMessage)
+        .where(PendingMessage.id.in_(pending_ids))
+        .values(delivered_at=datetime.now(timezone.utc))
+    )
+    await db.commit()
+
+
 @dataclass(frozen=True)
 class SentMessage:
-    """Everything the delivery layer needs, nothing that requires a db session."""
     id: UUID
     conversation_id: UUID
     sender_id: UUID
@@ -147,7 +179,6 @@ class SentMessage:
 
 
 async def send_message(db, sender_id: UUID, conversation_id: UUID, body: str) -> SentMessage:
-    """has_messages → create_message → get_participants, in one session."""
     is_first = not await has_messages(db, conversation_id)
     message = await create_message(db, sender_id, conversation_id, body)
     participants = await get_participants(db, message.conversation_id)
@@ -160,3 +191,14 @@ async def send_message(db, sender_id: UUID, conversation_id: UUID, body: str) ->
         is_first=is_first,
         participants=participants,
     )
+
+
+def message_payload(message: Message | SentMessage) -> dict:
+    return {
+        "type": frames.MESSAGE_NEW,
+        "id": str(message.id),
+        "conversation_id": str(message.conversation_id),
+        "sender_id": str(message.sender_id),
+        "body": message.body,
+        "created_at": message.created_at.isoformat(),
+    }
