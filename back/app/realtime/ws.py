@@ -71,38 +71,32 @@ async def websocket_endpoint(websocket: WebSocket):
                     case frames.MESSAGE_SEND:
                         data = MessageSend.model_validate(frame)
                         async with session_maker() as db:
-                            is_first = not await service.has_messages(
-                                db, data.conversation_id
-                            )
-                            message = await service.create_message(
+                            result = await service.send_message(
                                 db, user.id, data.conversation_id, data.body
-                            )
-                            participants = await service.get_participants(
-                                db, message.conversation_id
                             )
 
                         payload = {
                             "type": frames.MESSAGE_NEW,
-                            "id": str(message.id),
-                            "conversation_id": str(message.conversation_id),
-                            "sender_id": str(message.sender_id),
-                            "body": message.body,
-                            "created_at": message.created_at.isoformat(),
+                            "id": str(result.id),
+                            "conversation_id": str(result.conversation_id),
+                            "sender_id": str(result.sender_id),
+                            "body": result.body,
+                            "created_at": result.created_at.isoformat(),
                         }
-                        if is_first:
-                            for pid, _ in participants:
+                        if result.is_first:
+                            for pid, _ in result.participants:
                                 peer_id, peer_username = next(
                                     (participant_id, username)
-                                    for participant_id, username in participants
+                                    for participant_id, username in result.participants
                                     if participant_id != pid
                                 )
                                 await registry.send_to_user(
                                     pid,
                                     service.conversation_new_payload(
-                                        message.conversation_id, peer_id, peer_username
+                                        result.conversation_id, peer_id, peer_username
                                     ),
                                 )
-                        for pid, _ in participants:
+                        for pid, _ in result.participants:
                             await registry.send_to_user(pid, payload)
                     case _:
                         await _reject(websocket, "unknown_type")

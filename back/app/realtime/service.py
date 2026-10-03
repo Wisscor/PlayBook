@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+from datetime import datetime
 from uuid import UUID
 
 from sqlalchemy import exists, func, select
@@ -130,3 +132,31 @@ async def create_message(db, sender_id, conversation_id, body: str) -> Message:
     await db.commit()
     await db.refresh(message)
     return message
+
+
+@dataclass(frozen=True)
+class SentMessage:
+    """Everything the delivery layer needs, nothing that requires a db session."""
+    id: UUID
+    conversation_id: UUID
+    sender_id: UUID
+    body: str
+    created_at: datetime
+    is_first: bool
+    participants: list[tuple[UUID, str]]  # [(user_id, username), ...]
+
+
+async def send_message(db, sender_id: UUID, conversation_id: UUID, body: str) -> SentMessage:
+    """has_messages → create_message → get_participants, in one session."""
+    is_first = not await has_messages(db, conversation_id)
+    message = await create_message(db, sender_id, conversation_id, body)
+    participants = await get_participants(db, message.conversation_id)
+    return SentMessage(
+        id=message.id,
+        conversation_id=message.conversation_id,
+        sender_id=message.sender_id,
+        body=message.body,
+        created_at=message.created_at,
+        is_first=is_first,
+        participants=participants,
+    )
