@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from uuid import UUID
 
-from sqlalchemy import exists, func, select, update
+from sqlalchemy import exists, func, or_, select, update
 from sqlalchemy.orm import aliased
 
 from ..models import Follower
@@ -71,10 +71,25 @@ async def get_or_create_direct(db, me: UUID, peer: UUID) -> Conversation:
 
 async def list_conversations(db, me: UUID) -> list[dict]:
     mine, other = aliased(ConversationParticipant), aliased(ConversationParticipant)
+    read_marker = aliased(Message)
+    unread_count = (
+        select(func.count(Message.id))
+        .where(
+            Message.conversation_id == Conversation.id,
+            or_(
+                mine.last_read_message_id.is_(None),
+                read_marker.created_at.is_(None),
+                Message.created_at > read_marker.created_at,
+            ),
+        )
+        .correlate(Conversation, mine, read_marker)
+        .scalar_subquery()
+    )
     rows = await db.execute(
-        select(Conversation.id, other.user_id, User.username)
+        select(Conversation.id, other.user_id, User.username, unread_count)
         .join(mine, mine.conversation_id == Conversation.id)
         .join(other, (other.conversation_id == Conversation.id) & (other.user_id != me))
+        .outerjoin(read_marker, read_marker.id == mine.last_read_message_id)
         .join(User, User.id == other.user_id)
         .where(
             mine.user_id == me,
@@ -82,7 +97,10 @@ async def list_conversations(db, me: UUID) -> list[dict]:
         )
         .order_by(Conversation.created_at.desc())
     )
-    return [{"id": c, "peer_id": p, "peer_username": u} for c, p, u in rows.all()]
+    return [
+        {"id": c, "peer_id": p, "peer_username": u, "unread_count": count}
+        for c, p, u, count in rows.all()
+    ]
 
 
 async def get_contact_ids(db, user_id: UUID) -> set[UUID]:
@@ -138,6 +156,58 @@ async def create_message(db, sender_id, conversation_id, body: str) -> Message:
     await db.commit()
     await db.refresh(message)
     return message
+
+
+async def mark_conversation_read(
+    db, user_id: UUID, conversation_id: UUID, message_id: UUID
+) -> list[UUID]:
+    """Advance a participant's read cursor and return peers for the receipt."""
+    participant_result = await db.execute(
+        select(ConversationParticipant)
+        .where(
+            ConversationParticipant.conversation_id == conversation_id,
+            ConversationParticipant.user_id == user_id,
+        )
+        .with_for_update()
+    )
+    participant = participant_result.scalar_one_or_none()
+    if participant is None:
+        raise PermissionError("not a participant")
+
+    message_result = await db.execute(
+        select(Message).where(
+            Message.id == message_id,
+            Message.conversation_id == conversation_id,
+        )
+    )
+    message = message_result.scalar_one_or_none()
+    if message is None:
+        raise PermissionError("message not found in conversation")
+
+    current_created_at = None
+    if participant.last_read_message_id is not None:
+        current_result = await db.execute(
+            select(Message.created_at).where(
+                Message.id == participant.last_read_message_id,
+                Message.conversation_id == conversation_id,
+            )
+        )
+        current_created_at = current_result.scalar_one_or_none()
+
+    # Compare timestamps, not UUIDs: UUIDv4 values do not encode chronology.
+    if current_created_at is not None and message.created_at <= current_created_at:
+        return []
+
+    participant.last_read_message_id = message.id
+    peer_result = await db.execute(
+        select(ConversationParticipant.user_id).where(
+            ConversationParticipant.conversation_id == conversation_id,
+            ConversationParticipant.user_id != user_id,
+        )
+    )
+    peer_ids = [peer_id for (peer_id,) in peer_result.all()]
+    await db.commit()
+    return peer_ids
 
 
 async def create_pending_messages(

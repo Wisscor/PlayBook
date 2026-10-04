@@ -6,7 +6,7 @@ from pydantic import ValidationError
 from ..database.database import session_maker
 from . import frames, service, delivery
 from . import registry
-from .schemas import MessageSend
+from .schemas import MessageRead, MessageSend
 from .ws_auth import authenticate_socket
 
 router = APIRouter()
@@ -110,6 +110,20 @@ async def websocket_endpoint(websocket: WebSocket):
                                 await service.create_pending_messages(
                                     db, unreached, result.id
                                 )
+                    case frames.READ:
+                        data = MessageRead.model_validate(frame)
+                        async with session_maker() as db:
+                            peer_ids = await service.mark_conversation_read(
+                                db, user.id, data.conversation_id, data.message_id
+                            )
+                        receipt = {
+                            "type": frames.READ,
+                            "user_id": str(user.id),
+                            "conversation_id": str(data.conversation_id),
+                            "message_id": str(data.message_id),
+                        }
+                        for peer_id in peer_ids:
+                            await registry.send_to_user(peer_id, receipt)
                     case _:
                         await _reject(websocket, "unknown_type")
             except ValidationError:
