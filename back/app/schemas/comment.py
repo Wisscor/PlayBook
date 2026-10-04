@@ -2,6 +2,7 @@ from pydantic import BaseModel, Field, ConfigDict
 from datetime import datetime
 from uuid import UUID
 from typing import Optional
+from app.schemas.user import UserSummaryResponse
 
 
 class CommentBase(BaseModel):
@@ -23,5 +24,6 @@ class CommentResponse(CommentBase):
     id: UUID
     post_id: UUID
     user_id: UUID
+    user: Optional[UserSummaryResponse] = None
     created_at: datetime
-    updated_at: datetime
+    updated_at: Optional[datetime] = None
