@@ -8,7 +8,7 @@ from unittest.mock import AsyncMock
 # Ensure project root is in sys.path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from app.models import User
+from app.models import User, Post
 from app.core.security import hash_password
 
 
@@ -53,3 +53,14 @@ def mock_user_2(test_password):
 def mock_db():
     db = AsyncMock()
     return db
+
+
+@pytest.fixture
+def mock_post(mock_user_1):
+    return Post(
+        id=uuid.uuid4(),
+        user_id=mock_user_1.id,
+        caption="Morning run in the park",
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
+    )
