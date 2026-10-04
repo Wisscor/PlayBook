@@ -1,12 +1,26 @@
-FROM python:3.14
+FROM python:3.14-slim
+
+# Install uv from official Astral image
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 WORKDIR /back-end
 
-COPY ./requirements.txt /back-end/requirements.txt
-# --no-cache-dir 
-RUN pip install --no-cache-dir --upgrade -r /back-end/requirements.txt
+# Enable bytecode compilation and copy mode for uv
+ENV UV_COMPILE_BYTECODE=1
+ENV UV_LINK_MODE=copy
 
+# Copy dependency specifications for layer caching
+COPY pyproject.toml uv.lock ./
+
+# Install production dependencies only (no dev, frozen lockfile)
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-dev --no-install-project
+
+# Copy application source code
 COPY ./app /back-end/app
+
+# Place virtual environment executables at front of PATH
+ENV PATH="/back-end/.venv/bin:$PATH"
 
 EXPOSE 8000
 

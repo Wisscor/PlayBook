@@ -11,11 +11,6 @@ from sqlalchemy.orm import (
 )
 
 
-class PostTypeEnum(str, enum.Enum):
-    post = "post"
-    event_callout = "event_callout"
-
-
 class Post(Base):
     __tablename__ = "posts"
 
@@ -25,24 +20,7 @@ class Post(Base):
     user_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"), index=True
     )
-    post_type: Mapped[PostTypeEnum] = mapped_column(
-        Enum(PostTypeEnum),
-        default=PostTypeEnum.post,
-        nullable=False,
-    )
-
     caption: Mapped[str] = mapped_column(Text, nullable=False)
-
-    sport: Mapped[Optional[str]] = mapped_column(
-        String(50), nullable=True, default=None
-    )
-    location: Mapped[Optional[str]] = mapped_column(
-        String(100), nullable=True, default=None
-    )
-    event_date: Mapped[Optional[datetime]] = mapped_column(
-        DateTime(timezone=True), nullable=True, default=None
-    )
-
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),

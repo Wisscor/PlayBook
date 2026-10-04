@@ -22,7 +22,6 @@ from ..models import (
     Like,
     Comment,
 )
-from ..models.post import PostTypeEnum
 from ..schemas.post import PostCreate, PostUpdate, PostResponse
 from ..schemas.user import UserSummaryResponse
 from ..schemas.post_media import PostMediaResponse
@@ -104,10 +103,6 @@ async def _enrich_posts(
             user_id=p.user_id,
             user=user_summary,
             caption=p.caption,
-            post_type=p.post_type,
-            sport=p.sport,
-            location=p.location,
-            event_date=p.event_date,
             media=media_items,
             likes_count=likes_map.get(p.id, 0),
             comments_count=comments_map.get(p.id, 0),
@@ -179,8 +174,6 @@ async def create_post(
     response_model=List[PostResponse],
 )
 async def list_posts(
-    post_type: Optional[PostTypeEnum] = Query(default=None),
-    sport: Optional[str] = Query(default=None),
     user_id: Optional[uuid.UUID] = Query(default=None),
     limit: int = Query(default=20, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
@@ -197,10 +190,6 @@ async def list_posts(
         .order_by(Post.created_at.desc())
     )
 
-    if post_type:
-        stmt = stmt.where(Post.post_type == post_type)
-    if sport:
-        stmt = stmt.where(Post.sport.ilike(f"%{sport}%"))
     if user_id:
         stmt = stmt.where(Post.user_id == user_id)
 

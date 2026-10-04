@@ -2,14 +2,12 @@ from pydantic import BaseModel, Field, ConfigDict
 from datetime import datetime
 from uuid import UUID
 from typing import Optional, List
-from ..models.post import PostTypeEnum
 from .post_media import PostMediaResponse, PostMediaCreate
 from .user import UserSummaryResponse
 
 
 class PostBase(BaseModel):
     caption: str = Field(..., min_length=1, max_length=2000)
-    post_type: PostTypeEnum = PostTypeEnum.post
     sport: Optional[str] = Field(default=None, max_length=50)
     location: Optional[str] = Field(default=None, max_length=100)
     event_date: Optional[datetime] = None

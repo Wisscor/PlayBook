@@ -3,8 +3,9 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com/)
 [![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
 [![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-D71F00?style=for-the-badge&logo=sqlalchemy&logoColor=white)](https://docs.sqlalchemy.org/)
+[![uv](https://img.shields.io/badge/uv-DE5FE9?style=for-the-badge&logo=uv&logoColor=white)](https://astral.sh/uv)
 
-A scalable, modular backend API service built with FastAPI, SQLAlchemy, Docker, and real-time support.
+A scalable, modular backend API service built with FastAPI, SQLAlchemy, Docker, and uv for fast Python package and virtual environment management.
 
 ---
 
@@ -22,10 +23,9 @@ A scalable, modular backend API service built with FastAPI, SQLAlchemy, Docker, 
 
 ### Current Layout
 
-
 ```text
 back/
-├── app
+├── app/
 │   ├── __init__.py
 │   ├── main.py
 │   ├── logging_conf.py
@@ -35,11 +35,14 @@ back/
 │   ├── realtime/
 │   ├── routers/
 │   └── schemas/
+├── tests/
 ├── docker-compose.yaml
 ├── Dockerfile.api
 ├── Dockerfile.db
+├── pyproject.toml
+├── uv.lock
 ├── README.md
-└── requirements.txt
+└── .env
 ```
 
 ---
@@ -49,7 +52,7 @@ back/
 ### Authentication
 | Method | Route | Description |
 | :--- | :--- | :--- |
-| `POST` | `/auth/register` | Register a new user account |
+| `POST` | `/auth/signup` | Register a new user account |
 | `POST` | `/auth/login` | Authenticate credentials and retrieve access token |
 | `GET` | `/auth/me` | Fetch profile for current authenticated user |
 
@@ -107,91 +110,44 @@ back/
 
 ## Getting Started
 
-### Environment Variables
- 
-The `DATABASE_URL` differs depending on where Postgres is reached from. Keep your local `.env` pointed at the **local** URL — the **docker** URL is injected directly by `docker-compose.yml` for the `api` service, so you never need to edit `.env` when switching contexts.
- 
+### Option A — Full Docker Stack (Recommended)
+
+Build and run both the API and PostgreSQL with Docker Compose:
+
 ```bash
-# .env (local development)
-DATABASE_URL=postgresql+asyncpg://ziko:1234pass@0.0.0.0:5432/my-postgres
-```
- 
-```yaml
-# docker-compose.yml (used only inside the containerized stack)
-services:
-  api:
-    environment:
-      DATABASE_URL: postgresql+asyncpg://ziko:1234pass@postgres:5432/my-postgres
-```
- 
-> `environment:` in Compose overrides anything from `env_file:`, so the container always gets the `postgres` hostname regardless of what's in your local `.env`.
- 
-### Option A — Local Development (recommended for coding)
- 
-Run Postgres in Docker, but run the API directly on your machine so `--reload` works reliably.
- 
-```bash
-# 1. Start only the database
-docker compose up -d postgres
- 
-# 2. Run the API locally (from the back/ directory, so relative imports resolve)
-uvicorn app.main:app --reload
- 
-# 3. When done for the day
-docker compose stop postgres
-```
- 
-- No `--host`/`--port` needed locally — uvicorn defaults to `127.0.0.1:8000`.
-- Make sure the `postgres` service in `docker-compose.yml` exposes its port to the host (`ports: ["5432:5432"]`), otherwise `0.0.0.0:5432` won't be reachable from your machine.
-### Option B — Full Docker Stack (for DevOps / integration testing)
- 
-Build and run the entire stack (API + Postgres) in containers, as DevOps will run it in staging/production.
- 
-```bash
-# Build and start every service in the background
+# Build and start services
 docker compose up --build -d
- 
-# Stream logs in real-time
-docker compose logs -f
- 
-# Check container health status
-docker compose ps
- 
-# Stop and remove containers
+
+# View logs
+docker compose logs -f api
+
+# Stop services
 docker compose down
 ```
- 
-Inside the container, the API's `CMD` binds to all interfaces so it's reachable from outside the container:
- 
+
+### Option B — Local Development with uv
+
+Run PostgreSQL via Docker and start the API locally with hot-reloading:
+
 ```bash
-uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+# 1. Start database
+docker compose up -d postgres
+
+# 2. Sync dependencies
+uv sync
+
+# 3. Run API with hot-reload
+uv run uvicorn app.main:app --reload
+
+# 4. Run tests
+uv run pytest
 ```
- 
----
- 
-## Testing Endpoints
- 
-Execute these CLI calls via [HTTPie](https://httpie.io/) to verify your local instance:
- 
-### 1. User Registration (`/auth/signup`)
-```bash
-http -v POST localhost:8000/auth/signup \
-  username=zakaria \
-  email=zakaria@example.com \
-  password=pass1234
-```
- 
-### 2. User Login (`/auth/login`)
-```bash
-http -v POST localhost:8000/auth/login \
-  username_or_email=zakaria \
-  password=pass1234
-```
+
 ---
 
 ## Testing Endpoints
 
-Execute these CLI calls via [HTTPie](https://httpie.io/) to verify your local instance:
+Execute these CLI calls via [HTTPie](https://httpie.io/) to verify your instance:
 
 ### 1. User Registration (`/auth/signup`)
 ```bash
@@ -212,7 +168,7 @@ http -v POST localhost:8000/auth/login \
 
 ## Resources & References
 
-- [SQLAlchemy Database URLs & Engine Documentation](https://docs.sqlalchemy.org/en/21/core/engines.html#database-urls)
-
-- [A complete guide to logging in FastAPI](https://apitally.io/blog/fastapi-logging-guide)
-- [How to Get Started with Logging in FastAPI](https://betterstack.com/community/guides/logging/logging-with-fastapi/)
+- [uv Documentation](https://docs.astral.sh/uv/)
+- [FastAPI Documentation](https://fastapi.tiangolo.com/)
+- [SQLAlchemy Documentation](https://docs.sqlalchemy.org/)
+- [Docker Documentation](https://docs.docker.com/)

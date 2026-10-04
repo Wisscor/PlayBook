@@ -85,7 +85,3 @@ class User(Base):
         back_populates="following",
         cascade="all, delete-orphan",
     )
-    # messages: Mapped[list["Message"]] = relationship(
-    #     back_populates="sender",
-    #     cascade="all, delete-orphan",
-    # )
