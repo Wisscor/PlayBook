@@ -232,7 +232,9 @@ def test_registry_connections_for_returns_a_copy():
 
 
 def test_conversation_new_payload_has_expected_shape(mock_user_1):
-    payload = service.conversation_new_payload(uuid.uuid4(), mock_user_1)
+    payload = service.conversation_new_payload(
+        uuid.uuid4(), mock_user_1.id, mock_user_1.username
+    )
 
     assert payload["type"] == frames.CONVERSATION_NEW
     assert payload["id"]
