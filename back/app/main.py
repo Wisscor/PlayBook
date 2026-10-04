@@ -1,19 +1,19 @@
+import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
+
 from .database.database import engine, Base
 from .core.config import settings
-from .routers import auth
 from .realtime import models as realtime_models
 from .realtime import ws as realtime_ws
-from .routers import users
-from .routers import post
-from .routers import followers
-import logging
+from .routers import auth, users, post, followers
+from .models import User, Session
 
 from .logging_conf import setup_logging
 
 setup_logging()
 logger = logging.getLogger(__name__)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

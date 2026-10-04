@@ -50,8 +50,8 @@ class UserSummaryResponse(BaseModel):
 
     id: UUID
     username: str
-    firstname: Optional[str] = None
-    lastname: Optional[str] = None
+    firstname: str
+    lastname: str
     avatar: Optional[str] = None
 
 
