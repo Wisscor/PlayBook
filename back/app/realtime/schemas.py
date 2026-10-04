@@ -9,3 +9,7 @@ class MessageSend(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True)
     conversation_id: UUID
     body: str = Field(min_length=1, max_length=2000)
+
+
+class NotificationReadRequest(BaseModel):
+    notification_ids: list[UUID] = Field(min_length=1, max_length=50)

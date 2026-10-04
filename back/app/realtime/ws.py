@@ -56,6 +56,27 @@ async def websocket_endpoint(websocket: WebSocket):
                 )
 
         async with session_maker() as db:
+            pending_notifications = await service.get_undelivered_notifications(
+                db, user.id
+            )
+            for notification, actor_username in pending_notifications:
+                await websocket.send_json(
+                    service.notification_payload(notification, actor_username)
+                )
+            if pending_notifications:
+                await service.mark_delivered(
+                    db, [notification.id for notification, _ in pending_notifications]
+                )
+
+            unread_count = await service.get_unread_count(db, user.id)
+            await websocket.send_json(
+                {
+                    "type": frames.NOTIFICATION_COUNT,
+                    "unread_count": unread_count,
+                }
+            )
+
+        async with session_maker() as db:
             contacts = await service.get_contact_ids(db, user.id)
         online_contacts = contacts & registry.online_user_ids()
         await websocket.send_json(

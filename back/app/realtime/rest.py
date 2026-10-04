@@ -7,7 +7,7 @@ from ..database.database import get_db
 from ..models.user import User
 from ..core.deps import get_curr_user
 from . import service
-from .schemas import ConversationCreate
+from .schemas import ConversationCreate, NotificationReadRequest
 from .models import Message
 
 router = APIRouter(prefix="/realtime", tags=["realtime"])
@@ -70,3 +70,36 @@ async def get_messages(
         "items": rows,
         "next_cursor": rows[-1].id if len(rows) == limit else None,
     }
+
+
+@router.get("/notifications")
+async def list_notifications(
+    unread_only: bool = False,
+    limit: int = Query(30, ge=1, le=100),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_curr_user),
+):
+    return {
+        "items": await service.list_notifications(
+            db, current_user.id, unread_only, limit
+        ),
+        "unread_count": await service.get_unread_count(db, current_user.id),
+    }
+
+
+@router.post("/notifications/read")
+async def mark_notifications_read(
+    body: NotificationReadRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_curr_user),
+):
+    await service.mark_read(db, current_user.id, body.notification_ids)
+    return {"unread_count": await service.get_unread_count(db, current_user.id)}
+
+
+@router.get("/notifications/count")
+async def notification_count(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_curr_user),
+):
+    return {"unread_count": await service.get_unread_count(db, current_user.id)}
