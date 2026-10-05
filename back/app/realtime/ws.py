@@ -1,14 +1,14 @@
 import asyncio
+import logging
 import time
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from pydantic import ValidationError
 
 from ..database.database import session_maker
-from . import connection, frames, service, delivery, registry
-from .handlers import ConnectionContext
+from . import connection, frames, registry
+from .handlers import HANDLERS, CloseConnection, ConnectionContext
 from .limits import SlidingWindow
-from .schemas import MessageRead, MessageSend
 from .ws_auth import authenticate_socket
 
 router = APIRouter()
@@ -16,6 +16,38 @@ router = APIRouter()
 
 async def _reject(ws: WebSocket, reason: str) -> None:
     await ws.send_json({"type": frames.ERROR, "reason": reason})
+
+
+async def receive_loop(ctx: ConnectionContext) -> None:
+    while True:
+        try:
+            frame = await ctx.websocket.receive_json()
+        except ValueError:
+            ctx.last_seen = time.monotonic()
+            await _reject(ctx.websocket, "invalid_json")
+            continue
+
+        ctx.last_seen = time.monotonic()
+        kind = frame.get("type") if isinstance(frame, dict) else None
+        handler = HANDLERS.get(kind) if isinstance(kind, str) else None
+        if handler is None:
+            await _reject(ctx.websocket, "unknown_type")
+            continue
+
+        try:
+            await handler(ctx, frame)
+        except CloseConnection as exc:
+            await ctx.websocket.close(code=exc.code)
+            return
+        except ValidationError:
+            await _reject(ctx.websocket, "invalid_frame")
+        except PermissionError:
+            await _reject(ctx.websocket, "conversation_not_found")
+        except WebSocketDisconnect:
+            raise
+        except Exception:
+            logging.getLogger(__name__).exception("handler failed")
+            continue
 
 
 async def _idle_watchdog(ctx: ConnectionContext) -> None:
@@ -56,62 +88,7 @@ async def websocket_endpoint(websocket: WebSocket):
         )
         contacts = await connection.on_connect(websocket, user, first_socket)
 
-        async def receive_loop() -> None:
-            while True:
-                try:
-                    frame = await ctx.websocket.receive_json()
-                except ValueError:
-                    ctx.last_seen = time.monotonic()
-                    await _reject(ctx.websocket, "invalid_json")
-                    continue
-
-                now = time.monotonic()
-                ctx.last_seen = now
-                kind = frame.get("type") if isinstance(frame, dict) else None
-                try:
-                    match kind:
-                        case frames.MESSAGE_SEND:
-                            if ctx.sends.hit(now) > 10:
-                                await _reject(ctx.websocket, "rate_limited")
-                                if ctx.strikes.hit(now) >= 5:
-                                    await ctx.websocket.close(code=frames.CLOSE_RATE_LIMIT)
-                                    return
-                                continue
-                            data = MessageSend.model_validate(frame)
-                            async with session_maker() as db:
-                                result = await service.send_message(
-                                    db, user.id, data.conversation_id, data.body
-                                )
-                            unreached = await delivery.deliver_message(result)
-                            if unreached:
-                                async with session_maker() as db:
-                                    await service.create_pending_messages(
-                                        db, unreached, result.id
-                                    )
-                        case frames.READ:
-                            data = MessageRead.model_validate(frame)
-                            async with session_maker() as db:
-                                peer_ids = await service.mark_conversation_read(
-                                    db, user.id, data.conversation_id, data.message_id
-                                )
-                            receipt = {
-                                "type": frames.READ,
-                                "user_id": str(user.id),
-                                "conversation_id": str(data.conversation_id),
-                                "message_id": str(data.message_id),
-                            }
-                            for peer_id in peer_ids:
-                                await registry.send_to_user(peer_id, receipt)
-                        case frames.PING:
-                            await ctx.websocket.send_json({"type": frames.PONG})
-                        case _:
-                            await _reject(websocket, "unknown_type")
-                except ValidationError:
-                    await _reject(websocket, "invalid_frame")
-                except PermissionError:
-                    await _reject(websocket, "conversation_not_found")
-
-        receive_task = asyncio.create_task(receive_loop())
+        receive_task = asyncio.create_task(receive_loop(ctx))
         watchdog_task = asyncio.create_task(_idle_watchdog(ctx))
         tasks = (receive_task, watchdog_task)
         try:
