@@ -3,7 +3,8 @@ import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 import pytest
-from unittest.mock import AsyncMock
+
+from unittest.mock import AsyncMock, MagicMock
 
 # Ensure project root is in sys.path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -52,6 +53,7 @@ def mock_user_2(test_password):
 @pytest.fixture
 def mock_db():
     db = AsyncMock()
+    db.add = MagicMock()
     return db
 
 
