@@ -15,7 +15,6 @@ from app.models.match_announcement import AnnouncementTypeEnum
 
 
 class MatchAnnouncementCreate(BaseModel):
-    owner_id: uuid.UUID
     sport_id: uuid.UUID
     type: AnnouncementTypeEnum
     start_time: datetime
@@ -35,10 +34,10 @@ class MatchAnnouncementUpdate(BaseModel):
     with the stored value of the other one (end_time > start_time).
     """
 
-    sport_id: Optional[uuid.UUID]
-    type: Optional[AnnouncementTypeEnum]
-    start_time: Optional[datetime]
-    end_time: Optional[datetime]
+    sport_id: Optional[uuid.UUID] = None
+    type: Optional[AnnouncementTypeEnum] = None
+    start_time: Optional[datetime] = None
+    end_time: Optional[datetime] = None
 
     @model_validator(mode="after")
     def check_update(self):

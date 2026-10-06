@@ -6,7 +6,17 @@ from app.database.database import engine, Base
 from app.core.config import settings
 from .realtime import models as realtime_models
 from .realtime import ws as realtime_ws
-from app.routers import auth, users, post, followers, like, comments
+from app.routers import (
+    auth,
+    users,
+    post,
+    followers,
+    like,
+    comments,
+    sport,
+    match_announcement,
+    play_request,
+)
 from app.models import User, Session
 
 from app.logging_conf import setup_logging
@@ -36,7 +46,9 @@ app = FastAPI(
 app.include_router(
     auth.router,
 )
-app.include_router(realtime_ws.router)
+app.include_router(
+    realtime_ws.router,
+)
 app.include_router(
     users.router,
 )
@@ -51,6 +63,15 @@ app.include_router(
 )
 app.include_router(
     comments.router,
+)
+app.include_router(
+    sport.router,
+)
+app.include_router(
+    match_announcement.router,
+)
+app.include_router(
+    play_request.router,
 )
 
 

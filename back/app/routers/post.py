@@ -126,17 +126,12 @@ async def create_post(
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Create a new post or event callout.
-    Accepts caption, post_type, optional sport/location/event_date,
-    and an optional list of media items.
+    Create a new post.
+    Accepts caption, and an optional list of media items.
     """
     post = Post(
         user_id=curr_user.id,
         caption=data.caption,
-        post_type=data.post_type,
-        sport=data.sport,
-        location=data.location,
-        event_date=data.event_date,
     )
     db.add(post)
     # Flush to get the post.id before adding media
@@ -240,7 +235,7 @@ async def update_post(
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Update post caption, sport, location, or event_date.
+    Update post caption.
     Only the author can update their post.
     """
     stmt = (

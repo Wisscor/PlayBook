@@ -6,27 +6,19 @@ from .post_media import PostMediaResponse, PostMediaCreate
 from .user import UserSummaryResponse
 
 
-class PostBase(BaseModel):
-    caption: str = Field(..., min_length=1, max_length=2000)
-    sport: Optional[str] = Field(default=None, max_length=50)
-    location: Optional[str] = Field(default=None, max_length=100)
-    event_date: Optional[datetime] = None
-
-
-class PostCreate(PostBase):
+class PostCreate(BaseModel):
     media: Optional[List[PostMediaCreate]] = None
+    caption: str = Field(..., min_length=1, max_length=2000)
 
 
 class PostUpdate(BaseModel):
     caption: Optional[str] = Field(default=None, min_length=1, max_length=2000)
-    sport: Optional[str] = Field(default=None, max_length=50)
-    location: Optional[str] = Field(default=None, max_length=100)
-    event_date: Optional[datetime] = None
 
 
-class PostResponse(PostBase):
+class PostResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
+    caption: str = Field(..., min_length=1, max_length=2000)
     id: UUID
     user_id: UUID
     user: Optional[UserSummaryResponse] = None
