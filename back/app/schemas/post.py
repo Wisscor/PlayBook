@@ -16,15 +16,24 @@ class PostUpdate(BaseModel):
 
 
 class PostResponse(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
-    caption: str = Field(..., min_length=1, max_length=2000)
     id: UUID
+    caption: str = Field(..., min_length=1, max_length=2000)
     user_id: UUID
+    author: Optional[UserSummaryResponse] = None
     user: Optional[UserSummaryResponse] = None
     media: List[PostMediaResponse] = []
+    like_count: int = 0
     likes_count: int = 0
+    comment_count: int = 0
     comments_count: int = 0
+    liked_by_me: bool = False
     is_liked_by_me: bool = False
     created_at: datetime
     updated_at: datetime
+
+
+class PostPage(BaseModel):
+    items: List[PostResponse]
+    next_cursor: Optional[str] = None

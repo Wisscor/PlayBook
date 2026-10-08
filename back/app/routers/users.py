@@ -8,7 +8,8 @@ from fastapi import (
     Query,
     status,
 )
-from sqlalchemy import select, func, or_, and_
+from sqlalchemy import select, func, or_, and_, tuple_
+from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 from http import HTTPStatus
 
@@ -24,7 +25,10 @@ from ..schemas.user import (
     UserProfileResponse,
     UserSummaryResponse,
 )
-from app.core.deps import get_curr_user, get_curr_user
+from ..schemas.post import PostPage
+from .post import _enrich_posts
+from app.core.deps import get_curr_user
+from app.core.pagination import encode_cursor, decode_cursor
 
 router = APIRouter(
     prefix="/users",
@@ -200,6 +204,43 @@ async def get_user(
     profile.is_following = is_following
     return profile
 
-# stmt = select(users_table).where(
-#         and_(users_table.c.name == "wendy", users_table.c.enrolled == True)
-#     )
+
+@router.get(
+    path="/{user_id}/posts",
+    status_code=HTTPStatus.OK,
+    response_model=PostPage,
+)
+async def list_user_posts(
+    user_id: uuid.UUID,
+    limit: int = Query(default=20, ge=1, le=100),
+    cursor: Optional[str] = None,
+    curr_user: Optional[User] = Depends(get_curr_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Retrieve posts authored by a user (newest first) with keyset cursor pagination.
+    """
+    if await db.get(User, user_id) is None:
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND,
+            detail="User not found.",
+        )
+
+    stmt = (
+        select(Post)
+        .options(selectinload(Post.user), selectinload(Post.media))
+        .where(Post.user_id == user_id)
+        .order_by(Post.created_at.desc(), Post.id.desc())
+    )
+    if cursor:
+        ts, cursor_id = decode_cursor(cursor)
+        stmt = stmt.where(tuple_(Post.created_at, Post.id) < tuple_(ts, cursor_id))
+
+    rows = list((await db.scalars(stmt.limit(limit + 1))).all())
+    next_cursor = None
+    if len(rows) > limit:
+        rows = rows[:limit]
+        next_cursor = encode_cursor(rows[-1].created_at, rows[-1].id)
+
+    enriched = await _enrich_posts(rows, curr_user, db)
+    return PostPage(items=enriched, next_cursor=next_cursor)

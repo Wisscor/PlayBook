@@ -9,7 +9,7 @@ from fastapi import (
     Query,
     status,
 )
-from sqlalchemy import select, func
+from sqlalchemy import select, func, or_, tuple_
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 from http import HTTPStatus
@@ -21,14 +21,15 @@ from ..models import (
     PostMedia,
     Like,
     Comment,
+    Follower,
 )
-from ..schemas.post import PostCreate, PostUpdate, PostResponse
+from ..schemas.post import PostCreate, PostUpdate, PostResponse, PostPage
 from ..schemas.user import UserSummaryResponse
 from ..schemas.post_media import PostMediaResponse
 from app.core.deps import get_curr_user
+from app.core.pagination import encode_cursor, decode_cursor
 
 router = APIRouter(
-    prefix="/posts",
     tags=["Posts"],
 )
 
@@ -102,11 +103,15 @@ async def _enrich_posts(
             id=p.id,
             user_id=p.user_id,
             user=user_summary,
+            author=user_summary,
             caption=p.caption,
             media=media_items,
             likes_count=likes_map.get(p.id, 0),
+            like_count=likes_map.get(p.id, 0),
             comments_count=comments_map.get(p.id, 0),
+            comment_count=comments_map.get(p.id, 0),
             is_liked_by_me=p.id in user_liked_set,
+            liked_by_me=p.id in user_liked_set,
             created_at=p.created_at,
             updated_at=p.updated_at,
         )
@@ -116,7 +121,7 @@ async def _enrich_posts(
 
 
 @router.post(
-    "",
+    "/posts",
     status_code=status.HTTP_201_CREATED,
     response_model=PostResponse,
 )
@@ -164,7 +169,55 @@ async def create_post(
 
 
 @router.get(
-    "",
+    "/feed",
+    status_code=status.HTTP_200_OK,
+    response_model=PostPage,
+)
+@router.get(
+    "/posts/feed",
+    status_code=status.HTTP_200_OK,
+    response_model=PostPage,
+    include_in_schema=False,
+)
+async def get_feed(
+    limit: int = Query(default=20, ge=1, le=100),
+    cursor: Optional[str] = None,
+    curr_user: User = Depends(get_curr_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Posts from people I follow plus mine (newest first).
+    """
+    following_subquery = select(Follower.following_id).where(
+        Follower.follower_id == curr_user.id
+    )
+    stmt = (
+        select(Post)
+        .options(selectinload(Post.user), selectinload(Post.media))
+        .where(
+            or_(
+                Post.user_id.in_(following_subquery),
+                Post.user_id == curr_user.id,
+            )
+        )
+        .order_by(Post.created_at.desc(), Post.id.desc())
+    )
+    if cursor:
+        ts, cursor_id = decode_cursor(cursor)
+        stmt = stmt.where(tuple_(Post.created_at, Post.id) < tuple_(ts, cursor_id))
+
+    rows = list((await db.scalars(stmt.limit(limit + 1))).all())
+    next_cursor = None
+    if len(rows) > limit:
+        rows = rows[:limit]
+        next_cursor = encode_cursor(rows[-1].created_at, rows[-1].id)
+
+    enriched = await _enrich_posts(rows, curr_user, db)
+    return PostPage(items=enriched, next_cursor=next_cursor)
+
+
+@router.get(
+    "/posts",
     status_code=status.HTTP_200_OK,
     response_model=List[PostResponse],
 )
@@ -195,7 +248,7 @@ async def list_posts(
 
 
 @router.get(
-    "/{post_id}",
+    "/posts/{post_id}",
     status_code=status.HTTP_200_OK,
     response_model=PostResponse,
 )
@@ -224,7 +277,7 @@ async def get_post(
 
 
 @router.patch(
-    "/{post_id}",
+    "/posts/{post_id}",
     status_code=status.HTTP_200_OK,
     response_model=PostResponse,
 )
@@ -268,7 +321,7 @@ async def update_post(
 
 
 @router.delete(
-    "/{post_id}",
+    "/posts/{post_id}",
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def delete_post(
