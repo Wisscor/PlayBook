@@ -25,5 +25,13 @@ class Settings(BaseSettings):
     session_cookie_http_only: bool = True
     session_cookie_same_site: Literal['lax', 'strict', 'none'] = "lax"
 
+    # CORS
+    cors_origins: list[str] = [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ]
+
 
 settings = Settings()
