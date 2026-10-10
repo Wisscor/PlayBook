@@ -1,10 +1,13 @@
 import { PlayerButton } from "@/components/ui/Button";
 import { PlayInput } from "@/components/ui/Input";
 import { PlayText } from "@/components/ui/Text";
+import { useNavigation } from "@/hooks/useNavigation";
 import { ROUTES } from "@/lib/constants";
+import Cookies from "js-cookie";
 import React from "react";
 
 export const SignIn = () => {
+  const { goHome } = useNavigation();
   const [infos, setInfos] = React.useState({
     username: "",
     password: "",
@@ -71,6 +74,20 @@ export const SignIn = () => {
             textClassName="lg:text-white"
             title="login"
             className=" justify-center self-center lg:bg-primary "
+            onClick={() => {
+              const user = {
+                firstname: "Wissam",
+                lastname: "Azadou",
+              };
+
+              Cookies.set("user_session", JSON.stringify(user), {
+                expires: 2 / 24,
+                secure: true,
+                sameSite: "strict",
+              });
+
+              goHome();
+            }}
           />
         </div>
       </div>

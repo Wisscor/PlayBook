@@ -19,5 +19,17 @@
   "already-have-account": "Vous avez déjà un compte ?",
   "create-account": "Créer un compte",
   "signUp": "S'inscrire",
-  "welcome-message": "Bienvenue sur notre plateforme ! Veuillez remplir les détails ci-dessous pour créer votre compte."
+  "welcome-message": "Bienvenue sur notre plateforme ! Veuillez remplir les détails ci-dessous pour créer votre compte.",
+  "my-posts": "Mes publications",
+  "my-matches": "Mes matches",
+  "my-profile": "Mon profil",
+  "make-matche-room": "Créer une salle de match",
+  "make-post": "Créer une publication",
+  "go-to-profile": "Aller à mon profil",
+  "go-to-matches-posts": "Aller aux matches et publications",
+
+  "make-matche-room-description": "Créez une salle de match pour trouver des joueurs intéressés",
+  "make-post-description": "Publiez vos idées, macthes ou retours pour attirer l'attention de la communauté",
+  "go-to-profile-description": "Consultez votre profil, mettez à jour vos informations et gérez vos paramètres",
+  "go-to-matches-posts-description": "Recherche des salles de match et voir publications des autres utilisateurs pour interagir avec eux"
 }

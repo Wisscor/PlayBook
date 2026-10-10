@@ -8,7 +8,8 @@ const Primary: React.FC<{
   type?: "button" | "submit" | "reset";
   className?: string;
   textClassName?: string;
-}> = ({ title, type, className, textClassName }) => {
+  onClick?: React.MouseEventHandler<HTMLButtonElement>;
+}> = ({ title, type, className, textClassName, onClick }) => {
   return (
     <button
       className={twMerge(
@@ -18,6 +19,7 @@ const Primary: React.FC<{
         ),
       )}
       type={type ?? "button"}
+      onClick={onClick}
     >
       <PlayText.Primary
         id={title}
@@ -32,7 +34,8 @@ const Secondary: React.FC<{
   type?: "button" | "submit" | "reset";
   className?: string;
   textClassName?: string;
-}> = ({ title, type, className, textClassName }) => {
+  onClick?: React.MouseEventHandler<HTMLButtonElement>;
+}> = ({ title, type, className, textClassName, onClick }) => {
   return (
     <button
       className={twMerge(
@@ -42,6 +45,7 @@ const Secondary: React.FC<{
         ),
       )}
       type={type ?? "button"}
+      onClick={onClick}
     >
       <PlayText.Primary id={title} className={`text-black ${textClassName}`} />
     </button>
