@@ -19,5 +19,17 @@
   "already-have-account": "Already have an account?",
   "create-account": "Create an account",
   "signUp": "Sign Up",
-  "welcome-message": "Welcome to our platform! Please fill in the details below to create your account."
+  "welcome-message": "Welcome to our platform! Please fill in the details below to create your account.",
+  "my-posts": "My Posts",
+  "my-matches": "My Matches",
+  "my-profile": "My Profile",
+  "make-matche-room": "Create a match room",
+  "make-post": "Create a post",
+  "go-to-profile": "Go to my profile",
+  "go-to-matches-posts": "Go to matches and posts",
+
+  "make-matche-room-description": "Create a match room to find interested players",
+  "make-post-description": "Publish your ideas, matches or feedback to attract the attention of the community",
+  "go-to-profile-description": "Check your profile, update your information and manage your settings",
+  "go-to-matches-posts-description": "Search for match rooms and view other users' posts to interact with them"
 }

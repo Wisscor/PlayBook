@@ -4,7 +4,7 @@ export const useNavigation = () => {
   const { push } = useRouter();
 
   return {
-    goHome: () => push("/"),
+    goHome: () => push("/home"),
     goAuth: () => push("/auth"),
     goSignUp: () => push("/auth?mode=signup"),
     goSignIn: () => push("/auth?mode=signin"),
