@@ -3,6 +3,7 @@ import { PlayInput } from "@/components/ui/Input";
 import { PlayText } from "@/components/ui/Text";
 import { useNavigation } from "@/hooks/useNavigation";
 import { ROUTES } from "@/lib/constants";
+import { User } from "@/types/user";
 import Cookies from "js-cookie";
 import React from "react";
 
@@ -75,9 +76,10 @@ export const SignIn = () => {
             title="login"
             className=" justify-center self-center lg:bg-primary "
             onClick={() => {
-              const user = {
+              const user: User = {
                 firstname: "Wissam",
                 lastname: "Azadou",
+                username: "wazadou",
               };
 
               Cookies.set("user_session", JSON.stringify(user), {

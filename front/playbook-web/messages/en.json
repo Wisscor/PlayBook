@@ -31,5 +31,15 @@
   "make-matche-room-description": "Create a match room to find interested players",
   "make-post-description": "Publish your ideas, matches or feedback to attract the attention of the community",
   "go-to-profile-description": "Check your profile, update your information and manage your settings",
-  "go-to-matches-posts-description": "Search for match rooms and view other users' posts to interact with them"
+  "go-to-matches-posts-description": "Search for match rooms and view other users' posts to interact with them",
+  "login-to-see": "Login to see this page",
+  "not-set": "Not set",
+  "firstname-label": "First Name :",
+  "lastname-label": "Last Name :",
+  "bio-label": "Bio :",
+  "email": "Email",
+  "firstname": "First Name",
+  "lastname": "Last Name",
+  "bio": "Bio",
+  "update-infos": "Update Information"
 }

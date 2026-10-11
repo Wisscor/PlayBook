@@ -9,7 +9,8 @@ export const BurgerMenu: React.FC<{
     route: string;
   }[];
   locale: string;
-}> = ({ isOpen, menu, locale }) => {
+  close: () => void;
+}> = ({ isOpen, menu, locale, close }) => {
   return (
     <div
       className={` ${
@@ -20,7 +21,14 @@ export const BurgerMenu: React.FC<{
     >
       {menu.map((el) => {
         return (
-          <Link key={el.name} href={el.route} className="  w-full py-2 block">
+          <Link
+            onClick={() => {
+              close();
+            }}
+            key={el.name}
+            href={el.route}
+            className="  w-full py-2 block"
+          >
             <PlayText.Primary id={el.name} className="text-black text-sm" />
           </Link>
         );

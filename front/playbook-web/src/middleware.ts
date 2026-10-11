@@ -4,7 +4,7 @@ import type { NextRequest } from "next/server";
 const LOCALES = new Set(["en", "fr", "ar"]);
 const DEFAULT_LOCALE = "en";
 
-const PROTECTED_ROUTES = ["/home"];
+const PROTECTED_ROUTES = ["/home", "/profile"];
 const AUTH_ROUTES = ["/auth"];
 
 export function middleware(request: NextRequest) {

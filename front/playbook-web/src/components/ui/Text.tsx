@@ -11,11 +11,16 @@ interface SpanText {
 }
 
 const Primary: React.FC<{
-  id: string;
+  id?: string;
   className?: string;
-}> = ({ id, className }) => {
+  content?: string;
+}> = ({ id, className, content }) => {
   const t = useTranslations();
-  return <p className={twMerge(clsx("text-white", className))}>{t(id)}</p>;
+  return (
+    <p className={twMerge(clsx("text-white", className))}>
+      {id ? t(id) : content}
+    </p>
+  );
 };
 
 const Span: React.FC<{

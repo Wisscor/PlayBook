@@ -30,7 +30,7 @@ export const HomePage = () => {
     },
   ];
   return (
-    <div className="flex flex-col min-h-screen justify-center items-center py-8">
+    <div className="flex flex-col min-h-screen justify-center items-center py-8 p-4 lg:px-30">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {actions.map((action) => {
           return <Action key={action.action} action={action} />;
