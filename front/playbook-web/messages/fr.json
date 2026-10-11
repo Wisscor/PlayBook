@@ -31,5 +31,15 @@
   "make-matche-room-description": "Créez une salle de match pour trouver des joueurs intéressés",
   "make-post-description": "Publiez vos idées, macthes ou retours pour attirer l'attention de la communauté",
   "go-to-profile-description": "Consultez votre profil, mettez à jour vos informations et gérez vos paramètres",
-  "go-to-matches-posts-description": "Recherche des salles de match et voir publications des autres utilisateurs pour interagir avec eux"
+  "go-to-matches-posts-description": "Recherche des salles de match et voir publications des autres utilisateurs pour interagir avec eux",
+  "login-to-see": "Connectez-vous pour voir ce page",
+  "not-set": "Non défini",
+  "firstname-label": "Prénom :",
+  "lastname-label": "Nom de famille :",
+  "bio-label": "Bio :",
+  "email": "Email",
+  "firstname": "Prénom",
+  "lastname": "Nom de famille",
+  "bio": "Bio",
+  "update-infos": "Mettre à jour les informations"
 }

@@ -64,12 +64,17 @@ export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
               className="static"
             />
           </button>
-          <BurgerMenu menu={menu} isOpen={isExpanded} locale={locale} />
+          <BurgerMenu
+            close={() => {
+              setIsExpanded(!isExpanded);
+            }}
+            menu={menu}
+            isOpen={isExpanded}
+            locale={locale}
+          />
         </div>
-
-        {/* <h1 className="text-xl">Private Layout Header</h1> */}
       </header>
-      <main className="grow p-4 lg:px-30">{children}</main>
+      <main className="grow">{children}</main>
       <footer className="bg-linear-to-b from-extra to-secondary text-center text-sm  text-white p-4 lg:px-30 shadow-2xl">
         <p>&copy; {new Date().getFullYear()} playbook. All rights reserved.</p>
       </footer>
