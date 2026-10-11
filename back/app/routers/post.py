@@ -1,12 +1,15 @@
 import uuid
 from typing import Optional, List
 from datetime import datetime
+from pathlib import Path
 from fastapi import (
     APIRouter,
     Depends,
     HTTPException,
     Response,
     Query,
+    File,
+    UploadFile,
     status,
 )
 from sqlalchemy import select, func, or_, tuple_
@@ -23,15 +26,78 @@ from ..models import (
     Comment,
     Follower,
 )
-from ..schemas.post import PostCreate, PostUpdate, PostResponse, PostPage
-from ..schemas.user import UserSummaryResponse
-from ..schemas.post_media import PostMediaResponse
+from app.schemas.post import PostCreate, PostUpdate, PostResponse, PostPage
+from app.schemas.user import UserSummaryResponse
+from app.schemas.post_media import PostMediaResponse, UploadedMedia
 from app.core.deps import get_curr_user
 from app.core.pagination import encode_cursor, decode_cursor
 
 router = APIRouter(
     tags=["Posts"],
 )
+
+UPLOAD_DIR = Path("uploads")
+
+# Media types (or MIME types) allowed
+ALLOWED_MEDIA_TYPES = {
+    # Images: max 10 MB (jpeg, png, webp)
+    "image/jpeg": ("image", ".jpg", 10 * 1024 * 1024),
+    "image/png": ("image", ".png", 10 * 1024 * 1024),
+    "image/webp": ("image", ".webp", 10 * 1024 * 1024),
+    # Videos: max 100 MB (mp4, webm)
+    "video/mp4": ("video", ".mp4", 100 * 1024 * 1024),
+    "video/webm": ("video", ".webm", 100 * 1024 * 1024),
+}
+
+
+@router.post(
+    "/media",
+    status_code=status.HTTP_201_CREATED,
+    response_model=UploadedMedia,
+)
+async def upload_media(
+    file: UploadFile = File(...),
+    _: User = Depends(get_curr_user),
+):
+    """
+    Upload one media file. Images up to 10 MB, videos up to 100 MB.
+    """
+    # Check the content type of the uploaded file
+    content_type = (file.content_type or "").lower()
+    if content_type not in ALLOWED_MEDIA_TYPES:
+        raise HTTPException(
+            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            detail="Unsupported file type",
+        )
+
+    media_type, ext, max_size = ALLOWED_MEDIA_TYPES[content_type]
+    UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+    # Generate a unique filename to avoid filename collisions
+    filename = f"{uuid.uuid4().hex}{ext}"
+    filepath = UPLOAD_DIR / filename
+
+    size = 0
+    try:
+        # Open the file in binary write mode 
+        # and read in chunks to avoid loading the entire file into memory
+        with open(filepath, "wb") as f:
+            while chunk := await file.read(1024 * 64):
+                size += len(chunk)
+                if size > max_size:
+                    raise HTTPException(
+                        status_code=status.HTTP_413_CONTENT_TOO_LARGE,
+                        detail="File too large",
+                    )
+                f.write(chunk)
+    except Exception:
+        if filepath.exists():
+            filepath.unlink(missing_ok=True)
+        raise
+
+    return UploadedMedia(
+        media_url=f"/uploads/{filename}",
+        media_type=media_type,
+    )
 
 
 async def _enrich_posts(

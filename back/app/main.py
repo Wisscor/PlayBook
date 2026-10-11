@@ -1,8 +1,9 @@
 import logging
 from contextlib import asynccontextmanager
+from pathlib import Path
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
+from fastapi.staticfiles import StaticFiles
 from app.database.database import engine, Base
 from app.core.config import settings
 from .realtime import models as realtime_models
@@ -42,6 +43,11 @@ app = FastAPI(
     title=settings.app_name,
     debug=settings.debug,
 )
+
+UPLOAD_DIR = Path("uploads")
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+# Mount the uploads directory to serve static files
+app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
 app.add_middleware(
     CORSMiddleware,
