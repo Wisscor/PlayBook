@@ -5,7 +5,6 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
     async_sessionmaker,
 )
-from sqlalchemy.orm import DeclarativeBase
 
 # The engine will connect to the 'ft_trancendance' database using the provided credentials.
 
@@ -23,11 +22,6 @@ session_maker = async_sessionmaker(
     expire_on_commit=False,
 )
 
-
-# * Base — every model inherits from this. SQLAlchemy uses Base.metadata to know
-# * what tables exist across your whole app
-class Base(DeclarativeBase):
-    pass
 
 
 # Create a new async session for each request

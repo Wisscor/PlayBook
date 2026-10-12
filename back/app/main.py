@@ -4,7 +4,8 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from app.database.database import engine, Base
+from app.database.database import engine
+from app.database.base import Base
 from app.core.config import settings
 from .realtime import models as realtime_models
 from .realtime import ws as realtime_ws

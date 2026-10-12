@@ -1,5 +1,5 @@
 import uuid
-from ..database.database import Base
+from app.database.base import Base
 from datetime import datetime, timezone
 from sqlalchemy import (
     ForeignKey,
