@@ -1,7 +1,7 @@
 "use client";
 
 import { Header } from "@/components/shared/Header";
-import { PlayerButton } from "@/components/ui/Button";
+import { PlayButton } from "@/components/ui/Button";
 import { PlayText } from "@/components/ui/Text";
 import { useResize } from "@/hooks/contexts/resizeContext";
 import { ROUTES } from "@/lib/constants";
@@ -27,7 +27,7 @@ export const Home = () => {
             </div>
 
             <div className="lg:flex-1 lg:bg-secondary lg:px-9 lg:pt-38 lg:pb-15 ">
-              <PlayerButton.Primary title="continue-intra" />
+              <PlayButton.Primary title="continue-intra" />
               <div className="flex items-center gap-2.5 mt-4">
                 <div className="flex-1 h-px bg-white100 " />
                 <PlayText.Primary id="or" className="text-[16px] lg:text-xl " />
@@ -35,13 +35,13 @@ export const Home = () => {
               </div>
               <div className="flex flex-col lg:flex-row gap-4 mt-4">
                 <Link href={ROUTES.SIGNUP} className="w-full">
-                  <PlayerButton.Secondary
+                  <PlayButton.Secondary
                     title="signup"
                     textClassName="text-white"
                   />
                 </Link>
                 <Link href={ROUTES.SIGNIN} className="w-full">
-                  <PlayerButton.Primary title="login" />
+                  <PlayButton.Primary title="login" />
                 </Link>
               </div>
             </div>

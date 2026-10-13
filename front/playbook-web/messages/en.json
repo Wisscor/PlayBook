@@ -41,5 +41,19 @@
   "firstname": "First Name",
   "lastname": "Last Name",
   "bio": "Bio",
-  "update-infos": "Update Information"
+  "update-infos": "Update Information",
+  "create-match": "Create Match Room",
+  "match-name": "Match Name",
+  "select-match-type": "Select Match Type",
+  "select-player-number": "Select Number of Players",
+  "choose-date": "Choose Date",
+  "start-time": "Start Time",
+  "end-time": "End Time",
+  "invalid-time": "End time must be after start time.",
+  "invalid-start-time": "Please enter a valid start time.",
+  "invalid-end-time": "Please enter a valid end time.",
+  "past-date": "Please select a date in the future.",
+  "invalid-date": "Please enter a valid date.",
+  "past-start-time": "Start time must be in the future.",
+  "past-end-time": "End time must be in the future."
 }

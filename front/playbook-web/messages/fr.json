@@ -41,5 +41,19 @@
   "firstname": "Prénom",
   "lastname": "Nom de famille",
   "bio": "Bio",
-  "update-infos": "Mettre à jour les informations"
+  "update-infos": "Mettre à jour les informations",
+  "create-match": "Créer une salle de match",
+  "match-name": "Nom du match",
+  "select-match-type": "Sélectionnez le type de match",
+  "select-player-number": "Sélectionnez le nombre de joueurs",
+  "choose-date": "Choisir une date",
+  "start-time": "Heure de début",
+  "end-time": "Heure de fin",
+  "invalid-time": "L'heure de fin doit être après l'heure de début.",
+  "invalid-start-time": "Veuillez entrer une heure de début valide.",
+  "invalid-end-time": "Veuillez entrer une heure de fin valide.",
+  "past-date": "Veuillez sélectionner une date dans le futur.",
+  "invalid-date": "Veuillez entrer une date valide.",
+  "past-start-time": "L'heure de début doit être dans le futur.",
+  "past-end-time": "L'heure de fin doit être dans le futur."
 }

@@ -24,7 +24,7 @@ export const Info: React.FC<{
           }}
           placeholder={placeholder}
           value={value ?? ""}
-          className=" py-1 bg-gray text-sm rounded-[10px] flex-2 "
+          className=" py-1 bg-gray/10 text-sm rounded-[10px] flex-2 text-black "
         />
       ) : (
         <PlayText.Primary

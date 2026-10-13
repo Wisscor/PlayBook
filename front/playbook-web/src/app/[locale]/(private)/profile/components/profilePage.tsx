@@ -8,7 +8,7 @@ import { RequestCookie } from "next/dist/compiled/@edge-runtime/cookies";
 import { User } from "@/types/user";
 import { isEmailValid } from "@/lib/utils";
 import { useTranslations } from "next-intl";
-import { PlayerButton } from "@/components/ui/Button";
+import { PlayButton } from "@/components/ui/Button";
 import Cookies from "js-cookie";
 
 export const ProfilePageContent: React.FC<{
@@ -99,7 +99,7 @@ export const ProfilePageContent: React.FC<{
                 }}
                 placeholder="username"
                 value={updatedInfos.username}
-                className=" py-2 bg-gray text-sm "
+                className=" py-2  text-sm bg-gray/10 text-black"
               />
             ) : (
               <PlayText.Primary
@@ -139,7 +139,7 @@ export const ProfilePageContent: React.FC<{
                 }}
                 placeholder="email"
                 value={updatedInfos.email}
-                className=" py-2 bg-gray text-sm "
+                className=" py-2  text-sm bg-gray/10 text-black "
               />
             ) : (
               <PlayText.Primary
@@ -234,7 +234,7 @@ export const ProfilePageContent: React.FC<{
         </div>
       </div>
       {isSomethingChanged() && (
-        <PlayerButton.Primary
+        <PlayButton.Primary
           title="update-infos"
           className="w-fit px-6 py-4 bg-primary"
           textClassName="text-white"
