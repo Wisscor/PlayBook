@@ -1,4 +1,4 @@
-import { PlayerButton } from "@/components/ui/Button";
+import { PlayButton } from "@/components/ui/Button";
 import { PlayInput } from "@/components/ui/Input";
 import { PlayText } from "@/components/ui/Text";
 import { ROUTES } from "@/lib/constants";
@@ -84,7 +84,7 @@ export const SignUp = () => {
           ]}
         />
         <div className="w-full  px-5 lg:px-25">
-          <PlayerButton.Primary
+          <PlayButton.Primary
             textClassName="lg:text-white"
             title="login"
             className=" justify-center self-center lg:bg-primary "

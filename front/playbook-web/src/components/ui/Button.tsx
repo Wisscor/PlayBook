@@ -52,7 +52,7 @@ const Secondary: React.FC<{
   );
 };
 
-export const PlayerButton = {
+export const PlayButton = {
   Primary,
   Secondary,
 };

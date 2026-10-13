@@ -8,5 +8,6 @@ export const useNavigation = () => {
     goAuth: () => push("/auth"),
     goSignUp: () => push("/auth?mode=signup"),
     goSignIn: () => push("/auth?mode=signin"),
+    goProfile: () => push("/profile"),
   };
 };
