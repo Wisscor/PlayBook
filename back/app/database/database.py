@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
 )
 
-# The engine will connect to the 'ft_trancendance' database using the provided credentials.
+# ? The engine will connect with database using the provided credentials.
 
 # * Engine = the actual connection pool to Postgres. One per app.
 engine = create_async_engine(

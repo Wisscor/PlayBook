@@ -30,12 +30,7 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-
-    async with engine.begin() as connection:  # Create tables if they don't exist
-        await connection.run_sync(Base.metadata.create_all)
-
     yield
-
     await engine.dispose()
 
 
