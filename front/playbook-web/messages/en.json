@@ -55,5 +55,7 @@
   "past-date": "Please select a date in the future.",
   "invalid-date": "Please enter a valid date.",
   "past-start-time": "Start time must be in the future.",
-  "past-end-time": "End time must be in the future."
+  "past-end-time": "End time must be in the future.",
+  "your-post": "Your Post",
+  "create-post": "Create Post"
 }

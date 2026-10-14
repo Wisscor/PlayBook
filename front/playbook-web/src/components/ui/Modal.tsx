@@ -6,7 +6,8 @@ export const Primary: React.FC<{
   close: () => void;
   isOpen: boolean;
   children: React.ReactNode;
-}> = ({ close, isOpen, children }) => {
+  title: string;
+}> = ({ close, isOpen, children, title }) => {
   return (
     <div
       className={`fixed inset-0 z-50 flex items-center justify-center bg-black/50 transition-all duration-300 ease-in-out ${
@@ -20,7 +21,7 @@ export const Primary: React.FC<{
       >
         <div className="flex gap-4 items-center justify-between">
           <div />
-          <PlayText.Primary id="create-match" className="text-black text-xl" />
+          <PlayText.Primary id={title} className="text-black text-xl" />
           <button
             onClick={() => {
               close();

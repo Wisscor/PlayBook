@@ -55,5 +55,7 @@
   "past-date": "Veuillez sélectionner une date dans le futur.",
   "invalid-date": "Veuillez entrer une date valide.",
   "past-start-time": "L'heure de début doit être dans le futur.",
-  "past-end-time": "L'heure de fin doit être dans le futur."
+  "past-end-time": "L'heure de fin doit être dans le futur.",
+  "your-post": "Votre publication",
+  "create-post": "Créer une publication"
 }

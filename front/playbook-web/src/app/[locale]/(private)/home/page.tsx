@@ -4,10 +4,12 @@ import { useNavigation } from "@/hooks/useNavigation";
 import { Action } from "./components/action";
 import React from "react";
 import { MatchModal } from "./components/matchModal";
+import { PostModal } from "./components/postModal";
 
 export const HomePage = () => {
   const { goProfile } = useNavigation();
   const [matchModalOpen, setMatchModalOpen] = React.useState(false);
+  const [postModalOpen, setPostModalOpen] = React.useState(false);
   const actions = [
     {
       action: "make-matche-room",
@@ -21,7 +23,9 @@ export const HomePage = () => {
       action: "make-post",
       description: "make-post-description",
       icon: "/icons/addition.png",
-      onClick: () => {},
+      onClick: () => {
+        setPostModalOpen(true);
+      },
     },
     {
       action: "go-to-profile",
@@ -50,6 +54,13 @@ export const HomePage = () => {
         <MatchModal
           isOpen={matchModalOpen}
           close={() => setMatchModalOpen(false)}
+        />
+      )}
+
+      {postModalOpen && (
+        <PostModal
+          isOpen={postModalOpen}
+          close={() => setPostModalOpen(false)}
         />
       )}
     </div>

@@ -37,6 +37,7 @@ export const MatchModal: React.FC<{
 
   return (
     <PlayModal.Primary
+      title="create-match"
       isOpen={isOpen}
       close={() => {
         close();
