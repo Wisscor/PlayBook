@@ -57,5 +57,9 @@
   "past-start-time": "Start time must be in the future.",
   "past-end-time": "End time must be in the future.",
   "your-post": "Your Post",
-  "create-post": "Create Post"
+  "create-post": "Create Post",
+  "delete": "Delete",
+  "edit": "Edit",
+  "no-posts": "You have no posts yet. Create one to get started!",
+  "no-matches": "You have no matches yet. Create one to get started!"
 }

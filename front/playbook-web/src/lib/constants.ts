@@ -23,7 +23,7 @@ export const ROUTES = {
   HOME: "/",
   SIGNIN: "/auth?mode=signin",
   SIGNUP: "/auth?mode=signup",
-  POSTS: "/posts",
-  MATCHES: "/matches",
+  POSTS: "/history?type=posts",
+  MATCHES: "/history?type=matches",
   PROFILE: "/profile",
 } as const;
