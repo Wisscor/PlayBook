@@ -18,12 +18,32 @@ class UserBase(BaseModel):
 # What should the client provide?
 class UserCreate(UserBase):
     password: str = Field(..., min_length=8, max_length=100)
+    #
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "firstname": "zakaria",
+                "lastname": "wazrou",
+                "username": "zouazrou",
+                "email": "zakaria@gmail.com",
+                "password": "ziko1234",
+            }
+        }
+    }
 
 
 # What should the client provide for login?
 class UserLogin(BaseModel):
     username_or_email: str
     password: str
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "username_or_email": "zouazrou",
+                "password": "ziko1234",
+            }
+        }
+    }
 
 
 # What should the client update?
