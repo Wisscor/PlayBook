@@ -29,6 +29,30 @@ const Primary: React.FC<{
   );
 };
 
+const Area: React.FC<{
+  placeholder: string;
+  value: string;
+  type?: React.HTMLInputTypeAttribute;
+  className?: string;
+  onChange?: React.ChangeEventHandler<HTMLTextAreaElement, HTMLTextAreaElement>;
+}> = ({ placeholder, value, type, className, onChange }) => {
+  const t = useTranslations();
+
+  return (
+    <textarea
+      value={value}
+      onChange={onChange}
+      placeholder={t(placeholder)}
+      className={twMerge(
+        clsx(
+          "w-full rounded-xl bg-white100/10 backdrop-blur-md border border-white100/20 px-6 py-4 text-lg text-white placeholder:text-black/50 placeholder:text-sm focus:outline-none focus:ring-2 focus:ring-white/40 resize-y min-h-30",
+          className,
+        ),
+      )}
+    />
+  );
+};
+
 const Password: React.FC<{
   placeholder: string;
   value: string;
@@ -78,4 +102,5 @@ const Password: React.FC<{
 export const PlayInput = {
   Primary,
   Password,
+  Area,
 };

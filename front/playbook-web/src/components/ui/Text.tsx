@@ -5,7 +5,8 @@ import { twMerge } from "tailwind-merge";
 import { Link } from "../../../i18n/navigation";
 
 interface SpanText {
-  text: string;
+  text?: string;
+  content?: string;
   className?: string;
   path?: string;
 }
@@ -39,7 +40,7 @@ const Span: React.FC<{
                 key={text.text}
                 className={twMerge(clsx("text-white", text.className))}
               >
-                {t(text.text)}
+                {text.text ? t(text.text) : text.content}
               </span>
             </Link>
           );
@@ -50,7 +51,7 @@ const Span: React.FC<{
             key={text.text}
             className={twMerge(clsx("text-white", text.className))}
           >
-            {t(text.text)}
+            {text.text ? t(text.text) : text.content}
           </span>
         );
       })}
