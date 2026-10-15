@@ -45,7 +45,6 @@ async def mutual_follow_exists(db, a: UUID, b: UUID) -> bool:
 def conversation_new_payload(
     conversation_id: UUID, peer_id: UUID, peer_username: str
 ) -> dict:
-    """Build the conversation row for ONE recipient, describing the other user."""
     return {
         "type": frames.CONVERSATION_NEW,
         "id": str(conversation_id),
@@ -161,7 +160,6 @@ async def create_message(db, sender_id, conversation_id, body: str) -> Message:
 async def mark_conversation_read(
     db, user_id: UUID, conversation_id: UUID, message_id: UUID
 ) -> list[UUID]:
-    """Advance a participant's read cursor and return peers for the receipt."""
     participant_result = await db.execute(
         select(ConversationParticipant)
         .where(
@@ -194,7 +192,6 @@ async def mark_conversation_read(
         )
         current_created_at = current_result.scalar_one_or_none()
 
-    # Compare timestamps, not UUIDs: UUIDv4 values do not encode chronology.
     if current_created_at is not None and message.created_at <= current_created_at:
         return []
 
