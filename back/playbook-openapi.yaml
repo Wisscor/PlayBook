@@ -1,0 +1,1188 @@
+openapi: 3.0.3
+info:
+  title: PlayBook API
+  version: 1.0.0
+  description: |
+    Sports social media platform. Users post, follow, like, comment, chat,
+    and announce matches to find players or opponents.
+
+    **Auth:** session-based. `POST /auth/login` creates a row in `sessions`
+    and sets an HttpOnly cookie (`session_id`). Every endpoint except
+    register and login requires a valid, unexpired session (otherwise 401).
+
+    **Conventions:** UUID ids, ISO 8601 UTC timestamps, cursor pagination
+    (`limit`, `cursor` -> `items`, `next_cursor`). Likes, follows and user
+    sports use PUT/DELETE so repeated calls are safe (idempotent).
+
+    **Realtime:** new messages and new notifications are also pushed by the
+    realtime service (separate component). These REST endpoints remain the
+    source of truth.
+servers:
+  - url: /api/v1
+tags:
+  - name: Auth
+  - name: Users
+  - name: Sports
+  - name: Follow
+  - name: Posts
+  - name: Likes
+  - name: Comments
+  - name: Chat
+  - name: Match Announcements
+  - name: Play Requests
+  - name: Notifications
+security:
+  - cookieAuth: []
+
+paths:
+  # ---------------------------------------------------------------- Auth
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Create an account
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RegisterRequest' }
+      responses:
+        '201':
+          description: Account created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Me' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Log in (creates a session and sets the cookie)
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LoginRequest' }
+      responses:
+        '200':
+          description: Logged in. Sets the `session_id` cookie.
+          headers:
+            Set-Cookie:
+              schema: { type: string }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Me' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Log out (deletes the session)
+      responses:
+        '204': { description: Logged out }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /auth/me:
+    get:
+      tags: [Auth]
+      summary: Current user
+      responses:
+        '200':
+          description: Current user
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Me' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  # --------------------------------------------------------------- Users
+  /users:
+    get:
+      tags: [Users]
+      summary: Search users
+      description: |
+        `q` matches firstname, lastname and username (partial,
+        case-insensitive). `sport_id` keeps only users who play that sport.
+        Filters are optional and can be combined.
+      parameters:
+        - name: q
+          in: query
+          schema: { type: string, minLength: 1 }
+        - name: sport_id
+          in: query
+          schema: { type: string, format: uuid }
+        - { $ref: '#/components/parameters/Limit' }
+        - { $ref: '#/components/parameters/Cursor' }
+      responses:
+        '200':
+          description: Matching users
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/UserPage' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /users/me:
+    patch:
+      tags: [Users]
+      summary: Update my profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ProfileUpdate' }
+      responses:
+        '200':
+          description: Updated profile
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Me' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /users/{id}:
+    get:
+      tags: [Users]
+      summary: Get a user profile
+      parameters:
+        - { $ref: '#/components/parameters/Id' }
+      responses:
+        '200':
+          description: Profile
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/UserProfile' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /users/{id}/posts:
+    get:
+      tags: [Users]
+      summary: Posts of a user (newest first)
+      parameters:
+        - { $ref: '#/components/parameters/Id' }
+        - { $ref: '#/components/parameters/Limit' }
+        - { $ref: '#/components/parameters/Cursor' }
+      responses:
+        '200':
+          description: Posts
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PostPage' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # -------------------------------------------------------------- Sports
+  /sports:
+    get:
+      tags: [Sports]
+      summary: List all sports (seed data, read-only)
+      responses:
+        '200':
+          description: Sports
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Sport' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /users/{id}/sports:
+    get:
+      tags: [Sports]
+      summary: Sports a user plays
+      parameters:
+        - { $ref: '#/components/parameters/Id' }
+      responses:
+        '200':
+          description: Sports
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Sport' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /users/me/sports/{sport_id}:
+    put:
+      tags: [Sports]
+      summary: Add a sport to my profile (idempotent)
+      parameters:
+        - { $ref: '#/components/parameters/SportId' }
+      responses:
+        '204': { description: Sport added (or already present) }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [Sports]
+      summary: Remove a sport from my profile
+      parameters:
+        - { $ref: '#/components/parameters/SportId' }
+      responses:
+        '204': { description: Sport removed }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # -------------------------------------------------------------- Follow
+  /users/{id}/follow:
+    put:
+      tags: [Follow]
+      summary: Follow a user (idempotent)
+      description: |
+        Cannot follow yourself (400). A `follow` notification is created
+        only the first time.
+      parameters:
+        - { $ref: '#/components/parameters/Id' }
+      responses:
+        '204': { description: Following }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [Follow]
+      summary: Unfollow a user
+      parameters:
+        - { $ref: '#/components/parameters/Id' }
+      responses:
+        '204': { description: Not following }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /users/{id}/followers:
+    get:
+      tags: [Follow]
+      summary: Followers of a user
+      parameters:
+        - { $ref: '#/components/parameters/Id' }
+        - { $ref: '#/components/parameters/Limit' }
+        - { $ref: '#/components/parameters/Cursor' }
+      responses:
+        '200':
+          description: Followers
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/UserPage' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /users/{id}/following:
+    get:
+      tags: [Follow]
+      summary: Users that a user follows
+      parameters:
+        - { $ref: '#/components/parameters/Id' }
+        - { $ref: '#/components/parameters/Limit' }
+        - { $ref: '#/components/parameters/Cursor' }
+      responses:
+        '200':
+          description: Following
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/UserPage' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # --------------------------------------------------------------- Posts
+  /media:
+    post:
+      tags: [Posts]
+      summary: Upload one media file
+      description: |
+        Upload first, then reference the returned `media_url` in
+        `POST /posts`. Default limits (adjustable, not final): images up to
+        10 MB (jpeg, png, webp), videos up to 100 MB (mp4, webm).
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: { type: string, format: binary }
+      responses:
+        '201':
+          description: Uploaded
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/UploadedMedia' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '413': { description: File too large }
+        '415': { description: Unsupported file type }
+  /posts:
+    post:
+      tags: [Posts]
+      summary: Create a post
+      description: Caption is required. Media is optional (default limit 10 items).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PostCreate' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Post' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /posts/{id}:
+    get:
+      tags: [Posts]
+      summary: Get a post
+      parameters:
+        - { $ref: '#/components/parameters/Id' }
+      responses:
+        '200':
+          description: Post
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Post' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    patch:
+      tags: [Posts]
+      summary: Edit the caption (owner only)
+      parameters:
+        - { $ref: '#/components/parameters/Id' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PostUpdate' }
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Post' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+    delete:
+      tags: [Posts]
+      summary: Delete a post (owner only; media, comments, likes are deleted too)
+      parameters:
+        - { $ref: '#/components/parameters/Id' }
+      responses:
+        '204': { description: Deleted }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /feed:
+    get:
+      tags: [Posts]
+      summary: Posts from people I follow plus mine (newest first)
+      parameters:
+        - { $ref: '#/components/parameters/Limit' }
+        - { $ref: '#/components/parameters/Cursor' }
+      responses:
+        '200':
+          description: Feed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PostPage' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  # --------------------------------------------------------------- Likes
+  /posts/{id}/like:
+    put:
+      tags: [Likes]
+      summary: Like a post (idempotent)
+      description: One like per user per post. A `like` notification is created only the first time.
+      parameters:
+        - { $ref: '#/components/parameters/Id' }
+      responses:
+        '204': { description: Liked }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [Likes]
+      summary: Unlike a post
+      parameters:
+        - { $ref: '#/components/parameters/Id' }
+      responses:
+        '204': { description: Unliked }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ------------------------------------------------------------ Comments
+  /posts/{id}/comments:
+    get:
+      tags: [Comments]
+      summary: Top-level comments, each with its replies (one level)
+      parameters:
+        - { $ref: '#/components/parameters/Id' }
+        - { $ref: '#/components/parameters/Limit' }
+        - { $ref: '#/components/parameters/Cursor' }
+      responses:
+        '200':
+          description: Comments
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CommentPage' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    post:
+      tags: [Comments]
+      summary: Comment on a post, or reply to a comment
+      description: |
+        Without `reply_to_id` it is a comment (`comment` notification to the
+        post owner). With `reply_to_id` it is a reply (`reply` notification
+        to the parent's author). The parent must belong to the same post and
+        must itself be top-level, otherwise 422.
+      parameters:
+        - { $ref: '#/components/parameters/Id' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CommentCreate' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Comment' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /comments/{id}:
+    delete:
+      tags: [Comments]
+      summary: Delete a comment (author only; replies are deleted too)
+      parameters:
+        - { $ref: '#/components/parameters/Id' }
+      responses:
+        '204': { description: Deleted }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ---------------------------------------------------------------- Chat
+  /conversations:
+    post:
+      tags: [Chat]
+      summary: Start (or get) a one-to-one conversation
+      description: |
+        Returns the existing conversation between the two users (200) or
+        creates one with two participants (201). Cannot chat with yourself (400).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ConversationCreate' }
+      responses:
+        '200':
+          description: Existing conversation
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Conversation' }
+        '201':
+          description: New conversation
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Conversation' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    get:
+      tags: [Chat]
+      summary: My conversations
+      description: Each item has the other user, the last message and `unread_count`.
+      parameters:
+        - { $ref: '#/components/parameters/Limit' }
+        - { $ref: '#/components/parameters/Cursor' }
+      responses:
+        '200':
+          description: Conversations
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ConversationPage' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /conversations/{id}/messages:
+    get:
+      tags: [Chat]
+      summary: Messages of a conversation (newest first, participants only)
+      parameters:
+        - { $ref: '#/components/parameters/Id' }
+        - { $ref: '#/components/parameters/Limit' }
+        - { $ref: '#/components/parameters/Cursor' }
+      responses:
+        '200':
+          description: Messages
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MessagePage' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    post:
+      tags: [Chat]
+      summary: Send a message (participants only)
+      description: Creates a `message` notification for the other participant and emits a realtime event.
+      parameters:
+        - { $ref: '#/components/parameters/Id' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/MessageCreate' }
+      responses:
+        '201':
+          description: Sent
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Message' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /conversations/{id}/read:
+    post:
+      tags: [Chat]
+      summary: Mark messages as read up to a message
+      description: Updates my `last_read_message_id` in this conversation.
+      parameters:
+        - { $ref: '#/components/parameters/Id' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ReadMarker' }
+      responses:
+        '204': { description: Updated }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ------------------------------------------------- Match announcements
+  /match-announcements:
+    post:
+      tags: [Match Announcements]
+      summary: Announce a match
+      description: '`end_time` must be after `start_time` (422).'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/MatchAnnouncementCreate' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MatchAnnouncement' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+    get:
+      tags: [Match Announcements]
+      summary: Search match announcements
+      description: |
+        The time filter returns announcements that fit inside the window:
+        `start_time >= start_from` and `end_time <= end_to`.
+      parameters:
+        - name: sport_id
+          in: query
+          schema: { type: string, format: uuid }
+        - name: type
+          in: query
+          schema: { $ref: '#/components/schemas/AnnouncementType' }
+        - name: start_from
+          in: query
+          schema: { type: string, format: date-time }
+        - name: end_to
+          in: query
+          schema: { type: string, format: date-time }
+        - name: owner_id
+          in: query
+          schema: { type: string, format: uuid }
+        - { $ref: '#/components/parameters/Limit' }
+        - { $ref: '#/components/parameters/Cursor' }
+      responses:
+        '200':
+          description: Matching announcements
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MatchAnnouncementPage' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /match-announcements/{id}:
+    get:
+      tags: [Match Announcements]
+      summary: Get an announcement
+      parameters:
+        - { $ref: '#/components/parameters/Id' }
+      responses:
+        '200':
+          description: Announcement
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MatchAnnouncement' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    patch:
+      tags: [Match Announcements]
+      summary: Edit an announcement (owner only)
+      description: |
+        Partial update of `sport_id`, `type`, `start_time`, `end_time`.
+        The rule `end_time > start_time` is checked on the resulting values (422).
+        Existing play requests are kept.
+      parameters:
+        - { $ref: '#/components/parameters/Id' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/MatchAnnouncementUpdate' }
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MatchAnnouncement' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+    delete:
+      tags: [Match Announcements]
+      summary: Delete an announcement (owner only)
+      parameters:
+        - { $ref: '#/components/parameters/Id' }
+      responses:
+        '204': { description: Deleted }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ------------------------------------------------------- Play requests
+  /match-announcements/{id}/play-requests:
+    post:
+      tags: [Play Requests]
+      summary: Send a play request to an announcement
+      description: |
+        No body; the sender is the current user. Status starts as `pending`.
+        Creates a `play_request` notification for the announcement owner.
+        Several requests can be accepted for the same announcement.
+        403 on your own announcement, 409 if you already sent one.
+      parameters:
+        - { $ref: '#/components/parameters/Id' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PlayRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+    get:
+      tags: [Play Requests]
+      summary: Requests received by an announcement (owner only)
+      parameters:
+        - { $ref: '#/components/parameters/Id' }
+        - { $ref: '#/components/parameters/Limit' }
+        - { $ref: '#/components/parameters/Cursor' }
+      responses:
+        '200':
+          description: Requests
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PlayRequestPage' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /play-requests:
+    get:
+      tags: [Play Requests]
+      summary: My play requests
+      description: '`sent` = I am the sender. `received` = requests on my announcements.'
+      parameters:
+        - name: role
+          in: query
+          required: true
+          schema: { type: string, enum: [sent, received] }
+        - name: status
+          in: query
+          schema: { $ref: '#/components/schemas/PlayRequestStatus' }
+        - { $ref: '#/components/parameters/Limit' }
+        - { $ref: '#/components/parameters/Cursor' }
+      responses:
+        '200':
+          description: Requests
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PlayRequestPage' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /play-requests/{id}:
+    patch:
+      tags: [Play Requests]
+      summary: Accept or decline a request (announcement owner only)
+      description: Allowed only from `pending` (409 otherwise).
+      parameters:
+        - { $ref: '#/components/parameters/Id' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PlayRequestDecision' }
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PlayRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  # ------------------------------------------------------- Notifications
+  /notifications:
+    get:
+      tags: [Notifications]
+      summary: My notifications (newest first)
+      parameters:
+        - name: unread_only
+          in: query
+          schema: { type: boolean, default: false }
+        - { $ref: '#/components/parameters/Limit' }
+        - { $ref: '#/components/parameters/Cursor' }
+      responses:
+        '200':
+          description: Notifications
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/NotificationPage' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /notifications/unread-count:
+    get:
+      tags: [Notifications]
+      summary: Number of unread notifications (badge)
+      responses:
+        '200':
+          description: Count
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [count]
+                properties:
+                  count: { type: integer, minimum: 0 }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /notifications/read-all:
+    post:
+      tags: [Notifications]
+      summary: Mark all notifications as read
+      responses:
+        '204': { description: Done }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /notifications/{id}/read:
+    post:
+      tags: [Notifications]
+      summary: Mark one notification as read
+      parameters:
+        - { $ref: '#/components/parameters/Id' }
+      responses:
+        '204': { description: Done }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: session_id
+
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    SportId:
+      name: sport_id
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    Limit:
+      name: limit
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+    Cursor:
+      name: cursor
+      in: query
+      description: Opaque value taken from the previous page's `next_cursor`.
+      schema: { type: string }
+
+  responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Unauthorized:
+      description: Not logged in, or session expired
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Forbidden:
+      description: Not allowed for this user
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Conflict:
+      description: Conflict with the current state
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    ValidationError:
+      description: Validation failed
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+
+  schemas:
+    Error:
+      type: object
+      required: [detail]
+      properties:
+        detail: { type: string }
+
+    # ----- enums
+    AnnouncementType:
+      type: string
+      enum: [player, opponent]
+      description: '`player` = teammate needed, `opponent` = opponent needed.'
+    PlayRequestStatus:
+      type: string
+      enum: [pending, accepted, declined]
+    MediaType:
+      type: string
+      enum: [image, video]
+    NotificationType:
+      type: string
+      enum: [like, comment, reply, follow, message, play_request]
+
+    # ----- users
+    UserSummary:
+      type: object
+      required: [id, username]
+      properties:
+        id: { type: string, format: uuid }
+        username: { type: string }
+        firstname: { type: string, nullable: true }
+        lastname: { type: string, nullable: true }
+        avatar: { type: string, nullable: true }
+    Me:
+      allOf:
+        - $ref: '#/components/schemas/UserSummary'
+        - type: object
+          required: [email, created_at]
+          properties:
+            email: { type: string, format: email }
+            phone: { type: string, nullable: true }
+            bio: { type: string, nullable: true }
+            created_at: { type: string, format: date-time }
+    UserProfile:
+      allOf:
+        - $ref: '#/components/schemas/UserSummary'
+        - type: object
+          required: [followers_count, following_count, posts_count, is_following, sports]
+          properties:
+            bio: { type: string, nullable: true }
+            followers_count: { type: integer }
+            following_count: { type: integer }
+            posts_count: { type: integer }
+            is_following: { type: boolean }
+            sports:
+              type: array
+              items: { $ref: '#/components/schemas/Sport' }
+            created_at: { type: string, format: date-time }
+    RegisterRequest:
+      type: object
+      required: [username, email, password]
+      properties:
+        username: { type: string, minLength: 3, maxLength: 50 }
+        email: { type: string, format: email, maxLength: 255 }
+        password: { type: string, minLength: 8, format: password }
+        firstname: { type: string, maxLength: 50 }
+        lastname: { type: string, maxLength: 50 }
+    LoginRequest:
+      type: object
+      required: [identifier, password]
+      properties:
+        identifier:
+          type: string
+          description: Username or email.
+        password: { type: string, format: password }
+    ProfileUpdate:
+      type: object
+      minProperties: 1
+      properties:
+        firstname: { type: string, maxLength: 50 }
+        lastname: { type: string, maxLength: 50 }
+        bio: { type: string }
+        avatar: { type: string, maxLength: 255 }
+        phone: { type: string, maxLength: 20 }
+    UserPage:
+      type: object
+      required: [items, next_cursor]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/UserSummary' }
+        next_cursor: { type: string, nullable: true }
+
+    # ----- sports
+    Sport:
+      type: object
+      required: [id, name]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+
+    # ----- posts
+    UploadedMedia:
+      type: object
+      required: [media_url, media_type]
+      properties:
+        media_url: { type: string, maxLength: 500 }
+        media_type: { $ref: '#/components/schemas/MediaType' }
+    PostMediaInput:
+      type: object
+      required: [media_url, media_type]
+      properties:
+        media_url: { type: string, maxLength: 500 }
+        media_type: { $ref: '#/components/schemas/MediaType' }
+        position: { type: integer, minimum: 0, default: 0 }
+    PostMedia:
+      allOf:
+        - $ref: '#/components/schemas/PostMediaInput'
+        - type: object
+          required: [id]
+          properties:
+            id: { type: string, format: uuid }
+    PostCreate:
+      type: object
+      required: [caption]
+      properties:
+        caption: { type: string, minLength: 1 }
+        media:
+          type: array
+          maxItems: 10
+          items: { $ref: '#/components/schemas/PostMediaInput' }
+    PostUpdate:
+      type: object
+      required: [caption]
+      properties:
+        caption: { type: string, minLength: 1 }
+    Post:
+      type: object
+      required: [id, author, caption, media, like_count, comment_count, liked_by_me, created_at, updated_at]
+      properties:
+        id: { type: string, format: uuid }
+        author: { $ref: '#/components/schemas/UserSummary' }
+        caption: { type: string }
+        media:
+          type: array
+          items: { $ref: '#/components/schemas/PostMedia' }
+        like_count: { type: integer }
+        comment_count: { type: integer }
+        liked_by_me: { type: boolean }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+    PostPage:
+      type: object
+      required: [items, next_cursor]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/Post' }
+        next_cursor: { type: string, nullable: true }
+
+    # ----- comments
+    CommentCreate:
+      type: object
+      required: [content]
+      properties:
+        content: { type: string, minLength: 1 }
+        reply_to_id:
+          type: string
+          format: uuid
+          description: Id of a top-level comment on the same post. Omit for a normal comment.
+    Comment:
+      type: object
+      required: [id, post_id, author, content, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        post_id: { type: string, format: uuid }
+        author: { $ref: '#/components/schemas/UserSummary' }
+        comment_reply_to_id: { type: string, format: uuid, nullable: true }
+        content: { type: string }
+        created_at: { type: string, format: date-time }
+        replies:
+          type: array
+          description: Present on top-level comments only (one level).
+          items: { $ref: '#/components/schemas/Reply' }
+    Reply:
+      type: object
+      required: [id, post_id, author, comment_reply_to_id, content, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        post_id: { type: string, format: uuid }
+        author: { $ref: '#/components/schemas/UserSummary' }
+        comment_reply_to_id: { type: string, format: uuid }
+        content: { type: string }
+        created_at: { type: string, format: date-time }
+    CommentPage:
+      type: object
+      required: [items, next_cursor]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/Comment' }
+        next_cursor: { type: string, nullable: true }
+
+    # ----- chat
+    ConversationCreate:
+      type: object
+      required: [user_id]
+      properties:
+        user_id: { type: string, format: uuid }
+    Message:
+      type: object
+      required: [id, conversation_id, sender_id, body, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        conversation_id: { type: string, format: uuid }
+        sender_id: { type: string, format: uuid }
+        body: { type: string }
+        created_at: { type: string, format: date-time }
+    MessageCreate:
+      type: object
+      required: [body]
+      properties:
+        body: { type: string, minLength: 1 }
+    ReadMarker:
+      type: object
+      required: [message_id]
+      properties:
+        message_id: { type: string, format: uuid }
+    Conversation:
+      type: object
+      required: [id, other_user, unread_count, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        other_user: { $ref: '#/components/schemas/UserSummary' }
+        last_message:
+          allOf:
+            - $ref: '#/components/schemas/Message'
+          nullable: true
+        unread_count: { type: integer, minimum: 0 }
+        created_at: { type: string, format: date-time }
+    ConversationPage:
+      type: object
+      required: [items, next_cursor]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/Conversation' }
+        next_cursor: { type: string, nullable: true }
+    MessagePage:
+      type: object
+      required: [items, next_cursor]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/Message' }
+        next_cursor: { type: string, nullable: true }
+
+    # ----- match announcements
+    MatchAnnouncementCreate:
+      type: object
+      required: [sport_id, type, start_time, end_time]
+      properties:
+        sport_id: { type: string, format: uuid }
+        type: { $ref: '#/components/schemas/AnnouncementType' }
+        start_time: { type: string, format: date-time }
+        end_time: { type: string, format: date-time }
+    MatchAnnouncementUpdate:
+      type: object
+      minProperties: 1
+      properties:
+        sport_id: { type: string, format: uuid }
+        type: { $ref: '#/components/schemas/AnnouncementType' }
+        start_time: { type: string, format: date-time }
+        end_time: { type: string, format: date-time }
+    MatchAnnouncement:
+      type: object
+      required: [id, owner, sport, type, start_time, end_time, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        owner: { $ref: '#/components/schemas/UserSummary' }
+        sport: { $ref: '#/components/schemas/Sport' }
+        type: { $ref: '#/components/schemas/AnnouncementType' }
+        start_time: { type: string, format: date-time }
+        end_time: { type: string, format: date-time }
+        created_at: { type: string, format: date-time }
+    MatchAnnouncementPage:
+      type: object
+      required: [items, next_cursor]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/MatchAnnouncement' }
+        next_cursor: { type: string, nullable: true }
+
+    # ----- play requests
+    PlayRequestDecision:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [accepted, declined]
+    PlayRequest:
+      type: object
+      required: [id, announcement_id, sender, status, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        announcement_id: { type: string, format: uuid }
+        sender: { $ref: '#/components/schemas/UserSummary' }
+        status: { $ref: '#/components/schemas/PlayRequestStatus' }
+        created_at: { type: string, format: date-time }
+    PlayRequestPage:
+      type: object
+      required: [items, next_cursor]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/PlayRequest' }
+        next_cursor: { type: string, nullable: true }
+
+    # ----- notifications
+    Notification:
+      type: object
+      required: [id, type, actor, is_read, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        type: { $ref: '#/components/schemas/NotificationType' }
+        actor: { $ref: '#/components/schemas/UserSummary' }
+        post_id: { type: string, format: uuid, nullable: true }
+        comment_id: { type: string, format: uuid, nullable: true }
+        play_request_id: { type: string, format: uuid, nullable: true }
+        is_read: { type: boolean }
+        created_at: { type: string, format: date-time }
+    NotificationPage:
+      type: object
+      required: [items, next_cursor]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/Notification' }
+        next_cursor: { type: string, nullable: true }

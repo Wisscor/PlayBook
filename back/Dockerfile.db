@@ -1,0 +1,7 @@
+FROM postgres:16-alpine
+
+ENV POSTGRES_USER=ziko
+ENV POSTGRES_PASSWORD=1234pass
+ENV POSTGRES_DB=my-postgres
+
+EXPOSE 5432
