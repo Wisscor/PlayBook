@@ -21,7 +21,7 @@ export function middleware(request: NextRequest) {
     pathWithoutLocale.startsWith(route),
   );
 
-  const sessionToken = request.cookies.get("user_session")?.value;
+  const sessionToken = request.cookies.get("session_id")?.value;
 
   const isAuthRoute = AUTH_ROUTES.some((route) =>
     pathWithoutLocale.startsWith(route),
