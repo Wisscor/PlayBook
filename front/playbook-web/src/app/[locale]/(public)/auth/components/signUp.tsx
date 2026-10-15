@@ -15,7 +15,7 @@ export const SignUp = () => {
     firstName: "",
     lastName: "",
     username: "",
-    email: "",
+    email: "", 
     password: "",
     confirmPassword: "",
   });
