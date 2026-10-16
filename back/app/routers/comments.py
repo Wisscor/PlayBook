@@ -1,6 +1,6 @@
 import uuid
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Query, Response
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status, Query, Response
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -9,6 +9,7 @@ from app.database.database import get_db
 from app.models import User, Post, Comment
 from app.schemas.comment import CommentCreate, CommentUpdate, CommentResponse
 from app.core.deps import get_curr_user
+from app.realtime.notify import emit_notification
 
 router = APIRouter(
     tags=["Comments"],
@@ -23,6 +24,7 @@ router = APIRouter(
 async def create_comment(
     post_id: uuid.UUID,
     data: CommentCreate,
+    background_tasks: BackgroundTasks,
     curr_user: User = Depends(get_curr_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -36,6 +38,7 @@ async def create_comment(
             detail="Post not found.",
         )
 
+    parent = None
     if data.comment_reply_to_id:
         parent = await db.scalar(
             select(Comment).where(Comment.id == data.comment_reply_to_id)
@@ -59,6 +62,14 @@ async def create_comment(
     )
     db.add(new_comment)
     await db.commit()
+    background_tasks.add_task(
+        emit_notification,
+        event_type="reply" if parent else "comment",
+        actor_id=curr_user.id,
+        target_user_id=parent.user_id if parent else post.user_id,
+        target_id=post.id,
+        target_type="post",
+    )
 
     stmt = (
         select(Comment)
