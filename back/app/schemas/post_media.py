@@ -1,5 +1,5 @@
 from pydantic import BaseModel, ConfigDict
-from typing import Optional
+from typing import Optional, Literal
 import uuid
 
 class PostMediaBase(BaseModel):
@@ -23,3 +23,8 @@ class PostMediaResponse(PostMediaBase):
     model_config = ConfigDict(from_attributes=True)
     id: uuid.UUID
     post_id: uuid.UUID
+
+
+class UploadedMedia(BaseModel):
+    media_url: str
+    media_type: Literal["image", "video"]

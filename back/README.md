@@ -25,6 +25,9 @@ A scalable, modular backend API service built with FastAPI, SQLAlchemy, Docker, 
 
 ```text
 back/
+├── alembic/
+│   ├── versions/
+│   └── env.py
 ├── app/
 │   ├── __init__.py
 │   ├── main.py
@@ -36,9 +39,11 @@ back/
 │   ├── routers/
 │   └── schemas/
 ├── tests/
+├── alembic.ini
 ├── docker-compose.yaml
 ├── Dockerfile.api
 ├── Dockerfile.db
+├── entrypoint.sh
 ├── pyproject.toml
 ├── uv.lock
 ├── README.md
@@ -112,10 +117,10 @@ back/
 
 ### Option A — Full Docker Stack (Recommended)
 
-Build and run both the API and PostgreSQL with Docker Compose:
+Build and run both the API and PostgreSQL with Docker Compose (database migrations run automatically on startup via `entrypoint.sh`):
 
 ```bash
-# Build and start services
+# Build and start services (migrations are applied automatically)
 docker compose up --build -d
 
 # View logs
@@ -136,10 +141,13 @@ docker compose up -d postgres
 # 2. Sync dependencies
 uv sync
 
-# 3. Run API with hot-reload
+# 3. Apply database migrations
+uv run alembic upgrade head
+
+# 4. Run API with hot-reload
 uv run uvicorn app.main:app --reload
 
-# 4. Run tests
+# 5. Run tests
 uv run pytest
 ```
 
@@ -171,4 +179,5 @@ http -v POST localhost:8000/auth/login \
 - [uv Documentation](https://docs.astral.sh/uv/)
 - [FastAPI Documentation](https://fastapi.tiangolo.com/)
 - [SQLAlchemy Documentation](https://docs.sqlalchemy.org/)
+- [Alembic Documentation](https://alembic.sqlalchemy.org/)
 - [Docker Documentation](https://docs.docker.com/)

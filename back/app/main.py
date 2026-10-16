@@ -1,29 +1,37 @@
+import logging
 from contextlib import asynccontextmanager
+from pathlib import Path
 from fastapi import FastAPI
-from .database.database import engine, Base
-from .core.config import settings
-from .routers import auth
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from app.database.database import engine
+from app.database.base import Base
+from app.core.config import settings
 from .realtime import models as realtime_models
 from .realtime import rest as realtime_rest
 from .realtime import ws as realtime_ws
-from .routers import users
-from .routers import post
-from .routers import followers
-import logging
+from app.routers import (
+    auth,
+    users,
+    post,
+    followers,
+    like,
+    comments,
+    sport,
+    match_announcement,
+    play_request,
+)
+from app.models import User, Session
 
-from .logging_conf import setup_logging
+from app.logging_conf import setup_logging
 
 setup_logging()
 logger = logging.getLogger(__name__)
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-
-    async with engine.begin() as connection:  # Create tables if they don't exist
-        await connection.run_sync(Base.metadata.create_all)
-
     yield
-
     await engine.dispose()
 
 
@@ -33,6 +41,18 @@ app = FastAPI(
     debug=settings.debug,
 )
 
+UPLOAD_DIR = Path("uploads")
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+# Mount the uploads directory to serve static files
+app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.cors_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 app.include_router(
     auth.router,
@@ -47,6 +67,21 @@ app.include_router(
 )
 app.include_router(
     followers.router,
+)
+app.include_router(
+    like.router,
+)
+app.include_router(
+    comments.router,
+)
+app.include_router(
+    sport.router,
+)
+app.include_router(
+    match_announcement.router,
+)
+app.include_router(
+    play_request.router,
 )
 
 

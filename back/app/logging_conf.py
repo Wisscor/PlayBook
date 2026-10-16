@@ -1,6 +1,6 @@
 import logging
 import sys
-from pythonjsonlogger import jsonlogger
+from pythonjsonlogger.json import JsonFormatter
 from .core.config import settings
 
 def setup_logging():
@@ -13,7 +13,7 @@ def setup_logging():
     log_handler = logging.StreamHandler(sys.stdout)
 
     # 3. JSON Formatter specifying the fields you want
-    formatter = jsonlogger.JsonFormatter(
+    formatter = JsonFormatter(
         fmt="%(asctime)s %(levelname)s %(name)s %(message)s",
         rename_fields={"levelname": "level", "asctime": "timestamp"},
     )

@@ -7,7 +7,7 @@ from sqlalchemy.orm import (
     relationship,
 )
 
-from app.database.database import Base
+from app.database.base import Base
 
 
 class Session(Base):
