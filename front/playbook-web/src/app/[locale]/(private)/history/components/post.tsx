@@ -4,7 +4,7 @@ import { PlayText } from "@/components/ui/Text";
 
 export interface PostProps {
   post: {
-    id: number;
+    id: string;
     date: string;
     post: string;
     author?: {

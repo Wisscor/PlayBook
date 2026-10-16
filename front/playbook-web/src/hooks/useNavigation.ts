@@ -9,5 +9,6 @@ export const useNavigation = () => {
     goSignUp: () => push("/auth?mode=signup"),
     goSignIn: () => push("/auth?mode=signin"),
     goProfile: () => push("/profile"),
+    goMatchesPosts: () => push("/history?type=all"),
   };
 };

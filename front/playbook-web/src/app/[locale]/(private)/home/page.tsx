@@ -7,7 +7,7 @@ import { MatchModal } from "./components/matchModal";
 import { PostModal } from "./components/postModal";
 
 export const HomePage = () => {
-  const { goProfile } = useNavigation();
+  const { goProfile, goMatchesPosts } = useNavigation();
   const [matchModalOpen, setMatchModalOpen] = React.useState(false);
   const [postModalOpen, setPostModalOpen] = React.useState(false);
   const actions = [
@@ -39,7 +39,9 @@ export const HomePage = () => {
       action: "go-to-matches-posts",
       description: "go-to-matches-posts-description",
       icon: "/icons/view-files.png",
-      onClick: () => {},
+      onClick: () => {
+        goMatchesPosts();
+      },
     },
   ];
   return (
