@@ -2,6 +2,8 @@ from collections import defaultdict
 from uuid import UUID
 from fastapi import WebSocket
 
+from . import frames
+
 _connections: dict[UUID, set[WebSocket]] = defaultdict(set)
 
 def register(user_id: UUID, ws: WebSocket) -> None:
@@ -17,6 +19,19 @@ def connections_for(user_id: UUID) -> set[WebSocket]:
 
 def online_user_ids() -> set[UUID]:
     return set(_connections.keys())
+
+
+async def close_user(user_id: UUID) -> None:
+    for ws in connections_for(user_id):
+        try:
+            await ws.close(
+                code=frames.CLOSE_SESSION_ENDED,
+                reason="session ended",
+            )
+        except Exception:
+            pass
+        finally:
+            unregister(user_id, ws)
 
 
 async def send_to_user(user_id: UUID, payload: dict) -> int:
