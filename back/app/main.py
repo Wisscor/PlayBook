@@ -33,6 +33,13 @@ logger = structlog.get_logger()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    try:
+        # Create database tables if they don't exist
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+    except Exception as e:
+        logger.error("Failed to create database tables", error_type=type(e).__name__, exc_info=True)
+        raise e
     yield
     await engine.dispose()
 
