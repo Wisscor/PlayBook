@@ -1,4 +1,5 @@
 "use client";
+
 import { PlayInput } from "@/components/ui/Input";
 import { PlayText } from "@/components/ui/Text";
 import Image from "next/image";
@@ -55,7 +56,6 @@ export const ProfilePageContent: React.FC<{
   useEffect(() => {
     if (user?.username) {
       setUpdatedInfos({
-        ...updatedInfos,
         username: user.username,
         firstname: user.firstname,
         lastname: user.lastname,
@@ -67,94 +67,104 @@ export const ProfilePageContent: React.FC<{
 
   if (!user) {
     return (
-      <div className="flex flex-col min-h-screen justify-center items-center py-8">
+      <div className="flex flex-col min-h-[calc(100vh-140px)] justify-center items-center py-8">
         <PlayText.Primary
           id="login-to-see"
-          className="text-black text-center align-middle"
+          className="text-lg font-medium text-slate-300 text-center"
         />
       </div>
     );
   }
+
   return (
-    <div className="flex flex-col min-h-screen bg-white100 p-4 lg:px-30 justify-center items-center py-8 gap-4">
-      <div className="flex flex-col gap-8 bg-white rounded-xl shadow-2xl w-full lg:w-1/2 px-6 py-4 ">
-        <div className="flex flex-col gap-2 items-center relative ">
-          <div className="bg-extra rounded-xl h-12 absolute w-full " />
-          <div className="mt-4 bg-white rounded-full p-1 z-10">
-            <div className="flex flex-col items-center gap-4 rounded-full bg-primary p-4  ">
-              <PlayText.Primary
-                className="text-black text-xl"
-                content={`${user.firstname.charAt(0).toUpperCase()}  ${user.lastname.charAt(0).toUpperCase()}`}
-              />
-            </div>
+    <div className="flex flex-col min-h-[calc(100vh-140px)] bg-slate-950 p-4 sm:p-8 lg:px-30 justify-center items-center py-8 sm:py-12 gap-8 text-white">
+      <div className="relative flex flex-col gap-8 rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl shadow-2xl w-full max-w-2xl px-4 sm:px-10 py-8 overflow-hidden">
+        <div className="absolute top-0 left-0 right-0 h-24 bg-linear-to-r from-secondary/40 via-extra/30 to-primary/40 backdrop-blur-md" />
+
+        <div className="relative z-10 flex flex-col gap-4 items-center pt-8">
+          <div className="flex flex-col items-center justify-center rounded-full border-4 border-slate-950 bg-white/10 p-5 shadow-xl backdrop-blur-md">
+            <PlayText.Primary
+              className="text-2xl font-extrabold text-white"
+              content={`${user.firstname.charAt(0).toUpperCase()}${user.lastname.charAt(0).toUpperCase()}`}
+            />
           </div>
-          <div className="flex gap-2 items-center">
-            {editing.username ? (
-              <PlayInput.Primary
-                onChange={(e) => {
-                  setUpdatedInfos({
-                    ...updatedInfos,
-                    username: e.target.value,
-                  });
-                }}
-                placeholder="username"
-                value={updatedInfos.username}
-                className=" py-2  text-sm bg-gray/10 text-black"
-              />
-            ) : (
-              <PlayText.Primary
-                className="text-black text-xl"
-                content={`${updatedInfos.username}`}
-              />
-            )}
+
+          <div className="flex items-center justify-center gap-2.5 w-full max-w-xs">
+            <div className="flex-1 min-w-0 text-center">
+              {editing.username ? (
+                <PlayInput.Primary
+                  onChange={(e) =>
+                    setUpdatedInfos({
+                      ...updatedInfos,
+                      username: e.target.value,
+                    })
+                  }
+                  placeholder="username"
+                  value={updatedInfos.username}
+                  className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-white backdrop-blur-md focus:border-white/30 focus:outline-none"
+                />
+              ) : (
+                <PlayText.Primary
+                  className="text-lg sm:text-xl font-bold text-white tracking-tight truncate"
+                  content={`@${updatedInfos.username}`}
+                />
+              )}
+            </div>
 
             <button
+              type="button"
               onClick={() => {
-                if (editing.username) {
-                  if (updatedInfos.username.trim() === "") {
-                    alert("Username cannot be empty.");
-                    return;
-                  }
+                if (editing.username && updatedInfos.username.trim() === "") {
+                  alert("Username cannot be empty.");
+                  return;
                 }
                 setEditing({ ...editing, username: !editing.username });
               }}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white transition-all cursor-pointer active:scale-95"
             >
               <Image
                 alt="edit"
-                src={"/icons/edit.png"}
-                width={18}
-                height={18}
+                src="/icons/edit.png"
+                width={16}
+                height={16}
+                className="opacity-80 invert shrink-0"
               />
             </button>
           </div>
 
-          <div className="flex gap-2 items-center">
-            {editing.email ? (
-              <PlayInput.Primary
-                onChange={(e) => {
-                  setUpdatedInfos({
-                    ...updatedInfos,
-                    email: e.target.value,
-                  });
-                }}
-                placeholder="email"
-                value={updatedInfos.email}
-                className=" py-2  text-sm bg-gray/10 text-black "
-              />
-            ) : (
-              <PlayText.Primary
-                className={`${updatedInfos.email.length != 0 ? "text-gray" : "text-warning"} text-lg`}
-                content={`${updatedInfos.email ? updatedInfos.email : t("not-set")}`}
-              />
-            )}
+          <div className="flex items-center justify-center gap-2.5 w-full max-w-xs">
+            <div className="flex-1 min-w-0 text-center">
+              {editing.email ? (
+                <PlayInput.Primary
+                  onChange={(e) =>
+                    setUpdatedInfos({ ...updatedInfos, email: e.target.value })
+                  }
+                  placeholder="email"
+                  value={updatedInfos.email}
+                  className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-white backdrop-blur-md focus:border-white/30 focus:outline-none"
+                />
+              ) : (
+                <PlayText.Primary
+                  className={`text-xs sm:text-sm font-medium truncate ${
+                    updatedInfos.email.length !== 0
+                      ? "text-slate-300"
+                      : "text-amber-400"
+                  }`}
+                  content={
+                    updatedInfos.email ? updatedInfos.email : t("not-set")
+                  }
+                />
+              )}
+            </div>
+
             <button
+              type="button"
               onClick={() => {
                 if (editing.email) {
                   if (updatedInfos.email.trim() === "") {
                     alert("Email cannot be empty.");
                     return;
                   }
-
                   if (!isEmailValid(updatedInfos.email.trim())) {
                     alert("Email Invalid.");
                     return;
@@ -162,35 +172,32 @@ export const ProfilePageContent: React.FC<{
                 }
                 setEditing({ ...editing, email: !editing.email });
               }}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white transition-all cursor-pointer active:scale-95"
             >
               <Image
                 alt="edit"
-                src={"/icons/edit.png"}
-                width={18}
-                height={18}
+                src="/icons/edit.png"
+                width={16}
+                height={16}
+                className="opacity-80 invert shrink-0"
               />
             </button>
           </div>
         </div>
 
-        <div className="w-full flex flex-col gap-4">
+        <div className="relative z-10 w-full flex flex-col gap-4 pt-4 border-t border-white/10">
           <Info
             placeholder="firstname"
             isEditing={editing.firstname}
-            updateValue={(v) => {
-              setUpdatedInfos({
-                ...updatedInfos,
-                firstname: v,
-              });
-            }}
+            updateValue={(v) =>
+              setUpdatedInfos({ ...updatedInfos, firstname: v })
+            }
             label="firstname-label"
             value={updatedInfos.firstname}
             onClick={() => {
-              if (editing.firstname) {
-                if (updatedInfos.firstname.trim() === "") {
-                  alert("Firstname cannot be empty.");
-                  return;
-                }
+              if (editing.firstname && updatedInfos.firstname.trim() === "") {
+                alert("Firstname cannot be empty.");
+                return;
               }
               setEditing({ ...editing, firstname: !editing.firstname });
             }}
@@ -198,20 +205,15 @@ export const ProfilePageContent: React.FC<{
           <Info
             placeholder="lastname"
             isEditing={editing.lastname}
-            updateValue={(v) => {
-              setUpdatedInfos({
-                ...updatedInfos,
-                lastname: v,
-              });
-            }}
+            updateValue={(v) =>
+              setUpdatedInfos({ ...updatedInfos, lastname: v })
+            }
             label="lastname-label"
             value={updatedInfos.lastname}
             onClick={() => {
-              if (editing.lastname) {
-                if (updatedInfos.lastname.trim() === "") {
-                  alert("Lastname cannot be empty.");
-                  return;
-                }
+              if (editing.lastname && updatedInfos.lastname.trim() === "") {
+                alert("Lastname cannot be empty.");
+                return;
               }
               setEditing({ ...editing, lastname: !editing.lastname });
             }}
@@ -219,36 +221,33 @@ export const ProfilePageContent: React.FC<{
           <Info
             placeholder="bio"
             isEditing={editing.bio}
-            updateValue={(v) => {
-              setUpdatedInfos({
-                ...updatedInfos,
-                bio: v,
-              });
-            }}
+            updateValue={(v) => setUpdatedInfos({ ...updatedInfos, bio: v })}
             label="bio-label"
             value={updatedInfos.bio}
-            onClick={() => {
-              setEditing({ ...editing, bio: !editing.bio });
-            }}
+            onClick={() => setEditing({ ...editing, bio: !editing.bio })}
           />
         </div>
       </div>
-      {isSomethingChanged() && (
-        <PlayButton.Primary
-          title="update-infos"
-          className="w-fit px-6 py-4 bg-primary"
-          textClassName="text-white"
-          onClick={() => {
-            Cookies.set("user_session", JSON.stringify(updatedInfos), {
-              expires: 2 / 24,
-              secure: true,
-              sameSite: "strict",
-            });
 
-            window.location.reload();
-          }}
-        />
+      {isSomethingChanged() && (
+        <div className="fixed bottom-6 z-40 animate-bounce">
+          <PlayButton.Primary
+            title="update-infos"
+            className="rounded-2xl bg-white px-8 py-3.5 shadow-2xl shadow-white/20 hover:bg-slate-100 transition-all font-semibold text-slate-950 cursor-pointer"
+            onClick={() => {
+              Cookies.set("user_session", JSON.stringify(updatedInfos), {
+                expires: 2 / 24,
+                secure: true,
+                sameSite: "strict",
+              });
+
+              window.location.reload();
+            }}
+          />
+        </div>
       )}
     </div>
   );
 };
+
+export default ProfilePageContent;
