@@ -1,16 +1,18 @@
+"use client";
+
 import { PlayButton } from "@/components/ui/Button";
 import { DateTimeRangePicker } from "@/components/ui/Datepicker";
 import { PlayInput } from "@/components/ui/Input";
 import { PlayList } from "@/components/ui/List";
 import { PlayModal } from "@/components/ui/Modal";
 import { useTranslations } from "next-intl";
-import React from "react";
+import React, { useState } from "react";
 
 export const MatchModal: React.FC<{
   close: () => void;
   isOpen: boolean;
 }> = ({ close, isOpen }) => {
-  const [matchInfos, setMatchInfos] = React.useState({
+  const [matchInfos, setMatchInfos] = useState({
     matchname: "",
     matchType: "",
     playerNbr: "",
@@ -20,13 +22,13 @@ export const MatchModal: React.FC<{
   });
   const t = useTranslations();
 
-  const [matchTypeOpen, setMatchTypeOpen] = React.useState(false);
-  const [playerNbrOpen, setPlayerNbrOpen] = React.useState(false);
-  const [error, setError] = React.useState(false);
+  const [matchTypeOpen, setMatchTypeOpen] = useState(false);
+  const [playerNbrOpen, setPlayerNbrOpen] = useState(false);
+  const [error, setError] = useState(false);
 
   const matchTypes = [
     {
-      name: "Baskteball",
+      name: "Basketball",
       nbrOfPlayersPerTeam: 5,
     },
     {
@@ -35,30 +37,24 @@ export const MatchModal: React.FC<{
     },
   ];
 
+  const isFormComplete = !Object.values(matchInfos).includes("") && !error;
+
   return (
-    <PlayModal.Primary
-      title="create-match"
-      isOpen={isOpen}
-      close={() => {
-        close();
-      }}
-    >
-      <>
-        <div className="flex flex-col gap-4">
+    <PlayModal.Primary title="create-match" isOpen={isOpen} close={close}>
+      <div className="flex flex-col gap-5 p-1">
+        <div className="space-y-4">
           <PlayInput.Primary
             onChange={(e) =>
               setMatchInfos({ ...matchInfos, matchname: e.target.value })
             }
             placeholder="match-name"
             value={matchInfos.matchname}
-            className="bg-primary/20 py-2 text-sm placeholder:text-gray text-black"
+            className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-slate-400 backdrop-blur-md focus:border-white/30 focus:outline-none transition-all"
           />
 
           <PlayList.Primary
             value="name"
-            toggle={() => {
-              setMatchTypeOpen(!matchTypeOpen);
-            }}
+            toggle={() => setMatchTypeOpen(!matchTypeOpen)}
             isOpen={matchTypeOpen}
             items={matchTypes}
             text={
@@ -78,9 +74,7 @@ export const MatchModal: React.FC<{
 
           {matchInfos.matchType.length > 0 && (
             <PlayList.Primary
-              toggle={() => {
-                setPlayerNbrOpen(!playerNbrOpen);
-              }}
+              toggle={() => setPlayerNbrOpen(!playerNbrOpen)}
               isOpen={playerNbrOpen}
               items={Array.from(
                 {
@@ -107,44 +101,36 @@ export const MatchModal: React.FC<{
           )}
 
           {matchInfos.playerNbr.length > 0 && (
-            <DateTimeRangePicker
-              onError={(error) => setError(error)}
-              date={matchInfos.date}
-              startTime={matchInfos.startTime}
-              endTime={matchInfos.endTime}
-              changeDate={(date) => {
-                setMatchInfos({
-                  ...matchInfos,
-                  date: date,
-                });
-              }}
-              changeStartTime={(startTime) => {
-                setMatchInfos({
-                  ...matchInfos,
-                  startTime: startTime,
-                });
-              }}
-              changeEndTime={(endTime) => {
-                setMatchInfos({
-                  ...matchInfos,
-                  endTime: endTime,
-                });
-              }}
-            />
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-md">
+              <DateTimeRangePicker
+                onError={(err) => setError(err)}
+                date={matchInfos.date}
+                startTime={matchInfos.startTime}
+                endTime={matchInfos.endTime}
+                changeDate={(date) => setMatchInfos({ ...matchInfos, date })}
+                changeStartTime={(startTime) =>
+                  setMatchInfos({ ...matchInfos, startTime })
+                }
+                changeEndTime={(endTime) =>
+                  setMatchInfos({ ...matchInfos, endTime })
+                }
+              />
+            </div>
           )}
         </div>
 
-        {!Object.values(matchInfos).includes("") && !error && (
-          <PlayButton.Primary
-            onClick={() => {
-              close();
-            }}
-            title="create-match"
-            className="bg-primary"
-            textClassName="text-white"
-          />
+        {isFormComplete && (
+          <div className="pt-2">
+            <PlayButton.Primary
+              onClick={close}
+              title="create-match"
+              className="w-full rounded-2xl bg-white py-3.5 shadow-lg shadow-white/5 hover:bg-slate-100 transition-all font-semibold text-slate-950"
+            />
+          </div>
         )}
-      </>
+      </div>
     </PlayModal.Primary>
   );
 };
+
+export default MatchModal;

@@ -7,17 +7,18 @@ import SignUp from "./components/signUp";
 
 export const AuthPage = () => {
   const searchParams = useSearchParams();
-
   const mode = searchParams.get("mode") ?? "signin";
 
   return (
-    <div className=" bg-[url('/images/bg-app.png')] bg-cover bg-no-repeat bg-center   flex-col flex-1 flex h-screen lg:px-30 lg:py-20   ">
-      <main className="flex-1 justify-between flex flex-col  ">
-        <div className="px-10 lg:px-0 py-11 lg:py-0">
+    <div className="relative flex min-h-screen flex-col overflow-hidden bg-linear-to-b from-secondary via-extra to-primary px-6 py-8 md:px-12 lg:px-20 lg:py-12">
+      <main className="relative z-10 flex flex-1 flex-col justify-between">
+        <div className="w-full">
           <Header />
         </div>
 
-        {mode === "signin" ? <SignIn /> : <SignUp />}
+        <div className="flex flex-1 items-center justify-center py-8">
+          {mode === "signin" ? <SignIn /> : <SignUp />}
+        </div>
       </main>
     </div>
   );

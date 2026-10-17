@@ -1,63 +1,69 @@
 "use client";
 
-import { useResize } from "@/hooks/contexts/resizeContext";
 import Image from "next/image";
 import React, { useState } from "react";
 import { LanguageSwitcher } from "./languageSwitcher";
 import { languages } from "@/lib/constants";
 import { useLocale } from "next-intl";
 
-export const Header: React.FC<{}> = ({}) => {
-  const { windowWidth } = useResize();
+export const Header: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const locale = useLocale();
 
-  return (
-    <div className={"flex relative flex-row justify-between items-center "}>
-      <Image
-        loading="eager"
-        alt="app-logo"
-        src={
-          windowWidth < 1024
-            ? "/logos/app-logo.png"
-            : "/logos/app-logo-dark.png"
-        }
-        width={128}
-        height={36}
-      />
+  const currentLang = languages.find((lang) => lang.value === locale);
 
-      <button
-        type="button"
-        onClick={() => {
-          setIsOpen(!isOpen);
-        }}
-        className={`bg-white/20 lg:bg-primary/20 rounded-t-xl ${!isOpen && "rounded-b-xl"} transition-all ease-in-out duration-150 py-2 px-3 cursor-pointer relative`}
-      >
-        <div className="flex flex-row gap-3 items-center">
-          <Image
-            loading="eager"
-            alt="flag"
-            src={languages.find((lang) => lang.value === locale)?.flag || ""}
-            width={32}
-            height={20}
-            className="rounded-lg"
-          />
+  return (
+    <header className="relative flex flex-row items-center justify-between">
+      <div className="relative h-9 w-32">
+        <Image
+          loading="eager"
+          alt="app-logo-dark"
+          src="/logos/app-logo.png"
+          fill
+          className="object-contain hidden lg:block"
+        />
+      </div>
+
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => setIsOpen(!isOpen)}
+          className={`flex items-center gap-3 bg-white/10 hover:bg-white/20 lg:bg-primary/20 lg:hover:bg-primary/30 px-3.5 py-2 transition-all duration-200 cursor-pointer border border-white/10 backdrop-blur-md ${
+            isOpen ? "rounded-t-xl" : "rounded-xl"
+          }`}
+        >
+          {currentLang?.flag && (
+            <Image
+              loading="eager"
+              alt="flag"
+              src={currentLang.flag}
+              width={24}
+              height={16}
+              className="rounded-md object-cover shadow-sm"
+            />
+          )}
 
           <Image
             loading="eager"
             alt="arrow-down"
-            src={"/icons/arrow-down.png"}
-            width={12}
-            height={12}
+            src="/icons/arrow-down.png"
+            width={10}
+            height={10}
+            className={`transition-transform duration-200 ${
+              isOpen ? "rotate-180" : ""
+            }`}
           />
-        </div>
-      </button>
-      <LanguageSwitcher
-        isOpen={isOpen}
-        changeLanguage={(lang) => {
-          setIsOpen(!isOpen);
-        }}
-      />
-    </div>
+        </button>
+
+        <LanguageSwitcher
+          isOpen={isOpen}
+          changeLanguage={() => {
+            setIsOpen(false);
+          }}
+        />
+      </div>
+    </header>
   );
 };
+
+export default Header;

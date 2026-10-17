@@ -1,43 +1,51 @@
+"use client";
+
 import { PlayButton } from "@/components/ui/Button";
 import { PlayInput } from "@/components/ui/Input";
 import { PlayModal } from "@/components/ui/Modal";
-import React from "react";
+import React, { useState } from "react";
 
 export const PostModal: React.FC<{
   close: () => void;
   isOpen: boolean;
 }> = ({ close, isOpen }) => {
-  const [postText, setPostText] = React.useState<string | undefined>(undefined);
+  const [postText, setPostText] = useState<string>("");
+
+  const handleCreatePost = () => {
+    if (!postText.trim()) return;
+    close();
+  };
 
   return (
-    <PlayModal.Primary
-      isOpen={isOpen}
-      close={() => {
-        close();
-      }}
-      title="create-post"
-    >
-      <>
-        <div className="flex flex-col gap-4">
+    <PlayModal.Primary isOpen={isOpen} close={close} title="create-post">
+      <div className="flex flex-col gap-6 pt-1">
+        <div className="relative flex flex-col gap-2">
           <PlayInput.Area
             onChange={(e) => setPostText(e.target.value)}
             placeholder="your-post"
-            value={postText ?? ""}
-            className="bg-primary/20 py-2 text-sm placeholder:text-gray text-black"
+            value={postText}
+            className="w-full min-h-35 rounded-2xl border border-white/10 bg-white/5 p-4 text-base text-white placeholder-slate-400 backdrop-blur-md focus:border-white/30 focus:outline-none transition-all resize-none"
           />
+
+          <div className="flex justify-end">
+            <span className="text-xs text-slate-400">
+              {postText.length} characters
+            </span>
+          </div>
         </div>
 
-        {postText && (
-          <PlayButton.Primary
-            onClick={() => {
-              close();
-            }}
-            title="create-post"
-            className="bg-primary"
-            textClassName="text-white"
-          />
+        {postText.trim().length > 0 && (
+          <div className="pt-2">
+            <PlayButton.Primary
+              onClick={handleCreatePost}
+              title="create-post"
+              className="w-full rounded-2xl bg-white py-3.5 shadow-lg shadow-white/5 hover:bg-slate-100 transition-all font-semibold text-slate-950"
+            />
+          </div>
         )}
-      </>
+      </div>
     </PlayModal.Primary>
   );
 };
+
+export default PostModal;
