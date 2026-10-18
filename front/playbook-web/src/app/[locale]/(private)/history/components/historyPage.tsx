@@ -7,6 +7,8 @@ import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import React from "react";
 import { MatchesSection } from "./matchesSection";
 import { PostsSection } from "./postsSection";
+import { PlayButton } from "@/components/ui/Button";
+import { useTranslations } from "next-intl";
 
 export const HistoryPageContent: React.FC<{
   sessionCookie: RequestCookie | undefined;
@@ -14,6 +16,7 @@ export const HistoryPageContent: React.FC<{
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
+  const t = useTranslations();
 
   const type = searchParams.get("type") ?? "matches";
 
@@ -30,7 +33,7 @@ export const HistoryPageContent: React.FC<{
   const handleTabChange = (newType: string) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set("type", newType);
-    router.replace(`${pathname}?rel=${params.toString()}`); // or router.replace(`${pathname}?${params.toString()}`) depending on your i18n router
+    router.replace(`${pathname}?rel=${params.toString()}`);
   };
 
   if (!user) {
@@ -66,7 +69,7 @@ export const HistoryPageContent: React.FC<{
                 : "text-slate-400 hover:text-white"
             }`}
           >
-            Matches
+            {t("matches")}
           </button>
           <button
             type="button"
@@ -81,7 +84,7 @@ export const HistoryPageContent: React.FC<{
                 : "text-slate-400 hover:text-white"
             }`}
           >
-            Posts
+            {t("posts")}
           </button>
         </div>
       </div>
@@ -92,5 +95,3 @@ export const HistoryPageContent: React.FC<{
     </div>
   );
 };
-
-export default HistoryPageContent;

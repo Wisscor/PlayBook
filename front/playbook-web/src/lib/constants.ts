@@ -25,6 +25,7 @@ export const ROUTES = {
   SIGNUP: "/auth?mode=signup",
   POSTS: "/history?type=posts",
   MATCHES: "/history?type=matches",
+  EDIT_PROFILE: "/edit-profile",
   PROFILE: "/profile",
   HOME: "/home",
 } as const;

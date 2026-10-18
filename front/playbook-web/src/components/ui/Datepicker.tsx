@@ -183,5 +183,3 @@ export const DateTimeRangePicker: React.FC<{
     </div>
   );
 };
-
-export default DateTimeRangePicker;

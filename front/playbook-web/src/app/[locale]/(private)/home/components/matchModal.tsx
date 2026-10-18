@@ -3,54 +3,101 @@
 import { PlayButton } from "@/components/ui/Button";
 import { DateTimeRangePicker } from "@/components/ui/Datepicker";
 import { PlayInput } from "@/components/ui/Input";
+import { PlayLabel } from "@/components/ui/Label";
 import { PlayList } from "@/components/ui/List";
 import { PlayModal } from "@/components/ui/Modal";
 import { useTranslations } from "next-intl";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
-export const MatchModal: React.FC<{
+interface MatchData {
+  id?: number;
+  matchname: string;
+  matchType: string;
+  playerNbr: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  status?: string;
+}
+
+interface MatchModalProps {
   close: () => void;
   isOpen: boolean;
-}> = ({ close, isOpen }) => {
-  const [matchInfos, setMatchInfos] = useState({
+  initialData?: MatchData | null;
+  onSave: (data: MatchData) => void;
+}
+
+export const MatchModal: React.FC<MatchModalProps> = ({
+  close,
+  isOpen,
+  initialData,
+  onSave,
+}) => {
+  const t = useTranslations();
+
+  const [matchInfos, setMatchInfos] = useState<MatchData>({
     matchname: "",
     matchType: "",
     playerNbr: "",
     date: "",
     startTime: "09:00",
     endTime: "10:00",
+    status: "Upcoming",
   });
-  const t = useTranslations();
+
+  useEffect(() => {
+    if (initialData) {
+      setMatchInfos(initialData);
+    } else {
+      setMatchInfos({
+        matchname: "",
+        matchType: "",
+        playerNbr: "",
+        date: "",
+        startTime: "09:00",
+        endTime: "10:00",
+        status: "Upcoming",
+      });
+    }
+  }, [initialData, isOpen]);
 
   const [matchTypeOpen, setMatchTypeOpen] = useState(false);
   const [playerNbrOpen, setPlayerNbrOpen] = useState(false);
   const [error, setError] = useState(false);
 
   const matchTypes = [
-    {
-      name: "Basketball",
-      nbrOfPlayersPerTeam: 5,
-    },
-    {
-      name: "Football",
-      nbrOfPlayersPerTeam: 11,
-    },
+    { name: "Basketball", nbrOfPlayersPerTeam: 5 },
+    { name: "Football", nbrOfPlayersPerTeam: 11 },
   ];
 
-  const isFormComplete = !Object.values(matchInfos).includes("") && !error;
+  const isFormComplete =
+    !Object.values(matchInfos).some((val) => val === "") && !error;
+
+  const handleFormSubmit = () => {
+    onSave(matchInfos);
+    close();
+  };
+
+  const isEditing = Boolean(initialData?.id !== undefined);
 
   return (
-    <PlayModal.Primary title="create-match" isOpen={isOpen} close={close}>
+    <PlayModal.Primary
+      title={isEditing ? "edit-match" : "create-match"}
+      isOpen={isOpen}
+      close={close}
+    >
       <div className="flex flex-col gap-5 p-1">
         <div className="space-y-4">
-          <PlayInput.Primary
-            onChange={(e) =>
-              setMatchInfos({ ...matchInfos, matchname: e.target.value })
-            }
-            placeholder="match-name"
-            value={matchInfos.matchname}
-            className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-slate-400 backdrop-blur-md focus:border-white/30 focus:outline-none transition-all"
-          />
+          <PlayLabel.Primary>
+            <PlayInput.Primary
+              onChange={(e) =>
+                setMatchInfos({ ...matchInfos, matchname: e.target.value })
+              }
+              placeholder="match-name"
+              value={matchInfos.matchname}
+              className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-slate-400 backdrop-blur-md focus:border-white/30 focus:outline-none transition-all"
+            />
+          </PlayLabel.Primary>
 
           <PlayList.Primary
             value="name"
@@ -122,9 +169,9 @@ export const MatchModal: React.FC<{
         {isFormComplete && (
           <div className="pt-2">
             <PlayButton.Primary
-              onClick={close}
-              title="create-match"
-              className="w-full rounded-2xl bg-white py-3.5 shadow-lg shadow-white/5 hover:bg-slate-100 transition-all font-semibold text-slate-950"
+              onClick={handleFormSubmit}
+              title={isEditing ? "save-changes" : "create-match"}
+              className="w-full rounded-2xl bg-white py-3.5 shadow-lg shadow-white/5 hover:bg-slate-100 transition-all font-semibold text-slate-950 cursor-pointer"
             />
           </div>
         )}

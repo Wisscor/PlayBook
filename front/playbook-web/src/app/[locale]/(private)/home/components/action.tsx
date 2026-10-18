@@ -38,5 +38,3 @@ export const Action: FC<{
     </button>
   );
 };
-
-export default Action;

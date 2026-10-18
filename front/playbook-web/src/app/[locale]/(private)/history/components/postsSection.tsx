@@ -3,8 +3,10 @@
 import { PlayText } from "@/components/ui/Text";
 import React, { useState } from "react";
 import { Post } from "./post";
+import { useTranslations } from "next-intl";
 
 export const PostsSection: React.FC = () => {
+  const t = useTranslations();
   const [posts, setPosts] = useState([
     {
       id: 0,
@@ -33,9 +35,15 @@ export const PostsSection: React.FC = () => {
           id="my-posts"
           className="text-xl font-bold tracking-tight text-white"
         />
-        <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-slate-400">
-          {posts.length} {posts.length === 1 ? "Post" : "Posts"}
-        </span>
+        <PlayText.Span
+          texts={[
+            {
+              content: `${posts.length} ${posts.length === 1 ? t("post") : t("posts")}`,
+              className:
+                "rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-slate-400",
+            },
+          ]}
+        />
       </div>
 
       <div>
@@ -62,5 +70,3 @@ export const PostsSection: React.FC = () => {
     </div>
   );
 };
-
-export default PostsSection;

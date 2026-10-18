@@ -61,5 +61,22 @@
   "delete": "Supprimer",
   "edit": "Modifier",
   "no-posts": "Vous n'avez pas encore de publications. Créez-en une pour commencer !",
-  "no-matches": "Vous n'avez pas encore de matches. Créez-en un pour commencer !"
+  "no-matches": "Vous n'avez pas encore de matches. Créez-en un pour commencer !",
+  "profile": "Profil",
+  "about-me": "À propos",
+  "details": "étails",
+  "name-label": "Nom :",
+  "username-label": "Nom d'utilisateur :",
+  "email-label": "Email :",
+  "edit-profile": "Modifier le profil",
+  "matches": "Matches",
+  "posts": "Publications",
+  "match-type": "Type de match",
+  "nbr-players": "Nombre de joueurs",
+  "save-changes": "Enregistrer les modifications",
+  "edit-match": "Modifier le match",
+  "match": "Match",
+  "time-label": "Heure :",
+  "players-label": "Joueurs :",
+  "post": "Publication"
 }
