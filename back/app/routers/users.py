@@ -1,4 +1,5 @@
 import uuid
+from pathlib import Path
 from typing import Optional, List
 from fastapi import (
     APIRouter,
@@ -7,8 +8,10 @@ from fastapi import (
     Response,
     Query,
     status,
+    File,
+    UploadFile,
 )
-from sqlalchemy import select, func, or_, and_, tuple_
+from sqlalchemy import select, func, or_, and_
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 from http import HTTPStatus
@@ -28,12 +31,19 @@ from ..schemas.user import (
 from ..schemas.post import PostPage
 from .post import _enrich_posts
 from app.core.deps import get_curr_user
-from app.core.pagination import encode_cursor, decode_cursor
 
 router = APIRouter(
     prefix="/users",
     tags=["Users"],
 )
+
+UPLOAD_DIR = Path("uploads")
+AVATAR_TYPES = {
+    "image/jpeg": ".jpg",
+    "image/png": ".png",
+    "image/webp": ".webp",
+}
+MAX_AVATAR_SIZE = 5 * 1024 * 1024
 
 
 @router.get(
@@ -66,9 +76,14 @@ async def get_my_profile(
         or 0
     )
 
-    posts_count = await db.scalar(
-        select(func.count()).select_from(Post).where(Post.user_id == curr_user.id)
-    ) or 0
+    posts_count = (
+        await db.scalar(
+            select(func.count())
+            .select_from(Post)
+            .where(Post.user_id == curr_user.id)
+        )
+        or 0
+    )
 
     profile = UserProfileResponse.model_validate(curr_user)
     profile.followers_count = followers_count
@@ -97,6 +112,55 @@ async def update(
 
     await db.commit()
     await db.refresh(curr_user)
+    return curr_user
+
+
+@router.post(
+    path="/me/avatar",
+    status_code=HTTPStatus.OK,
+    response_model=UserResponse,
+)
+async def upload_avatar(
+    file: UploadFile = File(...),
+    curr_user: User = Depends(get_curr_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Replace the current user's avatar with an image up to 5 MB."""
+    content_type = (file.content_type or "").lower()
+    extension = AVATAR_TYPES.get(content_type)
+    if extension is None:
+        raise HTTPException(
+            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            detail="Avatar must be a JPEG, PNG, or WebP image",
+        )
+
+    UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+    filename = f"{uuid.uuid4().hex}{extension}"
+    filepath = UPLOAD_DIR / filename
+    size = 0
+    old_avatar = curr_user.avatar
+
+    try:
+        with filepath.open("wb") as destination:
+            while chunk := await file.read(1024 * 64):
+                size += len(chunk)
+                if size > MAX_AVATAR_SIZE:
+                    raise HTTPException(
+                        status_code=status.HTTP_413_CONTENT_TOO_LARGE,
+                        detail="Avatar file too large; maximum size is 5 MB",
+                    )
+                destination.write(chunk)
+
+        curr_user.avatar = f"/uploads/{filename}"
+        await db.commit()
+        await db.refresh(curr_user)
+    except Exception:
+        filepath.unlink(missing_ok=True)
+        raise
+
+    if old_avatar and old_avatar.startswith("/uploads/"):
+        Path(old_avatar.removeprefix("/uploads/")).unlink(missing_ok=True)
+
     return curr_user
 
 
@@ -190,10 +254,12 @@ async def get_user(
     # )
 
     is_following_edge = await db.scalar(
-        select(Follower).where(and_(
-            Follower.follower_id == curr_user.id,
-            Follower.following_id == user_id,
-        ))
+        select(Follower).where(
+            and_(
+                Follower.follower_id == curr_user.id,
+                Follower.following_id == user_id,
+            )
+        )
     )
     is_following = is_following_edge is not None
 
@@ -213,12 +279,12 @@ async def get_user(
 async def list_user_posts(
     user_id: uuid.UUID,
     limit: int = Query(default=20, ge=1, le=100),
-    cursor: Optional[str] = None,
+    offset: int = Query(default=0, ge=0),
     curr_user: Optional[User] = Depends(get_curr_user),
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Retrieve posts authored by a user (newest first) with keyset cursor pagination.
+    Retrieve posts authored by a user (newest first) with offset pagination.
     """
     if await db.get(User, user_id) is None:
         raise HTTPException(
@@ -232,15 +298,11 @@ async def list_user_posts(
         .where(Post.user_id == user_id)
         .order_by(Post.created_at.desc(), Post.id.desc())
     )
-    if cursor:
-        ts, cursor_id = decode_cursor(cursor)
-        stmt = stmt.where(tuple_(Post.created_at, Post.id) < tuple_(ts, cursor_id))
-
-    rows = list((await db.scalars(stmt.limit(limit + 1))).all())
-    next_cursor = None
+    rows = list((await db.scalars(stmt.offset(offset).limit(limit + 1))).all())
+    next_offset = None
     if len(rows) > limit:
         rows = rows[:limit]
-        next_cursor = encode_cursor(rows[-1].created_at, rows[-1].id)
+        next_offset = offset + limit
 
     enriched = await _enrich_posts(rows, curr_user, db)
-    return PostPage(items=enriched, next_cursor=next_cursor)
+    return PostPage(items=enriched, next_offset=next_offset)
