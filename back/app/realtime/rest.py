@@ -12,6 +12,8 @@ from .models import Message
 
 router = APIRouter(prefix="/realtime", tags=["realtime"])
 
+
+
 @router.post("/conversations")
 async def create_conversation(
     body: ConversationCreate,
@@ -34,12 +36,15 @@ async def create_conversation(
 
     return {"id": conversation.id, "peer_id": body.peer_id}
 
+
+
 @router.get("/conversations")
 async def list_conversations(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_curr_user),
 ):
     return await service.list_conversations(db, current_user.id)
+
 
 
 @router.get("/conversations/{conversation_id}/messages")
@@ -72,6 +77,8 @@ async def get_messages(
     }
 
 
+
+
 @router.get("/notifications")
 async def list_notifications(
     unread_only: bool = False,
@@ -85,6 +92,8 @@ async def list_notifications(
         ),
         "unread_count": await service.get_unread_count(db, current_user.id),
     }
+
+
 
 
 @router.post("/notifications/read")

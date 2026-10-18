@@ -13,7 +13,6 @@ async def emit_notification(
     actor_id: uuid.UUID,
     target_user_id: uuid.UUID,
     target_id: uuid.UUID | None = None,
-    target_type: str | None = None,
 ) -> None:
     try:
         if actor_id == target_user_id:
@@ -21,12 +20,12 @@ async def emit_notification(
 
         async with session_maker() as db:
             if await service.unread_duplicate_exists(
-                db, target_user_id, actor_id, event_type, target_id, target_type
+                db, target_user_id, actor_id, event_type, target_id
             ):
                 return
 
             notif = await service.create_notification(
-                db, target_user_id, actor_id, event_type, target_id, target_type
+                db, target_user_id, actor_id, event_type, target_id
             )
             actor = await db.get(User, actor_id)
             payload = service.notification_payload(

@@ -1,8 +1,6 @@
 from datetime import datetime, timezone
 from uuid import UUID
-
 from sqlalchemy import func, select, update
-
 from ...models.user import User
 from .. import frames
 from ..models import Notification
@@ -14,14 +12,12 @@ async def create_notification(
     actor_id: UUID,
     event_type: str,
     target_id: UUID | None = None,
-    target_type: str | None = None,
 ) -> Notification:
     notif = Notification(
         user_id=user_id,
         actor_id=actor_id,
         event_type=event_type,
         target_id=target_id,
-        target_type=target_type,
     )
     db.add(notif)
     await db.commit()
@@ -29,7 +25,11 @@ async def create_notification(
 
 
 async def unread_duplicate_exists(
-    db, user_id, actor_id, event_type, target_id, target_type
+    db,
+    user_id: UUID,
+    actor_id: UUID,
+    event_type: str,
+    target_id: UUID | None = None,
 ) -> bool:
     result = await db.execute(
         select(Notification.id)
@@ -38,7 +38,6 @@ async def unread_duplicate_exists(
             Notification.actor_id == actor_id,
             Notification.event_type == event_type,
             Notification.target_id == target_id,
-            Notification.target_type == target_type,
             Notification.read_at.is_(None),
         )
         .limit(1)
