@@ -1,79 +1,70 @@
 services:
-### Elasticsearch, Kibana, and Logstash services
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:9.5.4
     container_name: elasticsearch
     ports:
-      - "9200:9200"
-    labels:
-      - "es.version=9.5.4"
+      - "127.0.0.1:9200:9200"
     environment:
       - discovery.type=single-node
       - xpack.security.enabled=false
     volumes:
       - elasticsearch_data:/usr/share/elasticsearch/data
     healthcheck:
-      test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -q '\"status\":\"green\"\\|\"status\":\"yellow\"' || exit 1"]
+      test: ["CMD-SHELL", "curl --fail --silent http://localhost:9200/_cluster/health"]
       interval: 10s
-      timeout: 5s
-      retries: 3
+      timeout: 8s
+      retries: 12
+      start_period: 40s
     restart: unless-stopped
   kibana:
     image: docker.elastic.co/kibana/kibana:9.5.4
     container_name: kibana
     ports:
-      - "5601:5601"
-    labels:
-      - "kibana.version=9.5.4"
+      - "127.0.0.1:5601:5601"
     environment:
       - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
     depends_on:
-      - elasticsearch
+      elasticsearch:
+        condition: service_healthy
+    restart: unless-stopped
   logstash:
     image: docker.elastic.co/logstash/logstash:9.5.4
     container_name: logstash
-    ports:
-      - "5044:5044"
-    labels:
-      - "logstash.version=9.5.4"
     volumes:
-      - ./elasticsearch/logstash.conf:/usr/share/logstash/pipeline/logstash.conf:Z
+      - ./elasticsearch/logstash.conf:/usr/share/logstash/pipeline/logstash.conf:ro,Z
     depends_on:
-      - elasticsearch
-### Prometheus, Grafana, and Node Exporter services
-  prometheus:
-    image: prom/prometheus:v3.14.0
-    container_name: prometheus
-    ports:
-      - "9090:9090"
-    labels:
-      - "prometheus.version=v3.14.0"
-    volumes:
-      - ./Prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:Z
-      - prometheus_data:/prometheus
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
+      elasticsearch:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail --silent http://localhost:9600/_node/pipelines > /dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
     restart: unless-stopped
-  grafana:
-    image: grafana/grafana:13.2.2
-    container_name: grafana
-    ports:
-      - "3000:3000"
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:9.5.4
+    container_name: filebeat
+    user: root
+    security_opt:
+      - label=disable
+    command: ["filebeat", "-e", "--strict.perms=false"]
     volumes:
-      - grafana_data:/var/lib/grafana
-    labels:
-      - "grafana.version=13.2.2"
-  node_exporter:
-    image: prom/node-exporter:v1.12.1
-    container_name: node
-    ports:
-      - "9100:9100"
-    labels:
-      - "node-exporter.version=v1.12.1"
-    
+      - ./filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro,Z
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - filebeat_data:/usr/share/filebeat/data
+    depends_on:
+      logstash:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "filebeat test output --strict.perms=false > /dev/null"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
 
 volumes:
-  prometheus_data:
-  grafana_data:
   elasticsearch_data:
+  filebeat_data:
