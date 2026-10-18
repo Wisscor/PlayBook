@@ -194,9 +194,26 @@ paths:
 
   # -------------------------------------------------------------- Sports
   /sports:
+    post:
+      tags: [Sports]
+      summary: Add a sport
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SportCreate' }
+      responses:
+        '201':
+          description: Sport created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Sport' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/ValidationError' }
     get:
       tags: [Sports]
-      summary: List all sports (seed data, read-only)
+      summary: List all sports
       responses:
         '200':
           description: Sports
@@ -306,8 +323,7 @@ paths:
       summary: Upload one media file
       description: |
         Upload first, then reference the returned `media_url` in
-        `POST /posts`. Default limits (adjustable, not final): images up to
-        10 MB (jpeg, png, webp), videos up to 100 MB (mp4, webm).
+        `POST /posts`. Images up to 10 MB are supported (jpeg, png, webp).
       requestBody:
         required: true
         content:
@@ -898,7 +914,7 @@ components:
       enum: [pending, accepted, declined]
     MediaType:
       type: string
-      enum: [image, video]
+      enum: [image]
     NotificationType:
       type: string
       enum: [like, comment, reply, follow, message, play_request]
@@ -976,10 +992,17 @@ components:
     # ----- sports
     Sport:
       type: object
-      required: [id, name]
+      required: [id, name, max_players]
       properties:
         id: { type: string, format: uuid }
         name: { type: string }
+        max_players: { type: integer, minimum: 1 }
+    SportCreate:
+      type: object
+      required: [name, max_players]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 50 }
+        max_players: { type: integer, minimum: 1 }
 
     # ----- posts
     UploadedMedia:

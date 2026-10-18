@@ -59,7 +59,7 @@ async def _get_or_404(
 
 def _to_response(announcement: MatchAnnouncement) -> MatchAnnouncementResponse:
     response = MatchAnnouncementResponse.model_validate(announcement)
-    response.accepted_players = [
+    response.accepted_players= [
         request.sender
         for request in announcement.play_requests
         if request.status == PlayerRequestStatusEnum.accepted
@@ -120,7 +120,7 @@ async def search_announcements(
         stmt = stmt.where(M.match_status == filters.match_status)
     else:
         stmt = stmt.where(
-            M.match_status.in_(
+            M.match_status.ingit_(
                 [
                     MatchAnnouncementStatus.upcoming,
                     MatchAnnouncementStatus.live,

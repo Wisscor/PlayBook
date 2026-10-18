@@ -23,7 +23,9 @@ def _make_post(user: User, caption: str = "Test post", media_items=None):
     return p
 
 
-def _mock_enrich_exec(mock_db, likes_map=None, comments_map=None, user_liked_ids=None):
+def _mock_enrich_exec(
+    mock_db, likes_map=None, comments_map=None, user_liked_ids=None
+):
     likes_res = MagicMock()
     likes_res.all.return_value = list((likes_map or {}).items())
 
@@ -71,7 +73,9 @@ def test_create_post_with_media(mock_user_1, mock_db):
         media_type="image",
         position=0,
     )
-    created_post = _make_post(mock_user_1, caption="Post with media", media_items=[media_item])
+    created_post = _make_post(
+        mock_user_1, caption="Post with media", media_items=[media_item]
+    )
     created_post.id = post_id
     mock_db.scalar.return_value = created_post
 
@@ -142,11 +146,11 @@ def test_list_posts_success(mock_user_1, mock_db):
     data = res.json()
     assert len(data) == 2
     assert data[0]["caption"] == "Post 1"
-    assert data[0]["likes_count"] == 3
-    assert data[0]["comments_count"] == 1
+    assert data[0]["like_count"] == 3
+    assert data[0]["comment_count"] == 1
     assert data[0]["is_liked_by_me"] is True
     assert data[1]["caption"] == "Post 2"
-    assert data[1]["likes_count"] == 0
+    assert data[1]["like_count"] == 0
 
     app.dependency_overrides.clear()
 
@@ -208,7 +212,7 @@ def test_get_post_by_id_success(mock_user_1, mock_db):
     data = res.json()
     assert data["id"] == str(post.id)
     assert data["caption"] == "Specific post"
-    assert data["likes_count"] == 10
+    assert data["like_count"] == 10
 
     app.dependency_overrides.clear()
 
@@ -256,7 +260,9 @@ def test_update_post_success(mock_user_1, mock_db):
     app.dependency_overrides.clear()
 
 
-def test_update_post_forbidden_for_non_author(mock_user_1, mock_user_2, mock_db):
+def test_update_post_forbidden_for_non_author(
+    mock_user_1, mock_user_2, mock_db
+):
     client = TestClient(app)
 
     # Post owned by mock_user_1, but caller is mock_user_2
@@ -305,7 +311,9 @@ def test_delete_post_success(mock_user_1, mock_db):
     app.dependency_overrides.clear()
 
 
-def test_delete_post_forbidden_for_non_author(mock_user_1, mock_user_2, mock_db):
+def test_delete_post_forbidden_for_non_author(
+    mock_user_1, mock_user_2, mock_db
+):
     client = TestClient(app)
 
     post = _make_post(mock_user_1, caption="Protected post")
@@ -346,7 +354,9 @@ def test_get_feed_success(mock_user_1, mock_user_2, mock_db):
     mock_scalars.all.return_value = [post1, post2]
     mock_db.scalars.return_value = mock_scalars
 
-    enrich_execs = _mock_enrich_exec(mock_db, likes_map={post1.id: 2}, comments_map={post1.id: 1})
+    enrich_execs = _mock_enrich_exec(
+        mock_db, likes_map={post1.id: 2}, comments_map={post1.id: 1}
+    )
     mock_db.execute.side_effect = enrich_execs
 
     app.dependency_overrides[get_curr_user] = lambda: mock_user_1

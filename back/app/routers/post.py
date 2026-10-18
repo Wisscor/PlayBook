@@ -44,9 +44,6 @@ ALLOWED_MEDIA_TYPES = {
     "image/jpeg": ("image", ".jpg", 10 * 1024 * 1024),
     "image/png": ("image", ".png", 10 * 1024 * 1024),
     "image/webp": ("image", ".webp", 10 * 1024 * 1024),
-    # Videos: max 100 MB (mp4, webm)
-    "video/mp4": ("video", ".mp4", 100 * 1024 * 1024),
-    "video/webm": ("video", ".webm", 100 * 1024 * 1024),
 }
 
 
@@ -60,7 +57,7 @@ async def upload_media(
     _: User = Depends(get_curr_user),
 ):
     """
-    Upload one media file. Images up to 10 MB, videos up to 100 MB.
+    Upload one image file up to 10 MB.
     """
     # Check the content type of the uploaded file
     content_type = (file.content_type or "").lower()
@@ -70,7 +67,7 @@ async def upload_media(
             detail="Unsupported file type",
         )
 
-    media_type, ext, max_size = ALLOWED_MEDIA_TYPES[content_type]
+    media_type_name, ext, max_size = ALLOWED_MEDIA_TYPES[content_type]
     UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
     # Generate a unique filename to avoid filename collisions
     filename = f"{uuid.uuid4().hex}{ext}"
@@ -78,7 +75,7 @@ async def upload_media(
 
     size = 0
     try:
-        # Open the file in binary write mode 
+        # Open the file in binary write mode
         # and read in chunks to avoid loading the entire file into memory
         with open(filepath, "wb") as f:
             while chunk := await file.read(1024 * 64):
@@ -96,7 +93,7 @@ async def upload_media(
 
     return UploadedMedia(
         media_url=f"/uploads/{filename}",
-        media_type=media_type,
+        media_type="image",
     )
 
 
@@ -106,7 +103,7 @@ async def _enrich_posts(
     db: AsyncSession,
 ) -> List[PostResponse]:
     """
-    Helper to efficiently batch-load likes_count, comments_count,
+    Helper to efficiently batch-load like_count, comment_count,
     and is_liked_by_me for a list of posts without N+1 queries.
     """
     if not posts:
@@ -172,9 +169,7 @@ async def _enrich_posts(
             author=user_summary,
             caption=p.caption,
             media=media_items,
-            likes_count=likes_map.get(p.id, 0),
             like_count=likes_map.get(p.id, 0),
-            comments_count=comments_map.get(p.id, 0),
             comment_count=comments_map.get(p.id, 0),
             is_liked_by_me=p.id in user_liked_set,
             liked_by_me=p.id in user_liked_set,
@@ -192,7 +187,7 @@ async def _enrich_posts(
     response_model=PostResponse,
 )
 async def create_post(
-    data: PostCreate,
+    body: PostCreate,
     curr_user: User = Depends(get_curr_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -202,15 +197,15 @@ async def create_post(
     """
     post = Post(
         user_id=curr_user.id,
-        caption=data.caption,
+        caption=body.caption,
     )
     db.add(post)
     # Flush to get the post.id before adding media
     await db.flush()
 
-    # Add media items by position 
-    if data.media:
-        for idx, item in enumerate(data.media):
+    # Add media items by position
+    if body.media:
+        for idx, item in enumerate(body.media):
             media = PostMedia(
                 post_id=post.id,
                 media_url=item.media_url,
@@ -219,7 +214,7 @@ async def create_post(
             )
             db.add(media)
 
-    # 
+    #
     await db.commit()
 
     # Re-queries post with relationships
@@ -270,7 +265,9 @@ async def get_feed(
     )
     if cursor:
         ts, cursor_id = decode_cursor(cursor)
-        stmt = stmt.where(tuple_(Post.created_at, Post.id) < tuple_(ts, cursor_id))
+        stmt = stmt.where(
+            tuple_(Post.created_at, Post.id) < tuple_(ts, cursor_id)
+        )
 
     rows = list((await db.scalars(stmt.limit(limit + 1))).all())
     next_cursor = None
