@@ -11,7 +11,7 @@ from fastapi import (
     File,
     UploadFile,
 )
-from sqlalchemy import select, func, or_, and_, tuple_
+from sqlalchemy import select, func, or_, and_
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 from http import HTTPStatus
@@ -31,7 +31,6 @@ from ..schemas.user import (
 from ..schemas.post import PostPage
 from .post import _enrich_posts
 from app.core.deps import get_curr_user
-from app.core.pagination import encode_cursor, decode_cursor
 
 router = APIRouter(
     prefix="/users",
@@ -280,12 +279,12 @@ async def get_user(
 async def list_user_posts(
     user_id: uuid.UUID,
     limit: int = Query(default=20, ge=1, le=100),
-    cursor: Optional[str] = None,
+    offset: int = Query(default=0, ge=0),
     curr_user: Optional[User] = Depends(get_curr_user),
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Retrieve posts authored by a user (newest first) with keyset cursor pagination.
+    Retrieve posts authored by a user (newest first) with offset pagination.
     """
     if await db.get(User, user_id) is None:
         raise HTTPException(
@@ -299,17 +298,11 @@ async def list_user_posts(
         .where(Post.user_id == user_id)
         .order_by(Post.created_at.desc(), Post.id.desc())
     )
-    if cursor:
-        ts, cursor_id = decode_cursor(cursor)
-        stmt = stmt.where(
-            tuple_(Post.created_at, Post.id) < tuple_(ts, cursor_id)
-        )
-
-    rows = list((await db.scalars(stmt.limit(limit + 1))).all())
-    next_cursor = None
+    rows = list((await db.scalars(stmt.offset(offset).limit(limit + 1))).all())
+    next_offset = None
     if len(rows) > limit:
         rows = rows[:limit]
-        next_cursor = encode_cursor(rows[-1].created_at, rows[-1].id)
+        next_offset = offset + limit
 
     enriched = await _enrich_posts(rows, curr_user, db)
-    return PostPage(items=enriched, next_cursor=next_cursor)
+    return PostPage(items=enriched, next_offset=next_offset)

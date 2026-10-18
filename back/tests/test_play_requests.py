@@ -7,7 +7,6 @@ from sqlalchemy.exc import IntegrityError
 from app.main import app
 from app.database.database import get_db
 from app.core.deps import get_curr_user
-from app.core.pagination import encode_cursor
 from app.models.match_announcement import (
     MatchAnnouncement,
     MatchAnnouncementStatus,
@@ -313,18 +312,16 @@ def test_list_my_requests_pagination(mock_user_1, mock_user_2, mock_db):
     assert res.status_code == 200
     data = res.json()
     assert len(data["items"]) == 1
-    assert data["next_cursor"] is not None
+    assert data["next_offset"] == 1
 
     app.dependency_overrides.clear()
 
 
-def test_list_my_requests_with_cursor(mock_user_1, mock_user_2, mock_db):
+def test_list_my_requests_with_offset(mock_user_1, mock_user_2, mock_db):
     client = TestClient(app)
     sport = Sport(id=uuid.uuid4(), name="Football", max_players=11)
     announcement = _make_announcement(mock_user_2, sport)
     pr1 = _make_play_request(mock_user_1, announcement)
-
-    cursor = encode_cursor(pr1.created_at, pr1.id)
 
     mock_scalars = MagicMock()
     mock_scalars.all.return_value = [pr1]
@@ -333,7 +330,7 @@ def test_list_my_requests_with_cursor(mock_user_1, mock_user_2, mock_db):
     app.dependency_overrides[get_curr_user] = lambda: mock_user_1
     app.dependency_overrides[get_db] = lambda: mock_db
 
-    res = client.get(f"/play-requests?role=sent&cursor={cursor}")
+    res = client.get("/play-requests?role=sent&offset=1")
     assert res.status_code == 200
     data = res.json()
     assert len(data["items"]) == 1

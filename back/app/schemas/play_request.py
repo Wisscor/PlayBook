@@ -33,4 +33,4 @@ class PlayerRequestFilter(BaseModel):
 
 class PlayerRequestPage(BaseModel):
     items: list[PlayerRequestResponse]
-    next_cursor: Optional[str] = None
+    next_offset: Optional[int] = None

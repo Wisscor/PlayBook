@@ -2,7 +2,7 @@ import uuid
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
-from sqlalchemy import select, tuple_
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, selectinload
 
@@ -20,10 +20,7 @@ from app.schemas.match_announcement import (
     MatchAnnouncementResponse,
     MatchAnnouncementUpdate,
 )
-from app.core.pagination import (
-    decode_cursor,
-    encode_cursor,
-)
+from app.schemas.user import UserSummaryResponse
 
 router = APIRouter(prefix="/match-announcements", tags=["Match Announcements"])
 
@@ -59,8 +56,8 @@ async def _get_or_404(
 
 def _to_response(announcement: MatchAnnouncement) -> MatchAnnouncementResponse:
     response = MatchAnnouncementResponse.model_validate(announcement)
-    response.accepted_players= [
-        request.sender
+    response.accepted_players = [
+        UserSummaryResponse.model_validate(request.sender)
         for request in announcement.play_requests
         if request.status == PlayerRequestStatusEnum.accepted
     ]
@@ -98,29 +95,47 @@ async def create_announcement(
 async def search_announcements(
     filters: MatchAnnouncementFilter = Depends(),
     limit: int = Query(20, ge=1, le=100),
-    cursor: Optional[str] = None,
+    offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
     _: User = Depends(get_curr_user),
 ):
     """Sorted by start_time (soonest first). Time window: the announcement must
     fit inside it (start_time >= start_from and end_time <= end_to)."""
     M = MatchAnnouncement
-    stmt = (
-        select(M)
-        .options(
-            joinedload(M.owner),
-            joinedload(M.sport),
-            selectinload(M.play_requests).joinedload(PlayerRequest.sender),
+    if (
+        filters.min_remaining_player_slots is not None
+        and filters.max_remaining_player_slots is not None
+        and filters.min_remaining_player_slots
+        > filters.max_remaining_player_slots
+    ):
+        raise HTTPException(
+            422,
+            detail="min_remaining_player_slots must be less than or equal to max_remaining_player_slots",
         )
-        .order_by(M.start_time, M.id)
+    stmt = select(M).options(
+        joinedload(M.owner),
+        joinedload(M.sport),
+        selectinload(M.play_requests).joinedload(PlayerRequest.sender),
     )
+    sort_column = {
+        "start_time": M.start_time,
+        "created_at": M.created_at,
+        "remaining_player_slots": M.remaining_player_slots,
+    }[filters.sort_by]
+    sort_expression = (
+        sort_column.asc()
+        if filters.sort_order == "asc"
+        else sort_column.desc()
+    )
+    tie_breaker = M.id.asc() if filters.sort_order == "asc" else M.id.desc()
+    stmt = stmt.order_by(sort_expression, tie_breaker)
     if filters.sport_id:
         stmt = stmt.where(M.sport_id == filters.sport_id)
     if filters.match_status:
         stmt = stmt.where(M.match_status == filters.match_status)
     else:
         stmt = stmt.where(
-            M.match_status.ingit_(
+            M.match_status.in_(
                 [
                     MatchAnnouncementStatus.upcoming,
                     MatchAnnouncementStatus.live,
@@ -133,20 +148,24 @@ async def search_announcements(
         stmt = stmt.where(M.start_time >= filters.start_from)
     if filters.end_to:
         stmt = stmt.where(M.end_time <= filters.end_to)
-    if cursor:
-        ts, cursor_id = decode_cursor(cursor)
-        stmt = stmt.where(tuple_(M.start_time, M.id) > tuple_(ts, cursor_id))
-
+    if filters.min_remaining_player_slots is not None:
+        stmt = stmt.where(
+            M.remaining_player_slots >= filters.min_remaining_player_slots
+        )
+    if filters.max_remaining_player_slots is not None:
+        stmt = stmt.where(
+            M.remaining_player_slots <= filters.max_remaining_player_slots
+        )
     rows = list(
-        (await db.scalars(stmt.limit(limit + 1))).all()
+        (await db.scalars(stmt.offset(offset).limit(limit + 1))).all()
     )  # one extra row = "has next page"
-    next_cursor = None
+    next_offset = None
     if len(rows) > limit:
         rows = rows[:limit]
-        next_cursor = encode_cursor(rows[-1].start_time, rows[-1].id)
+        next_offset = offset + limit
     return MatchAnnouncementPage(
         items=[_to_response(row) for row in rows],
-        next_cursor=next_cursor,
+        next_offset=next_offset,
     )
 
 

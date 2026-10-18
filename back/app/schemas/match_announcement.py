@@ -1,5 +1,5 @@
 import uuid
-from typing import Optional
+from typing import Literal, Optional
 
 from datetime import datetime
 from pydantic import (
@@ -83,12 +83,14 @@ class MatchAnnouncementFilter(BaseModel):
     start_from: Optional[AwareDatetime] = None
     end_to: Optional[AwareDatetime] = None
     organizer_id: Optional[uuid.UUID] = None
+    min_remaining_player_slots: Optional[int] = Field(default=None, ge=0)
+    max_remaining_player_slots: Optional[int] = Field(default=None, ge=0)
+    sort_by: Literal["start_time", "created_at", "remaining_player_slots"] = (
+        "start_time"
+    )
+    sort_order: Literal["asc", "desc"] = "asc"
 
 
 class MatchAnnouncementPage(BaseModel):
     items: list[MatchAnnouncementResponse]
-    # ?cursor=next_cursor
-    next_cursor: Optional[str] = None
-
-
-
+    next_offset: Optional[int] = None

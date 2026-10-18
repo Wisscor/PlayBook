@@ -4,14 +4,14 @@ info:
   version: 1.0.0
   description: |
     Sports social media platform. Users post, follow, like, comment, chat,
-    and announce matches to find players or opponents.
+    and announce matches to find players.
 
     **Auth:** session-based. `POST /auth/login` creates a row in `sessions`
     and sets an HttpOnly cookie (`session_id`). Every endpoint except
     register and login requires a valid, unexpired session (otherwise 401).
 
-    **Conventions:** UUID ids, ISO 8601 UTC timestamps, cursor pagination
-    (`limit`, `cursor` -> `items`, `next_cursor`). Likes, follows and user
+    **Conventions:** UUID ids, ISO 8601 UTC timestamps, offset pagination
+    (`limit`, `offset` -> `items`, `next_offset`). Likes, follows and user
     sports use PUT/DELETE so repeated calls are safe (idempotent).
 
     **Realtime:** new messages and new notifications are also pushed by the
@@ -111,7 +111,7 @@ paths:
           in: query
           schema: { type: string, format: uuid }
         - { $ref: '#/components/parameters/Limit' }
-        - { $ref: '#/components/parameters/Cursor' }
+        - { $ref: '#/components/parameters/Offset' }
       responses:
         '200':
           description: Matching users
@@ -182,7 +182,7 @@ paths:
       parameters:
         - { $ref: '#/components/parameters/Id' }
         - { $ref: '#/components/parameters/Limit' }
-        - { $ref: '#/components/parameters/Cursor' }
+        - { $ref: '#/components/parameters/Offset' }
       responses:
         '200':
           description: Posts
@@ -290,7 +290,7 @@ paths:
       parameters:
         - { $ref: '#/components/parameters/Id' }
         - { $ref: '#/components/parameters/Limit' }
-        - { $ref: '#/components/parameters/Cursor' }
+        - { $ref: '#/components/parameters/Offset' }
       responses:
         '200':
           description: Followers
@@ -306,7 +306,7 @@ paths:
       parameters:
         - { $ref: '#/components/parameters/Id' }
         - { $ref: '#/components/parameters/Limit' }
-        - { $ref: '#/components/parameters/Cursor' }
+        - { $ref: '#/components/parameters/Offset' }
       responses:
         '200':
           description: Following
@@ -410,7 +410,7 @@ paths:
       summary: Posts from people I follow plus mine (newest first)
       parameters:
         - { $ref: '#/components/parameters/Limit' }
-        - { $ref: '#/components/parameters/Cursor' }
+        - { $ref: '#/components/parameters/Offset' }
       responses:
         '200':
           description: Feed
@@ -449,7 +449,7 @@ paths:
       parameters:
         - { $ref: '#/components/parameters/Id' }
         - { $ref: '#/components/parameters/Limit' }
-        - { $ref: '#/components/parameters/Cursor' }
+        - { $ref: '#/components/parameters/Offset' }
       responses:
         '200':
           description: Comments
@@ -527,7 +527,7 @@ paths:
       description: Each item has the other user, the last message and `unread_count`.
       parameters:
         - { $ref: '#/components/parameters/Limit' }
-        - { $ref: '#/components/parameters/Cursor' }
+        - { $ref: '#/components/parameters/Offset' }
       responses:
         '200':
           description: Conversations
@@ -542,7 +542,7 @@ paths:
       parameters:
         - { $ref: '#/components/parameters/Id' }
         - { $ref: '#/components/parameters/Limit' }
-        - { $ref: '#/components/parameters/Cursor' }
+        - { $ref: '#/components/parameters/Offset' }
       responses:
         '200':
           description: Messages
@@ -616,7 +616,8 @@ paths:
       summary: Search match announcements
       description: |
         The time filter returns announcements that fit inside the window:
-        `start_time >= start_from` and `end_time <= end_to`.
+        `start_time >= start_from` and `end_time <= end_to`. Results can be
+        sorted by start time, creation time, or remaining player slots.
       parameters:
         - name: sport_id
           in: query
@@ -633,8 +634,26 @@ paths:
         - name: organizer_id
           in: query
           schema: { type: string, format: uuid }
+        - name: min_remaining_player_slots
+          in: query
+          schema: { type: integer, minimum: 0 }
+        - name: max_remaining_player_slots
+          in: query
+          schema: { type: integer, minimum: 0 }
+        - name: sort_by
+          in: query
+          schema:
+            type: string
+            enum: [start_time, created_at, remaining_player_slots]
+            default: start_time
+        - name: sort_order
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: asc
         - { $ref: '#/components/parameters/Limit' }
-        - { $ref: '#/components/parameters/Cursor' }
+        - { $ref: '#/components/parameters/Offset' }
       responses:
         '200':
           description: Matching announcements
@@ -719,7 +738,7 @@ paths:
       parameters:
         - { $ref: '#/components/parameters/Id' }
         - { $ref: '#/components/parameters/Limit' }
-        - { $ref: '#/components/parameters/Cursor' }
+        - { $ref: '#/components/parameters/Offset' }
       responses:
         '200':
           description: Requests
@@ -743,7 +762,7 @@ paths:
           in: query
           schema: { $ref: '#/components/schemas/PlayerRequestStatus' }
         - { $ref: '#/components/parameters/Limit' }
-        - { $ref: '#/components/parameters/Cursor' }
+        - { $ref: '#/components/parameters/Offset' }
       responses:
         '200':
           description: Requests
@@ -786,7 +805,7 @@ paths:
           in: query
           schema: { type: boolean, default: false }
         - { $ref: '#/components/parameters/Limit' }
-        - { $ref: '#/components/parameters/Cursor' }
+        - { $ref: '#/components/parameters/Offset' }
       responses:
         '200':
           description: Notifications
@@ -849,11 +868,11 @@ components:
       name: limit
       in: query
       schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
-    Cursor:
-      name: cursor
+    Offset:
+      name: offset
       in: query
-      description: Opaque value taken from the previous page's `next_cursor`.
-      schema: { type: string }
+      description: Number of items to skip before returning the page.
+      schema: { type: integer, minimum: 0, default: 0 }
 
   responses:
     BadRequest:
@@ -982,12 +1001,12 @@ components:
         phone: { type: string, maxLength: 20 }
     UserPage:
       type: object
-      required: [items, next_cursor]
+      required: [items, next_offset]
       properties:
         items:
           type: array
           items: { $ref: '#/components/schemas/UserSummary' }
-        next_cursor: { type: string, nullable: true }
+        next_offset: { type: integer, minimum: 0, nullable: true }
 
     # ----- sports
     Sport:
@@ -1056,12 +1075,12 @@ components:
         updated_at: { type: string, format: date-time }
     PostPage:
       type: object
-      required: [items, next_cursor]
+      required: [items, next_offset]
       properties:
         items:
           type: array
           items: { $ref: '#/components/schemas/Post' }
-        next_cursor: { type: string, nullable: true }
+        next_offset: { type: integer, minimum: 0, nullable: true }
 
     # ----- comments
     CommentCreate:
@@ -1099,12 +1118,12 @@ components:
         created_at: { type: string, format: date-time }
     CommentPage:
       type: object
-      required: [items, next_cursor]
+      required: [items, next_offset]
       properties:
         items:
           type: array
           items: { $ref: '#/components/schemas/Comment' }
-        next_cursor: { type: string, nullable: true }
+        next_offset: { type: integer, minimum: 0, nullable: true }
 
     # ----- chat
     ConversationCreate:
@@ -1145,20 +1164,20 @@ components:
         created_at: { type: string, format: date-time }
     ConversationPage:
       type: object
-      required: [items, next_cursor]
+      required: [items, next_offset]
       properties:
         items:
           type: array
           items: { $ref: '#/components/schemas/Conversation' }
-        next_cursor: { type: string, nullable: true }
+        next_offset: { type: integer, minimum: 0, nullable: true }
     MessagePage:
       type: object
-      required: [items, next_cursor]
+      required: [items, next_offset]
       properties:
         items:
           type: array
           items: { $ref: '#/components/schemas/Message' }
-        next_cursor: { type: string, nullable: true }
+        next_offset: { type: integer, minimum: 0, nullable: true }
 
     # ----- match announcements
     MatchAnnouncementCreate:
@@ -1198,12 +1217,12 @@ components:
         created_at: { type: string, format: date-time }
     MatchAnnouncementPage:
       type: object
-      required: [items, next_cursor]
+      required: [items, next_offset]
       properties:
         items:
           type: array
           items: { $ref: '#/components/schemas/MatchAnnouncement' }
-        next_cursor: { type: string, nullable: true }
+        next_offset: { type: integer, minimum: 0, nullable: true }
 
     # ----- play requests
     PlayerRequestDecision:
@@ -1224,12 +1243,12 @@ components:
         created_at: { type: string, format: date-time }
     PlayerRequestPage:
       type: object
-      required: [items, next_cursor]
+      required: [items, next_offset]
       properties:
         items:
           type: array
           items: { $ref: '#/components/schemas/PlayerRequest' }
-        next_cursor: { type: string, nullable: true }
+        next_offset: { type: integer, minimum: 0, nullable: true }
 
     # ----- notifications
     Notification:
@@ -1246,9 +1265,9 @@ components:
         created_at: { type: string, format: date-time }
     NotificationPage:
       type: object
-      required: [items, next_cursor]
+      required: [items, next_offset]
       properties:
         items:
           type: array
           items: { $ref: '#/components/schemas/Notification' }
-        next_cursor: { type: string, nullable: true }
+        next_offset: { type: integer, minimum: 0, nullable: true }

@@ -12,7 +12,7 @@ from fastapi import (
     UploadFile,
     status,
 )
-from sqlalchemy import select, func, or_, tuple_
+from sqlalchemy import select, func, or_
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 from http import HTTPStatus
@@ -30,7 +30,6 @@ from app.schemas.post import PostCreate, PostUpdate, PostResponse, PostPage
 from app.schemas.user import UserSummaryResponse
 from app.schemas.post_media import PostMediaResponse, UploadedMedia
 from app.core.deps import get_curr_user
-from app.core.pagination import encode_cursor, decode_cursor
 
 router = APIRouter(
     tags=["Posts"],
@@ -242,7 +241,7 @@ async def create_post(
 )
 async def get_feed(
     limit: int = Query(default=20, ge=1, le=100),
-    cursor: Optional[str] = None,
+    offset: int = Query(default=0, ge=0),
     curr_user: User = Depends(get_curr_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -263,20 +262,14 @@ async def get_feed(
         )
         .order_by(Post.created_at.desc(), Post.id.desc())
     )
-    if cursor:
-        ts, cursor_id = decode_cursor(cursor)
-        stmt = stmt.where(
-            tuple_(Post.created_at, Post.id) < tuple_(ts, cursor_id)
-        )
-
-    rows = list((await db.scalars(stmt.limit(limit + 1))).all())
-    next_cursor = None
+    rows = list((await db.scalars(stmt.offset(offset).limit(limit + 1))).all())
+    next_offset = None
     if len(rows) > limit:
         rows = rows[:limit]
-        next_cursor = encode_cursor(rows[-1].created_at, rows[-1].id)
+        next_offset = offset + limit
 
     enriched = await _enrich_posts(rows, curr_user, db)
-    return PostPage(items=enriched, next_cursor=next_cursor)
+    return PostPage(items=enriched, next_offset=next_offset)
 
 
 @router.get(

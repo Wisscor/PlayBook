@@ -2,7 +2,7 @@ import uuid
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import Select, select, tuple_
+from sqlalchemy import Select, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
@@ -20,10 +20,6 @@ from app.schemas.play_request import (
     PlayerRequestFilter,
     PlayerRequestPage,
     PlayerRequestResponse,
-)
-from app.core.pagination import (
-    decode_cursor,
-    encode_cursor,
 )
 
 router = APIRouter(tags=["Play Requests"])
@@ -47,24 +43,21 @@ async def _get_request(
 
 
 async def _paginate(
-    db: AsyncSession, stmt: Select, limit: int, cursor: Optional[str]
+    db: AsyncSession, stmt: Select, limit: int, offset: int
 ) -> PlayerRequestPage:
     """Newest first. `stmt` must select PlayerRequest."""
     P = PlayerRequest
     stmt = stmt.options(joinedload(P.sender)).order_by(
         P.created_at.desc(), P.id.desc()
     )
-    if cursor:
-        ts, cursor_id = decode_cursor(cursor)
-        stmt = stmt.where(tuple_(P.created_at, P.id) < tuple_(ts, cursor_id))
-    rows = list((await db.scalars(stmt.limit(limit + 1))).all())
-    next_cursor = None
+    rows = list((await db.scalars(stmt.offset(offset).limit(limit + 1))).all())
+    next_offset = None
     if len(rows) > limit:
         rows = rows[:limit]
-        next_cursor = encode_cursor(rows[-1].created_at, rows[-1].id)
+        next_offset = offset + limit
     return PlayerRequestPage(
         items=[PlayerRequestResponse.model_validate(r) for r in rows],
-        next_cursor=next_cursor,
+        next_offset=next_offset,
     )
 
 
@@ -133,7 +126,7 @@ async def send_play_request(
 async def list_announcement_requests(
     id: uuid.UUID,
     limit: int = Query(20, ge=1, le=100),
-    cursor: Optional[str] = None,
+    offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
     me: User = Depends(get_curr_user),
 ):
@@ -145,14 +138,14 @@ async def list_announcement_requests(
     if announcement.organizer_id != me.id:
         raise HTTPException(status.HTTP_403_FORBIDDEN, detail="Not the owner")
     stmt = select(PlayerRequest).where(PlayerRequest.announcement_id == id)
-    return await _paginate(db, stmt, limit, cursor)
+    return await _paginate(db, stmt, limit, offset)
 
 
 @router.get("/play-requests", response_model=PlayerRequestPage)
 async def list_my_requests(
     filters: PlayerRequestFilter = Depends(),
     limit: int = Query(20, ge=1, le=100),
-    cursor: Optional[str] = None,
+    offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
     me: User = Depends(get_curr_user),
 ):
@@ -167,7 +160,7 @@ async def list_my_requests(
         ).where(MatchAnnouncement.organizer_id == me.id)
     if filters.status:
         stmt = stmt.where(PlayerRequest.status == filters.status)
-    return await _paginate(db, stmt, limit, cursor)
+    return await _paginate(db, stmt, limit, offset)
 
 
 @router.patch("/play-requests/{id}", response_model=PlayerRequestResponse)

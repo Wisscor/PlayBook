@@ -6,7 +6,6 @@ from fastapi.testclient import TestClient
 from app.main import app
 from app.database.database import get_db
 from app.core.deps import get_curr_user
-from app.core.pagination import encode_cursor
 from app.models.match_announcement import (
     MatchAnnouncement,
     MatchAnnouncementStatus,
@@ -55,7 +54,6 @@ def test_create_announcement_success(mock_user_1, mock_db):
 
     mock_db.get.return_value = sport
     mock_db.scalar.return_value = announcement
-
     app.dependency_overrides[get_curr_user] = lambda: mock_user_1
     app.dependency_overrides[get_db] = lambda: mock_db
 
@@ -143,7 +141,7 @@ def test_search_announcements_success(mock_user_1, mock_db):
     assert res.status_code == 200
     data = res.json()
     assert len(data["items"]) == 2
-    assert data["next_cursor"] is None
+    assert data["next_offset"] is None
 
     app.dependency_overrides.clear()
 
@@ -166,17 +164,15 @@ def test_search_announcements_pagination(mock_user_1, mock_db):
     assert res.status_code == 200
     data = res.json()
     assert len(data["items"]) == 1
-    assert data["next_cursor"] is not None
+    assert data["next_offset"] == 1
 
     app.dependency_overrides.clear()
 
 
-def test_search_announcements_with_cursor(mock_user_1, mock_db):
+def test_search_announcements_with_offset(mock_user_1, mock_db):
     client = TestClient(app)
     sport = Sport(id=uuid.uuid4(), name="Basketball", max_players=11)
     ann1 = _make_announcement(mock_user_1, sport)
-
-    cursor = encode_cursor(ann1.start_time, ann1.id)
 
     mock_scalars = MagicMock()
     mock_scalars.all.return_value = [ann1]
@@ -185,11 +181,25 @@ def test_search_announcements_with_cursor(mock_user_1, mock_db):
     app.dependency_overrides[get_curr_user] = lambda: mock_user_1
     app.dependency_overrides[get_db] = lambda: mock_db
 
-    res = client.get(f"/match-announcements?cursor={cursor}")
+    res = client.get("/match-announcements?offset=1")
     assert res.status_code == 200
     data = res.json()
     assert len(data["items"]) == 1
 
+    app.dependency_overrides.clear()
+
+
+def test_search_announcements_invalid_slot_range(mock_user_1, mock_db):
+    client = TestClient(app)
+    app.dependency_overrides[get_curr_user] = lambda: mock_user_1
+    app.dependency_overrides[get_db] = lambda: mock_db
+
+    res = client.get(
+        "/match-announcements?min_remaining_player_slots=5&"
+        "max_remaining_player_slots=2"
+    )
+
+    assert res.status_code == 422
     app.dependency_overrides.clear()
 
 
