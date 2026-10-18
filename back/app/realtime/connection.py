@@ -11,8 +11,7 @@ async def _flush_pending_messages(websocket: WebSocket, user_id: UUID) -> None:
         pending = await service.take_pending_messages(db, user_id)
         for row, message in pending:
             await websocket.send_json(service.message_payload(message))
-        if pending:
-            await service.mark_pending_delivered(db, [row.id for row, _ in pending])
+            await service.delete_pending_message(db, row.id)
 
 
 async def _flush_notifications(websocket: WebSocket, user_id: UUID) -> None:

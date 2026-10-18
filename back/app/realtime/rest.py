@@ -96,10 +96,3 @@ async def mark_notifications_read(
     await service.mark_read(db, current_user.id, body.notification_ids)
     return {"unread_count": await service.get_unread_count(db, current_user.id)}
 
-
-@router.get("/notifications/count")
-async def notification_count(
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_curr_user),
-):
-    return {"unread_count": await service.get_unread_count(db, current_user.id)}

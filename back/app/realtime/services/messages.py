@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from uuid import UUID
 
-from sqlalchemy import exists, select, update
+from sqlalchemy import delete, exists, select
 
 from .. import frames
 from ..models import (
@@ -120,11 +120,9 @@ async def take_pending_messages(
     return rows.all()
 
 
-async def mark_pending_delivered(db, pending_ids: list[UUID]) -> None:
+async def delete_pending_message(db, pending_id: UUID) -> None:
     await db.execute(
-        update(PendingMessage)
-        .where(PendingMessage.id.in_(pending_ids))
-        .values(delivered_at=datetime.now(timezone.utc))
+        delete(PendingMessage).where(PendingMessage.id == pending_id)
     )
     await db.commit()
 

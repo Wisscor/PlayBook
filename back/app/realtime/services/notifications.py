@@ -114,8 +114,6 @@ def notification_dict(notif: Notification, actor_username: str) -> dict:
         "event_type": notif.event_type,
         "actor_id": str(notif.actor_id),
         "actor_username": actor_username,
-        "target_id": str(notif.target_id) if notif.target_id else None,
-        "target_type": notif.target_type,
         "read_at": notif.read_at.isoformat() if notif.read_at else None,
         "created_at": notif.created_at.isoformat(),
     }
