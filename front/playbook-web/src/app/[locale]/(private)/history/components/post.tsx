@@ -33,9 +33,14 @@ export const Post: React.FC<PostProps> = ({ post, onEdit, onDelete }) => {
                 className="rounded-full object-cover ring-1 ring-white/20"
               />
             )}
-            <span className="text-xs font-semibold text-slate-200">
-              {post.author.name}
-            </span>
+            <PlayText.Span
+              texts={[
+                {
+                  content: post.author.name,
+                  className: "text-xs font-semibold text-slate-200",
+                },
+              ]}
+            />
           </div>
         ) : (
           <div />
@@ -100,5 +105,3 @@ export const Post: React.FC<PostProps> = ({ post, onEdit, onDelete }) => {
     </article>
   );
 };
-
-export default Post;

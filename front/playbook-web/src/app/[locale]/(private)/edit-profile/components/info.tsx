@@ -1,6 +1,7 @@
 "use client";
 
 import { PlayInput } from "@/components/ui/Input";
+import { PlayLabel } from "@/components/ui/Label";
 import { PlayText } from "@/components/ui/Text";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
@@ -26,12 +27,14 @@ export const Info: React.FC<{
       <div className="flex items-center justify-between gap-3 flex-1 w-full">
         <div className="flex-1 min-w-0">
           {isEditing ? (
-            <PlayInput.Primary
-              onChange={(e) => updateValue(e.target.value)}
-              placeholder={placeholder}
-              value={value ?? ""}
-              className="w-full rounded-xl border border-white/10 bg-white/5 px-3.5 py-2 text-sm text-white placeholder-slate-400 backdrop-blur-md focus:border-white/30 focus:outline-none"
-            />
+            <PlayLabel.Primary>
+              <PlayInput.Primary
+                onChange={(e) => updateValue(e.target.value)}
+                placeholder={placeholder}
+                value={value ?? ""}
+                className="w-full rounded-xl border border-white/10 bg-white/5 px-3.5 py-2 text-sm text-white placeholder-slate-400 backdrop-blur-md focus:border-white/30 focus:outline-none"
+              />
+            </PlayLabel.Primary>
           ) : (
             <PlayText.Primary
               content={value || t("not-set")}
@@ -60,5 +63,3 @@ export const Info: React.FC<{
     </div>
   );
 };
-
-export default Info;

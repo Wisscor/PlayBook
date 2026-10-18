@@ -53,5 +53,3 @@ export const BurgerMenu: React.FC<{
     </div>
   );
 };
-
-export default BurgerMenu;

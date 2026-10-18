@@ -2,8 +2,8 @@
 
 import { Header } from "@/components/shared/Header";
 import { useSearchParams } from "next/navigation";
-import SignIn from "./components/signIn";
-import SignUp from "./components/signUp";
+import { SignIn } from "./components/signIn";
+import { SignUp } from "./components/signUp";
 
 export const AuthPage = () => {
   const searchParams = useSearchParams();

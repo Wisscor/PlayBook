@@ -61,5 +61,22 @@
   "delete": "Delete",
   "edit": "Edit",
   "no-posts": "You have no posts yet. Create one to get started!",
-  "no-matches": "You have no matches yet. Create one to get started!"
+  "no-matches": "You have no matches yet. Create one to get started!",
+  "profile": "Profile",
+  "about-me": "About Me",
+  "details": "Details",
+  "name-label": "Name :",
+  "username-label": "Username :",
+  "email-label": "Email :",
+  "edit-profile": "Edit Profile",
+  "matches": "Matches",
+  "posts": "Posts",
+  "match-type": "Match Type",
+  "nbr-players": "Number of Players",
+  "save-changes": "Save Changes",
+  "edit-match": "Edit Match",
+  "match": "Match",
+  "time-label": "Time :",
+  "players-label": "Players :",
+  "post": "Post"
 }

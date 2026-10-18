@@ -5,7 +5,7 @@ import React from "react";
 import { twMerge } from "tailwind-merge";
 
 interface InputProps {
-  placeholder: string;
+  placeholder?: string;
   value: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   type?: React.HTMLInputTypeAttribute;
@@ -13,7 +13,7 @@ interface InputProps {
 }
 
 interface AreaProps {
-  placeholder: string;
+  placeholder?: string;
   value: string;
   className?: string;
   onChange?: React.ChangeEventHandler<HTMLTextAreaElement>;
@@ -38,7 +38,7 @@ const Primary: React.FC<InputProps> = ({
       value={value}
       onChange={onChange}
       type={type ?? "text"}
-      placeholder={t(placeholder)}
+      placeholder={placeholder ? t(placeholder) : undefined}
       className={twMerge(
         clsx(
           "w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-3.5 text-base text-white placeholder:text-slate-400 placeholder:text-sm backdrop-blur-md transition-all outline-none focus:border-white/30 focus:bg-white/10 focus:ring-2 focus:ring-white/20",
@@ -61,7 +61,7 @@ const Area: React.FC<AreaProps> = ({
     <textarea
       value={value}
       onChange={onChange}
-      placeholder={t(placeholder)}
+      placeholder={placeholder ? t(placeholder) : undefined}
       className={twMerge(
         clsx(
           "w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-3.5 text-base text-white placeholder:text-slate-400 placeholder:text-sm backdrop-blur-md transition-all outline-none focus:border-white/30 focus:bg-white/10 focus:ring-2 focus:ring-white/20 resize-y min-h-30",
@@ -90,7 +90,7 @@ const Password: React.FC<PasswordProps> = ({
         value={value}
         onChange={onChange}
         type={isHidden ? "password" : "text"}
-        placeholder={t(placeholder)}
+        placeholder={placeholder ? t(placeholder) : undefined}
         className={twMerge(
           clsx(
             "w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-3.5 text-base text-white placeholder:text-slate-400 placeholder:text-sm backdrop-blur-md transition-all outline-none focus:border-white/30 focus:bg-white/10 focus:ring-2 focus:ring-white/20 pr-12",

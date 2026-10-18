@@ -71,14 +71,32 @@ export const Match: React.FC<MatchProps> = ({ match, onEdit, onDelete }) => {
 
         <div className="flex items-center justify-between pt-3 border-t border-white/10 text-xs text-slate-300">
           <div className="flex items-center gap-1.5">
-            <span className="font-semibold text-slate-400">Time:</span>
-            <span className="font-medium text-white">
-              {match.startTime} - {match.endTime}
-            </span>
+            <PlayText.Span
+              texts={[
+                {
+                  text: "time-label",
+                  className: "font-semibold text-slate-400",
+                },
+                {
+                  content: `${match.startTime} - ${match.endTime}`,
+                  className: "font-medium text-white",
+                },
+              ]}
+            />
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="font-semibold text-slate-400">Players:</span>
-            <span className="font-medium text-white">{match.playerNbr}</span>
+            <PlayText.Span
+              texts={[
+                {
+                  text: "players-label",
+                  className: "font-semibold text-slate-400",
+                },
+                {
+                  content: `${match.playerNbr}`,
+                  className: "font-medium text-white",
+                },
+              ]}
+            />
           </div>
         </div>
       </div>
@@ -117,5 +135,3 @@ export const Match: React.FC<MatchProps> = ({ match, onEdit, onDelete }) => {
     </div>
   );
 };
-
-export default Match;
