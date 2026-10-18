@@ -4,11 +4,13 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy import select, tuple_
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, selectinload
 
 from app.core.deps import get_curr_user
 from app.database.database import get_db
 from app.models.match_announcement import MatchAnnouncement
+from app.models.match_announcement import MatchAnnouncementStatus
+from app.models.play_request import PlayerRequest, PlayerRequestStatusEnum
 from app.models.sport import Sport
 from app.models.user import User
 from app.schemas.match_announcement import (
@@ -40,6 +42,9 @@ async def _get_or_404(
         .options(
             joinedload(MatchAnnouncement.owner),
             joinedload(MatchAnnouncement.sport),
+            selectinload(MatchAnnouncement.play_requests).joinedload(
+                PlayerRequest.sender
+            ),
         )
         .where(MatchAnnouncement.id == announcement_id)
         .execution_options(populate_existing=True)
@@ -52,8 +57,18 @@ async def _get_or_404(
     return announcement
 
 
+def _to_response(announcement: MatchAnnouncement) -> MatchAnnouncementResponse:
+    response = MatchAnnouncementResponse.model_validate(announcement)
+    response.accepted_players = [
+        request.sender
+        for request in announcement.play_requests
+        if request.status == PlayerRequestStatusEnum.accepted
+    ]
+    return response
+
+
 def _require_owner(announcement: MatchAnnouncement, user: User) -> None:
-    if announcement.owner_id != user.id:
+    if announcement.organizer_id != user.id:
         raise HTTPException(status.HTTP_403_FORBIDDEN, detail="Not the owner")
 
 
@@ -71,12 +86,12 @@ async def create_announcement(
         raise HTTPException(
             status.HTTP_404_NOT_FOUND, detail="Sport not found"
         )
-    announcement = MatchAnnouncement(owner_id=me.id, **body.model_dump())
+    announcement = MatchAnnouncement(organizer_id=me.id, **body.model_dump())
     db.add(announcement)
     await db.flush()  # assigns the id
     announcement_id = announcement.id  # read it now: commit expires the object
     await db.commit()
-    return await _get_or_404(db, announcement_id)
+    return _to_response(await _get_or_404(db, announcement_id))
 
 
 @router.get("", response_model=MatchAnnouncementPage)
@@ -92,15 +107,28 @@ async def search_announcements(
     M = MatchAnnouncement
     stmt = (
         select(M)
-        .options(joinedload(M.owner), joinedload(M.sport))
+        .options(
+            joinedload(M.owner),
+            joinedload(M.sport),
+            selectinload(M.play_requests).joinedload(PlayerRequest.sender),
+        )
         .order_by(M.start_time, M.id)
     )
     if filters.sport_id:
         stmt = stmt.where(M.sport_id == filters.sport_id)
-    if filters.type:
-        stmt = stmt.where(M.type == filters.type)
-    if filters.owner_id:
-        stmt = stmt.where(M.owner_id == filters.owner_id)
+    if filters.match_status:
+        stmt = stmt.where(M.match_status == filters.match_status)
+    else:
+        stmt = stmt.where(
+            M.match_status.in_(
+                [
+                    MatchAnnouncementStatus.upcoming,
+                    MatchAnnouncementStatus.live,
+                ]
+            )
+        )
+    if filters.organizer_id:
+        stmt = stmt.where(M.organizer_id == filters.organizer_id)
     if filters.start_from:
         stmt = stmt.where(M.start_time >= filters.start_from)
     if filters.end_to:
@@ -117,7 +145,7 @@ async def search_announcements(
         rows = rows[:limit]
         next_cursor = encode_cursor(rows[-1].start_time, rows[-1].id)
     return MatchAnnouncementPage(
-        items=[MatchAnnouncementResponse.model_validate(r) for r in rows],
+        items=[_to_response(row) for row in rows],
         next_cursor=next_cursor,
     )
 
@@ -128,7 +156,7 @@ async def get_announcement(
     db: AsyncSession = Depends(get_db),
     _: User = Depends(get_curr_user),
 ):
-    return await _get_or_404(db, id)
+    return _to_response(await _get_or_404(db, id))
 
 
 @router.patch("/{id}", response_model=MatchAnnouncementResponse)
@@ -159,10 +187,39 @@ async def update_announcement(
             status.HTTP_404_NOT_FOUND, detail="Sport not found"
         )
 
+    if "remaining_player_slots" in data and data["remaining_player_slots"] < 0:
+        raise HTTPException(422, detail="Player count cannot be negative")
+    if (
+        "match_status" in data
+        and data["match_status"] != announcement.match_status
+        and announcement.match_status
+        in {MatchAnnouncementStatus.canceled, MatchAnnouncementStatus.finished}
+    ):
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            detail="Announcement is already closed",
+        )
+    if (
+        "match_status" in data
+        and data["match_status"]
+        in {
+            MatchAnnouncementStatus.upcoming,
+            MatchAnnouncementStatus.live,
+        }
+        and announcement.match_status
+        in {MatchAnnouncementStatus.canceled, MatchAnnouncementStatus.finished}
+    ):
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            detail="Announcement cannot be reopened",
+        )
+
     for field, value in data.items():
         setattr(announcement, field, value)
     await db.commit()
-    return await _get_or_404(db, id)  # reload: owner and sport after commit
+    return _to_response(
+        await _get_or_404(db, id)
+    )  # reload: owner and sport after commit
 
 
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)

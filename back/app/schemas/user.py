@@ -53,7 +53,6 @@ class UserUpdate(BaseModel):
     username: Optional[str] = Field(default=None, min_length=3, max_length=50)
     email: Optional[EmailStr] = None
     phone: Optional[str] = Field(default=None, min_length=3, max_length=15)
-    avatar: Optional[str] = Field(default=None)
     bio: Optional[str] = Field(default=None, min_length=3, max_length=500)
 
 

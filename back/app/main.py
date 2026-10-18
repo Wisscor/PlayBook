@@ -38,7 +38,11 @@ async def lifespan(app: FastAPI):
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
     except Exception as e:
-        logger.error("Failed to create database tables", error_type=type(e).__name__, exc_info=True)
+        logger.error(
+            "Failed to create database tables",
+            error_type=type(e).__name__,
+            exc_info=True,
+        )
         raise e
     yield
     await engine.dispose()

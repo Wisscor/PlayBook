@@ -4,7 +4,6 @@ import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy import select
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.deps import get_curr_user
@@ -57,10 +56,7 @@ async def add_my_sport(
         )
     if await db.get(UserSport, (me.id, sport_id)) is None:
         db.add(UserSport(user_id=me.id, sport_id=sport_id))
-        try:
-            await db.commit()
-        except IntegrityError:  # two parallel requests: the row now exists
-            await db.rollback()
+        await db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -78,6 +74,6 @@ async def remove_my_sport(
         )
     link = await db.get(UserSport, (me.id, sport_id))
     if link is not None:
-        await db.delete(link)  # AsyncSession.delete must be awaited
+        await db.delete(link)
         await db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)

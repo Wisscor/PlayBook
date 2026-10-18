@@ -9,14 +9,17 @@ from sqlalchemy.orm import joinedload
 
 from app.core.deps import get_curr_user
 from app.database.database import get_db
-from app.models.match_announcement import MatchAnnouncement
-from app.models.play_request import PlayRequest, PlayRequestStatusEnum
+from app.models.match_announcement import (
+    MatchAnnouncement,
+    MatchAnnouncementStatus,
+)
+from app.models.play_request import PlayerRequest, PlayerRequestStatusEnum
 from app.models.user import User
 from app.schemas.play_request import (
-    PlayRequestDecision,
-    PlayRequestFilter,
-    PlayRequestPage,
-    PlayRequestResponse,
+    PlayerRequestDecision,
+    PlayerRequestFilter,
+    PlayerRequestPage,
+    PlayerRequestResponse,
 )
 from app.core.pagination import (
     decode_cursor,
@@ -26,16 +29,18 @@ from app.core.pagination import (
 router = APIRouter(tags=["Play Requests"])
 
 
-async def _get_request(db: AsyncSession, request_id: uuid.UUID) -> PlayRequest:
+async def _get_request(
+    db: AsyncSession, request_id: uuid.UUID
+) -> PlayerRequest:
     """Reload a request with its sender.
 
     Needed after a commit: commit expires every attribute, and async code
     cannot lazy-load `sender` while building the response.
     """
     stmt = (
-        select(PlayRequest)
-        .options(joinedload(PlayRequest.sender))
-        .where(PlayRequest.id == request_id)
+        select(PlayerRequest)
+        .options(joinedload(PlayerRequest.sender))
+        .where(PlayerRequest.id == request_id)
         .execution_options(populate_existing=True)
     )
     return (await db.scalars(stmt)).one()
@@ -43,9 +48,9 @@ async def _get_request(db: AsyncSession, request_id: uuid.UUID) -> PlayRequest:
 
 async def _paginate(
     db: AsyncSession, stmt: Select, limit: int, cursor: Optional[str]
-) -> PlayRequestPage:
-    """Newest first. `stmt` must select PlayRequest."""
-    P = PlayRequest
+) -> PlayerRequestPage:
+    """Newest first. `stmt` must select PlayerRequest."""
+    P = PlayerRequest
     stmt = stmt.options(joinedload(P.sender)).order_by(
         P.created_at.desc(), P.id.desc()
     )
@@ -57,15 +62,15 @@ async def _paginate(
     if len(rows) > limit:
         rows = rows[:limit]
         next_cursor = encode_cursor(rows[-1].created_at, rows[-1].id)
-    return PlayRequestPage(
-        items=[PlayRequestResponse.model_validate(r) for r in rows],
+    return PlayerRequestPage(
+        items=[PlayerRequestResponse.model_validate(r) for r in rows],
         next_cursor=next_cursor,
     )
 
 
 @router.post(
     "/match-announcements/{id}/play-requests",
-    response_model=PlayRequestResponse,
+    response_model=PlayerRequestResponse,
     status_code=status.HTTP_201_CREATED,
 )
 async def send_play_request(
@@ -78,14 +83,28 @@ async def send_play_request(
         raise HTTPException(
             status.HTTP_404_NOT_FOUND, detail="Announcement not found"
         )
-    if announcement.owner_id == me.id:
+    if announcement.organizer_id == me.id:
         raise HTTPException(
             status.HTTP_403_FORBIDDEN,
             detail="Cannot request your own announcement",
         )
+    if announcement.match_status not in {
+        MatchAnnouncementStatus.upcoming,
+        MatchAnnouncementStatus.live,
+    }:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            detail="Announcement is not accepting requests",
+        )
+    if announcement.remaining_player_slots <= 0:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            detail="Announcement has no open player slots",
+        )
     already_sent = await db.scalar(
-        select(PlayRequest.id).where(
-            PlayRequest.announcement_id == id, PlayRequest.sender_id == me.id
+        select(PlayerRequest.id).where(
+            PlayerRequest.announcement_id == id,
+            PlayerRequest.sender_id == me.id,
         )
     )
     if already_sent:
@@ -93,7 +112,7 @@ async def send_play_request(
             status.HTTP_409_CONFLICT, detail="Request already sent"
         )
 
-    play_request = PlayRequest(announcement_id=id, sender_id=me.id)
+    play_request = PlayerRequest(announcement_id=id, sender_id=me.id)
     db.add(play_request)
     await db.flush()  # assigns the id
     request_id = play_request.id  # read it now: commit expires the object
@@ -109,7 +128,7 @@ async def send_play_request(
 
 
 @router.get(
-    "/match-announcements/{id}/play-requests", response_model=PlayRequestPage
+    "/match-announcements/{id}/play-requests", response_model=PlayerRequestPage
 )
 async def list_announcement_requests(
     id: uuid.UUID,
@@ -123,59 +142,79 @@ async def list_announcement_requests(
         raise HTTPException(
             status.HTTP_404_NOT_FOUND, detail="Announcement not found"
         )
-    if announcement.owner_id != me.id:
+    if announcement.organizer_id != me.id:
         raise HTTPException(status.HTTP_403_FORBIDDEN, detail="Not the owner")
-    stmt = select(PlayRequest).where(PlayRequest.announcement_id == id)
+    stmt = select(PlayerRequest).where(PlayerRequest.announcement_id == id)
     return await _paginate(db, stmt, limit, cursor)
 
 
-@router.get("/play-requests", response_model=PlayRequestPage)
+@router.get("/play-requests", response_model=PlayerRequestPage)
 async def list_my_requests(
-    filters: PlayRequestFilter = Depends(),
+    filters: PlayerRequestFilter = Depends(),
     limit: int = Query(20, ge=1, le=100),
     cursor: Optional[str] = None,
     db: AsyncSession = Depends(get_db),
     me: User = Depends(get_curr_user),
 ):
     """role=sent: requests I sent. role=received: requests on my announcements."""
-    stmt = select(PlayRequest)
+    stmt = select(PlayerRequest)
     if filters.role == "sent":
-        stmt = stmt.where(PlayRequest.sender_id == me.id)
+        stmt = stmt.where(PlayerRequest.sender_id == me.id)
     else:
         stmt = stmt.join(
             MatchAnnouncement,
-            MatchAnnouncement.id == PlayRequest.announcement_id,
-        ).where(MatchAnnouncement.owner_id == me.id)
+            MatchAnnouncement.id == PlayerRequest.announcement_id,
+        ).where(MatchAnnouncement.organizer_id == me.id)
     if filters.status:
-        stmt = stmt.where(PlayRequest.status == filters.status)
+        stmt = stmt.where(PlayerRequest.status == filters.status)
     return await _paginate(db, stmt, limit, cursor)
 
 
-@router.patch("/play-requests/{id}", response_model=PlayRequestResponse)
+@router.patch("/play-requests/{id}", response_model=PlayerRequestResponse)
 async def decide_play_request(
     id: uuid.UUID,
-    body: PlayRequestDecision,
+    body: PlayerRequestDecision,
     db: AsyncSession = Depends(get_db),
     me: User = Depends(get_curr_user),
 ):
     play_request = await db.scalar(
-        select(PlayRequest)
+        select(PlayerRequest)
         .options(
-            joinedload(PlayRequest.sender),
-            joinedload(PlayRequest.announcement),
+            joinedload(PlayerRequest.sender),
+            joinedload(PlayerRequest.announcement),
         )
-        .where(PlayRequest.id == id)
+        .with_for_update()
+        .where(PlayerRequest.id == id)
     )
     if play_request is None:
         raise HTTPException(
             status.HTTP_404_NOT_FOUND, detail="Play request not found"
         )
-    if play_request.announcement.owner_id != me.id:
+    if play_request.announcement.organizer_id != me.id:
         raise HTTPException(status.HTTP_403_FORBIDDEN, detail="Not the owner")
-    if play_request.status != PlayRequestStatusEnum.pending:
+    if play_request.status != PlayerRequestStatusEnum.pending:
         raise HTTPException(
             status.HTTP_409_CONFLICT, detail="Request already answered"
         )
-    play_request.status = PlayRequestStatusEnum(body.status)
+    announcement = play_request.announcement
+    if announcement.match_status not in {
+        MatchAnnouncementStatus.upcoming,
+        MatchAnnouncementStatus.live,
+    }:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            detail="Announcement is not accepting decisions",
+        )
+    if (
+        body.status == PlayerRequestStatusEnum.accepted
+        and announcement.remaining_player_slots <= 0
+    ):
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            detail="Announcement has no open player slots",
+        )
+    play_request.status = PlayerRequestStatusEnum(body.status)
+    if play_request.status == PlayerRequestStatusEnum.accepted:
+        announcement.remaining_player_slots -= 1
     await db.commit()
     return await _get_request(db, id)

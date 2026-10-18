@@ -136,6 +136,31 @@ paths:
               schema: { $ref: '#/components/schemas/Me' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '422': { $ref: '#/components/responses/ValidationError' }
+  /users/me/avatar:
+    post:
+      tags: [Users]
+      summary: Replace my avatar
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: JPEG, PNG, or WebP image up to 5 MB.
+      responses:
+        '200':
+          description: Updated profile
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Me' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '413': { $ref: '#/components/responses/PayloadTooLarge' }
+        '415': { $ref: '#/components/responses/UnsupportedMediaType' }
   /users/{id}:
     get:
       tags: [Users]
@@ -580,16 +605,16 @@ paths:
         - name: sport_id
           in: query
           schema: { type: string, format: uuid }
-        - name: type
+        - name: match_status
           in: query
-          schema: { $ref: '#/components/schemas/AnnouncementType' }
+          schema: { $ref: '#/components/schemas/MatchAnnouncementStatus' }
         - name: start_from
           in: query
           schema: { type: string, format: date-time }
         - name: end_to
           in: query
           schema: { type: string, format: date-time }
-        - name: owner_id
+        - name: organizer_id
           in: query
           schema: { type: string, format: uuid }
         - { $ref: '#/components/parameters/Limit' }
@@ -619,7 +644,7 @@ paths:
       tags: [Match Announcements]
       summary: Edit an announcement (owner only)
       description: |
-        Partial update of `sport_id`, `type`, `start_time`, `end_time`.
+        Partial update of `title`, `sport_id`, `remaining_player_slots`, `match_status`, `start_time`, and `end_time`.
         The rule `end_time > start_time` is checked on the resulting values (422).
         Existing play requests are kept.
       parameters:
@@ -667,7 +692,7 @@ paths:
           description: Created
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/PlayRequest' }
+              schema: { $ref: '#/components/schemas/PlayerRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
@@ -684,7 +709,7 @@ paths:
           description: Requests
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/PlayRequestPage' }
+              schema: { $ref: '#/components/schemas/PlayerRequestPage' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
@@ -700,7 +725,7 @@ paths:
           schema: { type: string, enum: [sent, received] }
         - name: status
           in: query
-          schema: { $ref: '#/components/schemas/PlayRequestStatus' }
+          schema: { $ref: '#/components/schemas/PlayerRequestStatus' }
         - { $ref: '#/components/parameters/Limit' }
         - { $ref: '#/components/parameters/Cursor' }
       responses:
@@ -708,7 +733,7 @@ paths:
           description: Requests
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/PlayRequestPage' }
+              schema: { $ref: '#/components/schemas/PlayerRequestPage' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '422': { $ref: '#/components/responses/ValidationError' }
   /play-requests/{id}:
@@ -722,13 +747,13 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/PlayRequestDecision' }
+            schema: { $ref: '#/components/schemas/PlayerRequestDecision' }
       responses:
         '200':
           description: Updated
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/PlayRequest' }
+              schema: { $ref: '#/components/schemas/PlayerRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
@@ -825,6 +850,16 @@ components:
       content:
         application/json:
           schema: { $ref: '#/components/schemas/Error' }
+    PayloadTooLarge:
+      description: Uploaded avatar exceeds the 5 MB limit
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    UnsupportedMediaType:
+      description: Avatar is not a JPEG, PNG, or WebP image
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
     Forbidden:
       description: Not allowed for this user
       content:
@@ -854,11 +889,11 @@ components:
         detail: { type: string }
 
     # ----- enums
-    AnnouncementType:
+    MatchAnnouncementStatus:
       type: string
-      enum: [player, opponent]
-      description: '`player` = teammate needed, `opponent` = opponent needed.'
-    PlayRequestStatus:
+      enum: [upcoming, live, canceled, finished]
+      description: '`finished` means the match has ended; filling all slots does not close the announcement automatically.'
+    PlayerRequestStatus:
       type: string
       enum: [pending, accepted, declined]
     MediaType:
@@ -1105,28 +1140,36 @@ components:
     # ----- match announcements
     MatchAnnouncementCreate:
       type: object
-      required: [sport_id, type, start_time, end_time]
+      required: [title, sport_id, remaining_player_slots, start_time, end_time]
       properties:
+        title: { type: string, minLength: 1, maxLength: 255 }
         sport_id: { type: string, format: uuid }
-        type: { $ref: '#/components/schemas/AnnouncementType' }
+        remaining_player_slots: { type: integer, minimum: 1 }
         start_time: { type: string, format: date-time }
         end_time: { type: string, format: date-time }
     MatchAnnouncementUpdate:
       type: object
       minProperties: 1
       properties:
+        title: { type: string, minLength: 1, maxLength: 255 }
         sport_id: { type: string, format: uuid }
-        type: { $ref: '#/components/schemas/AnnouncementType' }
+        remaining_player_slots: { type: integer, minimum: 0 }
+        status: { $ref: '#/components/schemas/MatchAnnouncementStatus' }
         start_time: { type: string, format: date-time }
         end_time: { type: string, format: date-time }
     MatchAnnouncement:
       type: object
-      required: [id, owner, sport, type, start_time, end_time, created_at]
+      required: [id, title, owner, sport, remaining_player_slots, match_status, accepted_players, start_time, end_time, created_at]
       properties:
         id: { type: string, format: uuid }
+        title: { type: string }
         owner: { $ref: '#/components/schemas/UserSummary' }
         sport: { $ref: '#/components/schemas/Sport' }
-        type: { $ref: '#/components/schemas/AnnouncementType' }
+        remaining_player_slots: { type: integer, minimum: 0 }
+        match_status: { $ref: '#/components/schemas/MatchAnnouncementStatus' }
+        accepted_players:
+          type: array
+          items: { $ref: '#/components/schemas/UserSummary' }
         start_time: { type: string, format: date-time }
         end_time: { type: string, format: date-time }
         created_at: { type: string, format: date-time }
@@ -1140,29 +1183,29 @@ components:
         next_cursor: { type: string, nullable: true }
 
     # ----- play requests
-    PlayRequestDecision:
+    PlayerRequestDecision:
       type: object
       required: [status]
       properties:
         status:
           type: string
           enum: [accepted, declined]
-    PlayRequest:
+    PlayerRequest:
       type: object
       required: [id, announcement_id, sender, status, created_at]
       properties:
         id: { type: string, format: uuid }
         announcement_id: { type: string, format: uuid }
         sender: { $ref: '#/components/schemas/UserSummary' }
-        status: { $ref: '#/components/schemas/PlayRequestStatus' }
+        status: { $ref: '#/components/schemas/PlayerRequestStatus' }
         created_at: { type: string, format: date-time }
-    PlayRequestPage:
+    PlayerRequestPage:
       type: object
       required: [items, next_cursor]
       properties:
         items:
           type: array
-          items: { $ref: '#/components/schemas/PlayRequest' }
+          items: { $ref: '#/components/schemas/PlayerRequest' }
         next_cursor: { type: string, nullable: true }
 
     # ----- notifications

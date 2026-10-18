@@ -10,18 +10,20 @@ from app.core.deps import get_curr_user
 from app.core.pagination import encode_cursor
 from app.models.match_announcement import (
     MatchAnnouncement,
-    AnnouncementTypeEnum,
+    MatchAnnouncementStatus,
 )
-from app.models.play_request import PlayRequest, PlayRequestStatusEnum
+from app.models.play_request import PlayerRequest, PlayerRequestStatusEnum
 from app.models.sport import Sport
 
 
 def _make_announcement(owner, sport):
     ann = MatchAnnouncement(
         id=uuid.uuid4(),
-        owner_id=owner.id,
+        title="Looking for players",
+        organizer_id=owner.id,
         sport_id=sport.id,
-        type=AnnouncementTypeEnum.player,
+        remaining_player_slots=3,
+        match_status=MatchAnnouncementStatus.upcoming,
         start_time=datetime.now(timezone.utc),
         end_time=datetime.now(timezone.utc),
         created_at=datetime.now(timezone.utc),
@@ -33,9 +35,9 @@ def _make_announcement(owner, sport):
 
 
 def _make_play_request(
-    sender, announcement, status=PlayRequestStatusEnum.pending
+    sender, announcement, status=PlayerRequestStatusEnum.pending
 ):
-    pr = PlayRequest(
+    pr = PlayerRequest(
         id=uuid.uuid4(),
         announcement_id=announcement.id,
         sender_id=sender.id,
@@ -49,7 +51,7 @@ def _make_play_request(
 
 def test_send_play_request_success(mock_user_1, mock_user_2, mock_db):
     client = TestClient(app)
-    sport = Sport(id=uuid.uuid4(), name="Football")
+    sport = Sport(id=uuid.uuid4(), name="Football", max_players=11)
     # announcement owned by mock_user_2
     announcement = _make_announcement(mock_user_2, sport)
     # mock_user_1 sends request
@@ -95,7 +97,7 @@ def test_send_play_request_announcement_not_found(mock_user_1, mock_db):
 
 def test_send_play_request_own_announcement(mock_user_1, mock_db):
     client = TestClient(app)
-    sport = Sport(id=uuid.uuid4(), name="Football")
+    sport = Sport(id=uuid.uuid4(), name="Football", max_players=11)
     # announcement owned by mock_user_1
     announcement = _make_announcement(mock_user_1, sport)
 
@@ -111,9 +113,47 @@ def test_send_play_request_own_announcement(mock_user_1, mock_db):
     app.dependency_overrides.clear()
 
 
+def test_send_play_request_closed_announcement(
+    mock_user_1, mock_user_2, mock_db
+):
+    client = TestClient(app)
+    sport = Sport(id=uuid.uuid4(), name="Football", max_players=11)
+    announcement = _make_announcement(mock_user_2, sport)
+    announcement.match_status = MatchAnnouncementStatus.canceled
+    mock_db.get.return_value = announcement
+
+    app.dependency_overrides[get_curr_user] = lambda: mock_user_1
+    app.dependency_overrides[get_db] = lambda: mock_db
+
+    res = client.post(f"/match-announcements/{announcement.id}/play-requests")
+    assert res.status_code == 409
+    assert res.json()["detail"] == "Announcement is not accepting requests"
+
+    app.dependency_overrides.clear()
+
+
+def test_send_play_request_full_announcement(
+    mock_user_1, mock_user_2, mock_db
+):
+    client = TestClient(app)
+    sport = Sport(id=uuid.uuid4(), name="Football", max_players=11)
+    announcement = _make_announcement(mock_user_2, sport)
+    announcement.remaining_player_slots = 0
+    mock_db.get.return_value = announcement
+
+    app.dependency_overrides[get_curr_user] = lambda: mock_user_1
+    app.dependency_overrides[get_db] = lambda: mock_db
+
+    res = client.post(f"/match-announcements/{announcement.id}/play-requests")
+    assert res.status_code == 409
+    assert res.json()["detail"] == "Announcement has no open player slots"
+
+    app.dependency_overrides.clear()
+
+
 def test_send_play_request_already_sent(mock_user_1, mock_user_2, mock_db):
     client = TestClient(app)
-    sport = Sport(id=uuid.uuid4(), name="Football")
+    sport = Sport(id=uuid.uuid4(), name="Football", max_players=11)
     announcement = _make_announcement(mock_user_2, sport)
 
     mock_db.get.return_value = announcement
@@ -133,7 +173,7 @@ def test_send_play_request_already_sent(mock_user_1, mock_user_2, mock_db):
 
 def test_send_play_request_integrity_error(mock_user_1, mock_user_2, mock_db):
     client = TestClient(app)
-    sport = Sport(id=uuid.uuid4(), name="Football")
+    sport = Sport(id=uuid.uuid4(), name="Football", max_players=11)
     announcement = _make_announcement(mock_user_2, sport)
 
     mock_db.get.return_value = announcement
@@ -153,7 +193,7 @@ def test_send_play_request_integrity_error(mock_user_1, mock_user_2, mock_db):
 
 def test_list_announcement_requests_success(mock_user_1, mock_user_2, mock_db):
     client = TestClient(app)
-    sport = Sport(id=uuid.uuid4(), name="Football")
+    sport = Sport(id=uuid.uuid4(), name="Football", max_players=11)
     # announcement owned by mock_user_1
     announcement = _make_announcement(mock_user_1, sport)
     play_request = _make_play_request(mock_user_2, announcement)
@@ -179,7 +219,7 @@ def test_list_announcement_requests_not_owner(
     mock_user_1, mock_user_2, mock_db
 ):
     client = TestClient(app)
-    sport = Sport(id=uuid.uuid4(), name="Football")
+    sport = Sport(id=uuid.uuid4(), name="Football", max_players=11)
     # announcement owned by mock_user_2
     announcement = _make_announcement(mock_user_2, sport)
 
@@ -212,7 +252,7 @@ def test_list_announcement_requests_not_found(mock_user_1, mock_db):
 
 def test_list_my_requests_sent(mock_user_1, mock_user_2, mock_db):
     client = TestClient(app)
-    sport = Sport(id=uuid.uuid4(), name="Football")
+    sport = Sport(id=uuid.uuid4(), name="Football", max_players=11)
     announcement = _make_announcement(mock_user_2, sport)
     play_request = _make_play_request(mock_user_1, announcement)
 
@@ -234,7 +274,7 @@ def test_list_my_requests_sent(mock_user_1, mock_user_2, mock_db):
 
 def test_list_my_requests_received(mock_user_1, mock_user_2, mock_db):
     client = TestClient(app)
-    sport = Sport(id=uuid.uuid4(), name="Football")
+    sport = Sport(id=uuid.uuid4(), name="Football", max_players=11)
     announcement = _make_announcement(mock_user_1, sport)
     play_request = _make_play_request(mock_user_2, announcement)
 
@@ -256,7 +296,7 @@ def test_list_my_requests_received(mock_user_1, mock_user_2, mock_db):
 
 def test_list_my_requests_pagination(mock_user_1, mock_user_2, mock_db):
     client = TestClient(app)
-    sport = Sport(id=uuid.uuid4(), name="Football")
+    sport = Sport(id=uuid.uuid4(), name="Football", max_players=11)
     announcement = _make_announcement(mock_user_2, sport)
     pr1 = _make_play_request(mock_user_1, announcement)
     pr2 = _make_play_request(mock_user_1, announcement)
@@ -280,7 +320,7 @@ def test_list_my_requests_pagination(mock_user_1, mock_user_2, mock_db):
 
 def test_list_my_requests_with_cursor(mock_user_1, mock_user_2, mock_db):
     client = TestClient(app)
-    sport = Sport(id=uuid.uuid4(), name="Football")
+    sport = Sport(id=uuid.uuid4(), name="Football", max_players=11)
     announcement = _make_announcement(mock_user_2, sport)
     pr1 = _make_play_request(mock_user_1, announcement)
 
@@ -307,7 +347,7 @@ def test_decide_play_request_accept_success(mock_user_1, mock_user_2, mock_db):
     # announcement owned by mock_user_1
     announcement = _make_announcement(mock_user_1, sport)
     play_request = _make_play_request(
-        mock_user_2, announcement, status=PlayRequestStatusEnum.pending
+        mock_user_2, announcement, status=PlayerRequestStatusEnum.pending
     )
 
     mock_db.scalar.return_value = play_request
@@ -321,7 +361,8 @@ def test_decide_play_request_accept_success(mock_user_1, mock_user_2, mock_db):
     payload = {"status": "accepted"}
     res = client.patch(f"/play-requests/{play_request.id}", json=payload)
     assert res.status_code == 200
-    assert play_request.status == PlayRequestStatusEnum.accepted
+    assert play_request.status == PlayerRequestStatusEnum.accepted
+    assert announcement.remaining_player_slots == 2
     mock_db.commit.assert_called_once()
 
     app.dependency_overrides.clear()
@@ -371,7 +412,7 @@ def test_decide_play_request_already_answered(
     announcement = _make_announcement(mock_user_1, sport)
     # already accepted
     play_request = _make_play_request(
-        mock_user_2, announcement, status=PlayRequestStatusEnum.accepted
+        mock_user_2, announcement, status=PlayerRequestStatusEnum.accepted
     )
 
     mock_db.scalar.return_value = play_request

@@ -1,4 +1,6 @@
 import uuid
+import io
+from pathlib import Path
 from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock
 from fastapi.testclient import TestClient
@@ -55,6 +57,53 @@ def test_update_my_profile(mock_user_1, mock_db):
     app.dependency_overrides.clear()
 
 
+def test_upload_avatar_success(mock_user_1, mock_db):
+    client = TestClient(app)
+    app.dependency_overrides[get_curr_user] = lambda: mock_user_1
+    app.dependency_overrides[get_db] = lambda: mock_db
+
+    file_content = b"fake png avatar"
+    files = {"file": ("avatar.png", io.BytesIO(file_content), "image/png")}
+    res = client.post("/users/me/avatar", files=files)
+
+    assert res.status_code == 200
+    assert mock_user_1.avatar.startswith("/uploads/")
+    assert res.json()["avatar"] == mock_user_1.avatar
+    assert (
+        Path("uploads") / mock_user_1.avatar.removeprefix("/uploads/")
+    ).exists()
+
+    Path("uploads", mock_user_1.avatar.removeprefix("/uploads/")).unlink()
+    app.dependency_overrides.clear()
+
+
+def test_upload_avatar_rejects_unsupported_type(mock_user_1, mock_db):
+    client = TestClient(app)
+    app.dependency_overrides[get_curr_user] = lambda: mock_user_1
+    app.dependency_overrides[get_db] = lambda: mock_db
+
+    files = {"file": ("avatar.pdf", io.BytesIO(b"pdf"), "application/pdf")}
+    res = client.post("/users/me/avatar", files=files)
+
+    assert res.status_code == 415
+    app.dependency_overrides.clear()
+
+
+def test_upload_avatar_rejects_large_file(mock_user_1, mock_db):
+    client = TestClient(app)
+    app.dependency_overrides[get_curr_user] = lambda: mock_user_1
+    app.dependency_overrides[get_db] = lambda: mock_db
+
+    oversized_content = b"X" * (5 * 1024 * 1024 + 1)
+    files = {
+        "file": ("avatar.jpg", io.BytesIO(oversized_content), "image/jpeg")
+    }
+    res = client.post("/users/me/avatar", files=files)
+
+    assert res.status_code == 413
+    app.dependency_overrides.clear()
+
+
 def test_delete_my_profile(mock_user_1, mock_db):
     client = TestClient(app)
 
@@ -69,7 +118,9 @@ def test_delete_my_profile(mock_user_1, mock_db):
     app.dependency_overrides.clear()
 
 
-def test_get_user_by_id_found_is_following_true(mock_user_1, mock_user_2, mock_db):
+def test_get_user_by_id_found_is_following_true(
+    mock_user_1, mock_user_2, mock_db
+):
     client = TestClient(app)
 
     # 1. target_user -> mock_user_2
@@ -98,7 +149,9 @@ def test_get_user_by_id_found_is_following_true(mock_user_1, mock_user_2, mock_d
     app.dependency_overrides.clear()
 
 
-def test_get_user_by_id_found_is_following_false(mock_user_1, mock_user_2, mock_db):
+def test_get_user_by_id_found_is_following_false(
+    mock_user_1, mock_user_2, mock_db
+):
     client = TestClient(app)
 
     # 1. target_user -> mock_user_2
