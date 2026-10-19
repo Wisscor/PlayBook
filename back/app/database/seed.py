@@ -12,12 +12,20 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database.database import get_db
 from app.models.sport import Sport
 
-SPORTS = ["Football", "Volleyball", "Basketball"]
+SPORTS = {
+    "Football": 11,
+    "Volleyball": 6,
+    "Basketball": 5,
+}
 
 
 async def seed_sports(db: AsyncSession) -> None:
     existing = set((await db.scalars(select(Sport.name))).all())
-    db.add_all(Sport(name=name) for name in SPORTS if name not in existing)
+    db.add_all(
+        Sport(name=name, max_players=max_players)
+        for name, max_players in SPORTS.items()
+        if name not in existing
+    )
     await db.commit()
 
 

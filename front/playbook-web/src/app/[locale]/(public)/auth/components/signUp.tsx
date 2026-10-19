@@ -4,6 +4,8 @@ import { PlayButton } from "@/components/ui/Button";
 import { PlayInput } from "@/components/ui/Input";
 import { PlayText } from "@/components/ui/Text";
 import { ROUTES } from "@/lib/constants";
+import { signUp } from "@/services/auth";
+import { useNavigation } from "@/hooks/useNavigation";
 import React, { useState } from "react";
 
 export const SignUp = () => {
@@ -11,16 +13,40 @@ export const SignUp = () => {
     firstName: "",
     lastName: "",
     username: "",
+    email: "",
     password: "",
     confirmPassword: "",
   });
+  const { goSignIn } = useNavigation();
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const [isHidden, setIsHidden] = useState({
     original: true,
     confirm: true,
   });
 
-  const handleSignUp = (e: React.SubmitEvent) => {
+  const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setError("");
+    if (infos.password !== infos.confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+    setIsLoading(true);
+    try {
+      await signUp({
+        firstname: infos.firstName,
+        lastname: infos.lastName,
+        username: infos.username,
+        email: infos.email,
+        password: infos.password,
+      });
+      goSignIn();
+    } catch {
+      setError("Unable to create your account");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -55,6 +81,13 @@ export const SignUp = () => {
             onChange={(e) => setInfos({ ...infos, username: e.target.value })}
           />
 
+          <PlayInput.Primary
+            placeholder="email"
+            type="email"
+            value={infos.email}
+            onChange={(e) => setInfos({ ...infos, email: e.target.value })}
+          />
+
           <PlayInput.Password
             onClick={() =>
               setIsHidden({ ...isHidden, original: !isHidden.original })
@@ -77,9 +110,11 @@ export const SignUp = () => {
             }
           />
 
+          {error && <p className="text-sm text-rose-400">{error}</p>}
+
           <div className="pt-2">
             <PlayButton.Primary
-              title="signUp"
+              title={isLoading ? "signing-up" : "signUp"}
               className="w-full rounded-2xl bg-white py-3.5 shadow-lg shadow-white/5 hover:bg-slate-100 transition-all text-slate-950 font-semibold"
               type="submit"
             />

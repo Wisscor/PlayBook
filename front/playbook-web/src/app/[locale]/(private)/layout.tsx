@@ -8,11 +8,16 @@ import React, { useState } from "react";
 import { Link } from "../../../../i18n/navigation";
 import { usePathname } from "next/navigation";
 import { BurgerMenu } from "./components/burgerMenu";
+import { signOut } from "@/services/auth";
+import { useNavigation } from "@/hooks/useNavigation";
 
 export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
   const locale = useLocale();
   const pathname = usePathname();
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [logoutError, setLogoutError] = useState("");
+  const { goSignIn } = useNavigation();
 
   const menu = [
     {
@@ -28,6 +33,19 @@ export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
       route: ROUTES.PROFILE,
     },
   ];
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    setLogoutError("");
+    try {
+      await signOut();
+      goSignIn();
+    } catch (error) {
+      console.error("Unable to log out:", error);
+      setLogoutError("Unable to log out");
+      setIsLoggingOut(false);
+    }
+  };
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-950 text-white">
@@ -68,23 +86,35 @@ export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
             })}
           </nav>
 
-          <button
-            type="button"
-            onClick={() => setIsExpanded(!isExpanded)}
-            className={`lg:hidden rounded-xl border border-white/10 bg-white/5 p-2.5 backdrop-blur-md transition-all hover:bg-white/10 cursor-pointer ${
-              locale === "ar" ? "left-6" : "right-6"
-            }`}
-            aria-label="Toggle menu"
-          >
-            <Image
-              loading="eager"
-              alt="menu-icon"
-              src="/icons/menu.png"
-              width={20}
-              height={20}
-              className="opacity-80 hover:opacity-100 transition-opacity"
-            />
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={handleLogout}
+              disabled={isLoggingOut}
+              className="hidden rounded-xl border border-rose-500/20 bg-rose-500/10 px-4 py-2 text-sm font-semibold text-rose-300 transition-colors hover:bg-rose-500/20 disabled:cursor-not-allowed disabled:opacity-60 lg:block"
+            >
+              <PlayText.Primary
+                id={isLoggingOut ? "logging-out" : "logout"}
+                className="text-sm font-semibold text-rose-300"
+              />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="rounded-xl border border-white/10 bg-white/5 p-2.5 backdrop-blur-md transition-all hover:bg-white/10 lg:hidden"
+              aria-label="Toggle menu"
+            >
+              <Image
+                loading="eager"
+                alt="menu-icon"
+                src="/icons/menu.png"
+                width={20}
+                height={20}
+                className="opacity-80 transition-opacity hover:opacity-100"
+              />
+            </button>
+          </div>
 
           <BurgerMenu
             close={() => setIsExpanded(false)}
@@ -93,6 +123,11 @@ export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
             locale={locale}
           />
         </div>
+        {logoutError && (
+          <p className="px-6 pb-2 text-right text-sm text-rose-400 md:px-12 lg:px-20">
+            {logoutError}
+          </p>
+        )}
       </header>
 
       <main className="flex-1">

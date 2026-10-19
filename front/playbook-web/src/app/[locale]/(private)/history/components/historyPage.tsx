@@ -1,51 +1,19 @@
 "use client";
 
 import { PlayText } from "@/components/ui/Text";
-import { User } from "@/types/user";
-import { RequestCookie } from "next/dist/compiled/@edge-runtime/cookies";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import React from "react";
 import { MatchesSection } from "./matchesSection";
 import { PostsSection } from "./postsSection";
-import { PlayButton } from "@/components/ui/Button";
 import { useTranslations } from "next-intl";
 
-export const HistoryPageContent: React.FC<{
-  sessionCookie: RequestCookie | undefined;
-}> = ({ sessionCookie }) => {
+export const HistoryPageContent: React.FC = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
   const t = useTranslations();
 
   const type = searchParams.get("type") ?? "matches";
-
-  let user: User | null = null;
-
-  if (sessionCookie?.value) {
-    try {
-      user = JSON.parse(sessionCookie.value);
-    } catch (error) {
-      console.error("Malformed user session data:", error);
-    }
-  }
-
-  const handleTabChange = (newType: string) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("type", newType);
-    router.replace(`${pathname}?rel=${params.toString()}`);
-  };
-
-  if (!user) {
-    return (
-      <div className="flex flex-col min-h-[calc(100vh-140px)] justify-center items-center py-8">
-        <PlayText.Primary
-          id="login-to-see"
-          className="text-lg font-medium text-slate-300 text-center"
-        />
-      </div>
-    );
-  }
 
   return (
     <div className="flex flex-col min-h-[calc(100vh-140px)] bg-slate-950 p-6 md:p-12 lg:px-30 py-12 gap-8 text-white">

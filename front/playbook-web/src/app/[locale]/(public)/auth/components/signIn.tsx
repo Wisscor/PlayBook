@@ -5,33 +5,31 @@ import { PlayInput } from "@/components/ui/Input";
 import { PlayText } from "@/components/ui/Text";
 import { useNavigation } from "@/hooks/useNavigation";
 import { ROUTES } from "@/lib/constants";
-import { User } from "@/types/user";
-import Cookies from "js-cookie";
+import { signIn } from "@/services/auth";
 import React, { useState } from "react";
 
 export const SignIn = () => {
   const { goHome } = useNavigation();
   const [infos, setInfos] = useState({
-    username: "",
+    username_or_email: "",
     password: "",
   });
   const [isHidden, setIsHidden] = useState(true);
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = (e: React.SubmitEvent) => {
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const user: User = {
-      firstname: "Wissam",
-      lastname: "Azadou",
-      username: "wazadou",
-    };
-
-    Cookies.set("user_session", JSON.stringify(user), {
-      expires: 2 / 24,
-      secure: true,
-      sameSite: "strict",
-    });
-
-    goHome();
+    setError("");
+    setIsLoading(true);
+    try {
+      await signIn(infos);
+      goHome();
+    } catch {
+      setError("Invalid username/email or password");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -70,8 +68,10 @@ export const SignIn = () => {
             <PlayInput.Primary
               className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-slate-400 backdrop-blur-md focus:border-white/30 focus:outline-none transition-all"
               placeholder="username"
-              value={infos.username}
-              onChange={(e) => setInfos({ ...infos, username: e.target.value })}
+              value={infos.username_or_email}
+              onChange={(e) =>
+                setInfos({ ...infos, username_or_email: e.target.value })
+              }
             />
             <PlayInput.Password
               className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-slate-400 backdrop-blur-md focus:border-white/30 focus:outline-none transition-all"
@@ -83,10 +83,12 @@ export const SignIn = () => {
             />
           </div>
 
+          {error && <p className="text-sm text-rose-400">{error}</p>}
+
           <div className="pt-2">
             <PlayButton.Primary
               textClassName="text-slate-950 font-semibold"
-              title="login"
+              title={isLoading ? "logging-in" : "login"}
               className="w-full rounded-2xl bg-white py-3.5 shadow-lg shadow-white/5 hover:bg-slate-100 transition-all"
               type="submit"
             />

@@ -5,17 +5,14 @@ import { PlayText } from "@/components/ui/Text";
 import Image from "next/image";
 import React, { useEffect, useState } from "react";
 import { Info } from "./info";
-import { RequestCookie } from "next/dist/compiled/@edge-runtime/cookies";
 import { User } from "@/types/user";
 import { isEmailValid } from "@/lib/utils";
 import { useTranslations } from "next-intl";
 import { PlayButton } from "@/components/ui/Button";
-import Cookies from "js-cookie";
 import { PlayLabel } from "@/components/ui/Label";
+import { api } from "@/services/api";
 
-export const EditProfilePageContent: React.FC<{
-  sessionCookie: RequestCookie | undefined;
-}> = ({ sessionCookie }) => {
+export const EditProfilePageContent: React.FC = () => {
   const t = useTranslations();
 
   const [updatedInfos, setUpdatedInfos] = useState({
@@ -33,15 +30,9 @@ export const EditProfilePageContent: React.FC<{
     bio: false,
   });
 
-  let user: User | null = null;
-
-  if (sessionCookie?.value) {
-    try {
-      user = JSON.parse(sessionCookie.value);
-    } catch (error) {
-      console.error("Malformed user session data:", error);
-    }
-  }
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
 
   const isSomethingChanged = () => {
     if (!user) return false;
@@ -72,16 +63,28 @@ export const EditProfilePageContent: React.FC<{
   };
 
   useEffect(() => {
-    if (user?.username) {
-      setUpdatedInfos({
-        username: user.username,
-        firstname: user.firstname,
-        lastname: user.lastname,
-        email: user.email ?? "",
-        bio: user.bio ?? "",
-      });
-    }
-  }, [user?.username]);
+    api
+      .get<User>("/users/me")
+      .then((response) => {
+        setUser(response.data);
+        setUpdatedInfos({
+          username: response.data.username,
+          firstname: response.data.firstname,
+          lastname: response.data.lastname,
+          email: response.data.email ?? "",
+          bio: response.data.bio ?? "",
+        });
+      })
+      .catch((requestError) => {
+        console.error("Unable to load profile:", requestError);
+        setError("Unable to load your profile");
+      })
+      .finally(() => setIsLoading(false));
+  }, []);
+
+  if (isLoading) {
+    return <div className="py-12 text-center text-slate-300">Loading...</div>;
+  }
 
   if (!user) {
     return (
@@ -90,6 +93,7 @@ export const EditProfilePageContent: React.FC<{
           id="login-to-see"
           className="text-lg font-medium text-slate-300 text-center"
         />
+        {error && <p className="text-sm text-rose-400">{error}</p>}
       </div>
     );
   }
@@ -264,13 +268,22 @@ export const EditProfilePageContent: React.FC<{
                 return;
               }
 
-              Cookies.set("user_session", JSON.stringify(updatedInfos), {
-                expires: 2 / 24,
-                secure: true,
-                sameSite: "strict",
-              });
-
-              window.location.reload();
+              api
+                .patch<User>("/users/me", updatedInfos)
+                .then((response) => {
+                  setUser(response.data);
+                  setEditing({
+                    username: false,
+                    email: false,
+                    firstname: false,
+                    lastname: false,
+                    bio: false,
+                  });
+                })
+                .catch((requestError) => {
+                  console.error("Unable to update profile:", requestError);
+                  setError("Unable to update your profile");
+                });
             }}
           />
         </div>
