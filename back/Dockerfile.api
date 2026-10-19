@@ -13,8 +13,10 @@ ENV UV_LINK_MODE=copy
 COPY pyproject.toml uv.lock ./
 
 # Install production dependencies only (no dev, frozen lockfile)
-RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-dev --no-install-project
+RUN uv sync --frozen --no-dev --no-install-project
+
+# Include the application source in the image.
+COPY app ./app
 
 # Place virtual environment executables at front of PATH
 ENV PATH="/back-end/.venv/bin:$PATH"
