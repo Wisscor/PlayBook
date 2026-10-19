@@ -12,7 +12,7 @@ const PROTECTED_ROUTES = [
   ROUTES.POSTS,
   ROUTES.MATCHES,
 ];
-const AUTH_ROUTES = [ROUTES.SIGNIN, ROUTES.SIGNUP];
+const AUTH_ROUTES = ["/auth"];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -25,10 +25,10 @@ export function middleware(request: NextRequest) {
   const pathWithoutLocale = pathname.replace(`/${currentLocale}`, "") || "/";
 
   const isProtectedRoute = PROTECTED_ROUTES.some((route) =>
-    pathWithoutLocale.startsWith(route),
+    pathWithoutLocale.startsWith(route.split("?")[0]),
   );
 
-  const sessionToken = request.cookies.get("user_session")?.value;
+  const sessionToken = request.cookies.get("session_id")?.value;
 
   const isAuthRoute = AUTH_ROUTES.some((route) =>
     pathWithoutLocale.startsWith(route),

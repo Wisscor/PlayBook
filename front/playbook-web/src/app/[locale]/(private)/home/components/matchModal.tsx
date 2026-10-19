@@ -1,31 +1,36 @@
 "use client";
 
 import { PlayButton } from "@/components/ui/Button";
-import { DateTimeRangePicker } from "@/components/ui/Datepicker";
 import { PlayInput } from "@/components/ui/Input";
 import { PlayLabel } from "@/components/ui/Label";
-import { PlayList } from "@/components/ui/List";
 import { PlayModal } from "@/components/ui/Modal";
-import { useTranslations } from "next-intl";
-import React, { useState, useEffect } from "react";
+import { getSports } from "@/services/sports";
+import { Sport } from "@/types/api";
+import React, { useEffect, useState } from "react";
 
-interface MatchData {
-  id?: number;
-  matchname: string;
-  matchType: string;
-  playerNbr: string;
-  date: string;
-  startTime: string;
-  endTime: string;
-  status?: string;
+export interface MatchFormData {
+  id?: string;
+  title: string;
+  sport_id: string;
+  remaining_player_slots: number;
+  start_time: string;
+  end_time: string;
 }
 
 interface MatchModalProps {
   close: () => void;
   isOpen: boolean;
-  initialData?: MatchData | null;
-  onSave: (data: MatchData) => void;
+  initialData?: MatchFormData | null;
+  onSave: (data: MatchFormData) => Promise<void>;
 }
+
+const emptyForm: MatchFormData = {
+  title: "",
+  sport_id: "",
+  remaining_player_slots: 1,
+  start_time: "",
+  end_time: "",
+};
 
 export const MatchModal: React.FC<MatchModalProps> = ({
   close,
@@ -33,48 +38,64 @@ export const MatchModal: React.FC<MatchModalProps> = ({
   initialData,
   onSave,
 }) => {
-  const t = useTranslations();
-
-  const [matchInfos, setMatchInfos] = useState<MatchData>({
-    matchname: "",
-    matchType: "",
-    playerNbr: "",
-    date: "",
-    startTime: "09:00",
-    endTime: "10:00",
-    status: "Upcoming",
-  });
+  const [form, setForm] = useState<MatchFormData>(emptyForm);
+  const [sports, setSports] = useState<Sport[]>([]);
+  const [error, setError] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    if (initialData) {
-      setMatchInfos(initialData);
-    } else {
-      setMatchInfos({
-        matchname: "",
-        matchType: "",
-        playerNbr: "",
-        date: "",
-        startTime: "09:00",
-        endTime: "10:00",
-        status: "Upcoming",
-      });
-    }
+    if (!isOpen) return;
+    const timer = window.setTimeout(() => {
+      setForm(initialData ?? emptyForm);
+      setError("");
+      getSports()
+        .then(setSports)
+        .catch((requestError) => {
+          console.error("Unable to load sports:", requestError);
+          setError("Unable to load sports");
+        });
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [initialData, isOpen]);
 
-  const [matchTypeOpen, setMatchTypeOpen] = useState(false);
-  const [playerNbrOpen, setPlayerNbrOpen] = useState(false);
-  const [error, setError] = useState(false);
+  const update = <K extends keyof MatchFormData>(
+    field: K,
+    value: MatchFormData[K],
+  ) => setForm((current) => ({ ...current, [field]: value }));
 
-  const matchTypes = [
-    { name: "Basketball", nbrOfPlayersPerTeam: 5 },
-    { name: "Football", nbrOfPlayersPerTeam: 11 },
-  ];
+  const handleSubmit = async () => {
+    if (
+      !form.title.trim() ||
+      !form.sport_id ||
+      !form.start_time ||
+      !form.end_time
+    ) {
+      setError("Please fill in every field");
+      return;
+    }
+    if (new Date(form.end_time) <= new Date(form.start_time)) {
+      setError("End time must be after start time");
+      return;
+    }
+
+    setIsSaving(true);
+    setError("");
+    try {
+      await onSave(form);
+      close();
+    } catch (requestError) {
+      console.error("Unable to save match:", requestError);
+      setError("Unable to save match");
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const isFormComplete =
-    !Object.values(matchInfos).some((val) => val === "") && !error;
+    !Object.values(form).some((val) => val === "") && !error;
 
   const handleFormSubmit = () => {
-    onSave(matchInfos);
+    onSave(form);
     close();
   };
 
@@ -82,99 +103,79 @@ export const MatchModal: React.FC<MatchModalProps> = ({
 
   return (
     <PlayModal.Primary
-      title={isEditing ? "edit-match" : "create-match"}
+      title={initialData ? "edit-match" : "create-match"}
       isOpen={isOpen}
       close={close}
     >
-      <div className="flex flex-col gap-5 p-1">
-        <div className="space-y-4">
-          <PlayLabel.Primary>
-            <PlayInput.Primary
-              onChange={(e) =>
-                setMatchInfos({ ...matchInfos, matchname: e.target.value })
-              }
-              placeholder="match-name"
-              value={matchInfos.matchname}
-              className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-slate-400 backdrop-blur-md focus:border-white/30 focus:outline-none transition-all"
-            />
-          </PlayLabel.Primary>
-
-          <PlayList.Primary
-            value="name"
-            toggle={() => setMatchTypeOpen(!matchTypeOpen)}
-            isOpen={matchTypeOpen}
-            items={matchTypes}
-            text={
-              matchInfos.matchType.length > 0
-                ? matchInfos.matchType
-                : t("select-match-type")
+      <div className="flex flex-col gap-4 p-1">
+        <PlayInput.Primary
+          placeholder="match-name"
+          value={form.title}
+          onChange={(event) => update("title", event.target.value)}
+        />
+        <select
+          value={form.sport_id}
+          disabled={sports.length === 0}
+          onChange={(event) => {
+            const sport = sports.find((item) => item.id === event.target.value);
+            update("sport_id", event.target.value);
+            if (sport && form.remaining_player_slots > sport.max_players) {
+              update("remaining_player_slots", sport.max_players);
             }
-            choseItem={(item) => {
-              setMatchInfos({
-                ...matchInfos,
-                matchType: item.name,
-                playerNbr: "",
-              });
-              setMatchTypeOpen(false);
-            }}
+          }}
+          className="w-full rounded-2xl border border-white/10 bg-slate-900 px-5 py-3.5 text-white outline-none"
+        >
+          <option value="">
+            {sports.length === 0 ? "No sports available" : "Select a sport"}
+          </option>
+          {sports.map((sport) => (
+            <option key={sport.id} value={sport.id}>
+              {sport.name}
+            </option>
+          ))}
+        </select>
+        <PlayInput.Primary
+          type="number"
+          placeholder="select-player-number"
+          value={String(form.remaining_player_slots)}
+          onChange={(event) =>
+            update(
+              "remaining_player_slots",
+              Math.max(
+                1,
+                Math.min(
+                  Number(event.target.value),
+                  sports.find((sport) => sport.id === form.sport_id)
+                    ?.max_players ?? Number(event.target.value),
+                ),
+              ),
+            )
+          }
+        />
+        <PlayLabel.Primary id="start-time" className="text-sm text-slate-300">
+          <PlayInput.Primary
+            type="datetime-local"
+            value={form.start_time}
+            onChange={(event) => update("start_time", event.target.value)}
+            className="mt-1 w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-3.5 text-white"
           />
-
-          {matchInfos.matchType.length > 0 && (
-            <PlayList.Primary
-              toggle={() => setPlayerNbrOpen(!playerNbrOpen)}
-              isOpen={playerNbrOpen}
-              items={Array.from(
-                {
-                  length:
-                    matchTypes.find(
-                      (type) => type.name === matchInfos.matchType,
-                    )?.nbrOfPlayersPerTeam ?? 5,
-                },
-                (_, index) => index + 1,
-              )}
-              text={
-                matchInfos.playerNbr.length > 0
-                  ? matchInfos.playerNbr
-                  : t("select-player-number")
-              }
-              choseItem={(item) => {
-                setMatchInfos({
-                  ...matchInfos,
-                  playerNbr: item.toString(),
-                });
-                setPlayerNbrOpen(false);
-              }}
-            />
-          )}
-
-          {matchInfos.playerNbr.length > 0 && (
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-md">
-              <DateTimeRangePicker
-                onError={(err) => setError(err)}
-                date={matchInfos.date}
-                startTime={matchInfos.startTime}
-                endTime={matchInfos.endTime}
-                changeDate={(date) => setMatchInfos({ ...matchInfos, date })}
-                changeStartTime={(startTime) =>
-                  setMatchInfos({ ...matchInfos, startTime })
-                }
-                changeEndTime={(endTime) =>
-                  setMatchInfos({ ...matchInfos, endTime })
-                }
-              />
-            </div>
-          )}
-        </div>
-
-        {isFormComplete && (
-          <div className="pt-2">
-            <PlayButton.Primary
-              onClick={handleFormSubmit}
-              title={isEditing ? "save-changes" : "create-match"}
-              className="w-full rounded-2xl bg-white py-3.5 shadow-lg shadow-white/5 hover:bg-slate-100 transition-all font-semibold text-slate-950 cursor-pointer"
-            />
-          </div>
-        )}
+        </PlayLabel.Primary>
+        <PlayLabel.Primary id="end-time" className="text-sm text-slate-300">
+          <PlayInput.Primary
+            type="datetime-local"
+            value={form.end_time}
+            onChange={(event) => update("end_time", event.target.value)}
+            className="mt-1 w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-3.5 text-white"
+          />
+        </PlayLabel.Primary>
+        {error && <p className="text-sm text-rose-400">{error}</p>}
+        <PlayButton.Primary
+          title={
+            isSaving ? "saving" : initialData ? "save-changes" : "create-match"
+          }
+          onClick={handleSubmit}
+          className="w-full"
+        />
       </div>
     </PlayModal.Primary>
   );

@@ -5,6 +5,7 @@ import { PlayInput } from "@/components/ui/Input";
 import { PlayLabel } from "@/components/ui/Label";
 import { PlayModal } from "@/components/ui/Modal";
 import { PlayText } from "@/components/ui/Text";
+import { api } from "@/services/api";
 import React, { useState } from "react";
 
 export const PostModal: React.FC<{
@@ -12,10 +13,23 @@ export const PostModal: React.FC<{
   isOpen: boolean;
 }> = ({ close, isOpen }) => {
   const [postText, setPostText] = useState<string>("");
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleCreatePost = () => {
+  const handleCreatePost = async () => {
     if (!postText.trim()) return;
-    close();
+    setIsLoading(true);
+    setError("");
+    try {
+      await api.post("/posts", { caption: postText.trim() });
+      setPostText("");
+      close();
+    } catch (requestError) {
+      console.error("Unable to create post:", requestError);
+      setError("Unable to create your post");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -43,11 +57,13 @@ export const PostModal: React.FC<{
           </div>
         </div>
 
+        {error && <p className="text-sm text-rose-400">{error}</p>}
+
         {postText.trim().length > 0 && (
           <div className="pt-2">
             <PlayButton.Primary
               onClick={handleCreatePost}
-              title="create-post"
+              title={isLoading ? "creating-post" : "create-post"}
               className="w-full rounded-2xl bg-white py-3.5 shadow-lg shadow-white/5 hover:bg-slate-100 transition-all font-semibold text-slate-950"
             />
           </div>

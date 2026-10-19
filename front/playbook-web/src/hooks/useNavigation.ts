@@ -6,6 +6,7 @@ export const useNavigation = () => {
 
   return {
     goHome: () => push(ROUTES.HOME),
+    goSignIn: () => push(ROUTES.SIGNIN),
     goEdit: () => push(ROUTES.EDIT_PROFILE),
     goProfile: () => push(ROUTES.PROFILE),
   };

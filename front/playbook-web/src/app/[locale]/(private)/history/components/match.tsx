@@ -6,7 +6,7 @@ import React from "react";
 
 export interface MatchProps {
   match: {
-    id: number;
+    id: string;
     matchname: string;
     matchType: string;
     playerNbr: string | number;
@@ -15,8 +15,8 @@ export interface MatchProps {
     endTime: string;
     status: string;
   };
-  onEdit?: (id: number) => void;
-  onDelete?: (id: number) => void;
+  onEdit?: (id: string) => void;
+  onDelete?: (id: string) => void;
 }
 
 export const Match: React.FC<MatchProps> = ({ match, onEdit, onDelete }) => {
