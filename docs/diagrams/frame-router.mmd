@@ -1,0 +1,87 @@
+flowchart TD
+    START["receive_loop (ws.py)<br/>await websocket.receive_json()"]
+    INVALID_JSON{"ValueError?<br/>(invalid JSON)"}
+    UPDATE_TS["last_seen = time.monotonic()"]
+    GET_TYPE["kind = frame.get('type')"]
+    LOOKUP{"HANDLERS.get(kind)<br/>(handlers.py)"}
+    UNKNOWN["_reject: error → 'unknown_type'"]
+    CALL_HANDLER["await handler(ctx, frame)"]
+
+    subgraph handlers ["HANDLERS map (handlers.py)"]
+        H_MSG["'message.send' →<br/>handle_message_send"]
+        H_READ["'read' →<br/>handle_read"]
+        H_PING["'ping' →<br/>handle_ping → pong"]
+    end
+
+    subgraph rate_limit ["Rate limiting (limits.py)"]
+        RL_CHECK{"sends.hit(now) > 10?<br/>SlidingWindow span=10s"}
+        RL_ERROR["Send error → 'rate_limited'"]
+        RL_STRIKE{"strikes.hit(now) >= 5?<br/>SlidingWindow span=60s"}
+        RL_CLOSE["raise CloseConnection(4002)"]
+    end
+
+    subgraph errors ["Error handling (ws.py)"]
+        E_VALIDATION["ValidationError →<br/>error 'invalid_frame'"]
+        E_PERMISSION["PermissionError →<br/>error 'conversation_not_found'"]
+        E_CLOSE["CloseConnection →<br/>websocket.close(exc.code)"]
+        E_DISCONNECT["WebSocketDisconnect →<br/>re-raise (exit loop)"]
+        E_EXCEPTION["Exception →<br/>log.exception, continue"]
+    end
+
+    subgraph close_codes ["Close codes (frames.py)"]
+        CC1["4001 CLOSE_AUTH_FAILED<br/>No cookie / bad session / expired"]
+        CC2["4002 CLOSE_RATE_LIMIT<br/>≥5 strikes in 60s"]
+        CC3["4003 CLOSE_SESSION_ENDED<br/>Logged out while connected"]
+        CC4["4004 CLOSE_IDLE_TIMEOUT<br/>No frame for 45s"]
+    end
+
+    subgraph watchdog ["_idle_watchdog (ws.py)"]
+        WD_SLEEP["asyncio.sleep(15)"]
+        WD_CHECK{"monotonic() - last_seen > 45?"}
+        WD_CLOSE["close(4004 CLOSE_IDLE_TIMEOUT)"]
+    end
+
+    subgraph numbers ["Exact numbers from code"]
+        N1["SlidingWindow(10) for sends → 10s window"]
+        N2["sends.hit > 10 → rate_limited error"]
+        N3["SlidingWindow(60) for strikes → 60s window"]
+        N4["strikes.hit >= 5 → close 4002"]
+        N5["Ping every 20s (client → server)"]
+        N6["Idle watchdog: sleep 15s, check > 45s"]
+    end
+
+    START --> INVALID_JSON
+    INVALID_JSON -->|Yes| UPDATE_TS
+    UPDATE_TS -->|"_reject: error 'invalid_json'"| START
+    INVALID_JSON -->|No| UPDATE_TS
+    UPDATE_TS --> GET_TYPE
+    GET_TYPE --> LOOKUP
+    LOOKUP -->|None| UNKNOWN
+    UNKNOWN --> START
+    LOOKUP -->|Found| CALL_HANDLER
+    CALL_HANDLER --> H_MSG
+    CALL_HANDLER --> H_READ
+    CALL_HANDLER --> H_PING
+
+    H_MSG --> RL_CHECK
+    RL_CHECK -->|Yes| RL_ERROR
+    RL_ERROR --> RL_STRIKE
+    RL_STRIKE -->|Yes| RL_CLOSE
+    RL_STRIKE -->|No| START
+    RL_CHECK -->|No| E_VALIDATION
+
+    CALL_HANDLER -->|CloseConnection| E_CLOSE
+    CALL_HANDLER -->|ValidationError| E_VALIDATION
+    CALL_HANDLER -->|PermissionError| E_PERMISSION
+    CALL_HANDLER -->|WebSocketDisconnect| E_DISCONNECT
+    CALL_HANDLER -->|Exception| E_EXCEPTION
+    E_VALIDATION --> START
+    E_PERMISSION --> START
+    E_EXCEPTION --> START
+    E_CLOSE --> CC2
+    RL_CLOSE --> CC2
+
+    WD_SLEEP --> WD_CHECK
+    WD_CHECK -->|Yes| WD_CLOSE
+    WD_CLOSE --> CC4
+    WD_CHECK -->|No| WD_SLEEP

@@ -27,6 +27,12 @@ export function middleware(request: NextRequest) {
     pathWithoutLocale.startsWith(route),
   );
 
+  const previewMode = process.env.NEXT_PUBLIC_PREVIEW_MODE === "true";
+
+  if (previewMode) {
+    return NextResponse.next();
+  }
+
   if (isAuthRoute && sessionToken) {
     return NextResponse.redirect(
       new URL(`/${currentLocale}/home`, request.url),

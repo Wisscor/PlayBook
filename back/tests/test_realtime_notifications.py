@@ -1,9 +1,15 @@
+import asyncio
 from datetime import datetime, timezone
+from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 
 from app.realtime import frames
 from app.realtime.models import Notification
-from app.realtime.services.notifications import notification_dict, notification_payload
+from app.realtime.services.notifications import (
+    notification_dict,
+    notification_payload,
+    unread_duplicate_exists,
+)
 
 
 def test_notification_responses_omit_internal_target_fields():
@@ -13,7 +19,6 @@ def test_notification_responses_omit_internal_target_fields():
         actor_id=uuid4(),
         event_type="like",
         target_id=uuid4(),
-        target_type="post",
         read_at=None,
         created_at=datetime.now(timezone.utc),
     )
@@ -24,6 +29,26 @@ def test_notification_responses_omit_internal_target_fields():
     assert "target_id" not in response
     assert "target_type" not in response
     assert "target_id" not in websocket_payload
-    assert "target_type" not in websocket_payload
+    assert notification.target_id is not None
     assert response["actor_username"] == "alice"
     assert websocket_payload["type"] == frames.NOTIFICATION
+
+
+def test_unread_duplicate_check_is_scoped_to_target():
+    db = AsyncMock()
+    query_result = MagicMock()
+    query_result.first.return_value = None
+    db.execute.return_value = query_result
+    user_id = uuid4()
+    actor_id = uuid4()
+    post_id = uuid4()
+
+    assert not asyncio.run(
+        unread_duplicate_exists(db, user_id, actor_id, "like", post_id)
+    )
+
+    statement = db.execute.await_args.args[0]
+    compiled = statement.compile()
+    sql = str(compiled)
+    assert "notifications.target_id" in sql
+    assert post_id in compiled.params.values()

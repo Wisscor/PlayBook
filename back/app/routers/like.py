@@ -62,7 +62,6 @@ async def like_post(
         actor_id=curr_user.id,
         target_user_id=post.user_id,
         target_id=post.id,
-        target_type="post",
     )
 
     return LikeToggleResponse(liked=True, post_id=post_id)

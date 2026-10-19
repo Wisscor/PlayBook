@@ -68,7 +68,6 @@ async def create_comment(
         actor_id=curr_user.id,
         target_user_id=parent.user_id if parent else post.user_id,
         target_id=post.id,
-        target_type="post",
     )
 
     stmt = (

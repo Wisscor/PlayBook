@@ -113,7 +113,6 @@ async def send_play_request(
         actor_id=me.id,
         target_user_id=announcement.owner_id,
         target_id=announcement.id,
-        target_type="match_announcement",
     )
     return await _get_request(db, request_id)
 
@@ -195,6 +194,5 @@ async def decide_play_request(
         actor_id=me.id,
         target_user_id=play_request.sender_id,
         target_id=play_request.announcement_id,
-        target_type="match_announcement",
     )
     return await _get_request(db, id)
