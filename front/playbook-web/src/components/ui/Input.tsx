@@ -10,6 +10,8 @@ interface InputProps {
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   type?: React.HTMLInputTypeAttribute;
   className?: string;
+  onBlur?: React.FocusEventHandler<HTMLInputElement>;
+  onInputClick?: React.MouseEventHandler<HTMLInputElement>;
 }
 
 interface AreaProps {
@@ -30,11 +32,15 @@ const Primary: React.FC<InputProps> = ({
   onChange,
   type,
   className,
+  onBlur,
+  onInputClick,
 }) => {
   const t = useTranslations();
 
   return (
     <input
+      onClick={onInputClick}
+      onBlur={onBlur}
       value={value}
       onChange={onChange}
       type={type ?? "text"}
@@ -80,6 +86,8 @@ const Password: React.FC<PasswordProps> = ({
   isHidden,
   onClick,
   className,
+  onInputClick,
+  onBlur,
 }) => {
   const t = useTranslations();
   const locale = useLocale();
@@ -87,6 +95,8 @@ const Password: React.FC<PasswordProps> = ({
   return (
     <div className="relative w-full">
       <input
+        onClick={onInputClick}
+        onBlur={onBlur}
         value={value}
         onChange={onChange}
         type={isHidden ? "password" : "text"}

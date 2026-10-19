@@ -84,5 +84,10 @@
   "match": "Match",
   "time-label": "Time :",
   "players-label": "Players :",
-  "post": "Post"
+  "post": "Post",
+  "email-invalid": "Email invalid",
+  "error-credentials": "Invalid username/email or password",
+  "passwords-do-not-match": "Passwords do not match",
+  "error-creating-account": "Unable to create your account",
+  "all-fields-required": "All fields are required"
 }

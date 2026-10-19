@@ -7,6 +7,7 @@ import { ROUTES } from "@/lib/constants";
 import { signUp } from "@/services/auth";
 import { useNavigation } from "@/hooks/useNavigation";
 import React, { useState } from "react";
+import { isEmailValid } from "@/lib/utils";
 
 export const SignUp = () => {
   const [infos, setInfos] = useState({
@@ -18,7 +19,7 @@ export const SignUp = () => {
     confirmPassword: "",
   });
   const { goSignIn } = useNavigation();
-  const [error, setError] = useState("");
+  const [error, setError] = useState<string | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(false);
   const [isHidden, setIsHidden] = useState({
     original: true,
@@ -27,9 +28,24 @@ export const SignUp = () => {
 
   const handleSignUp = async (e: React.SubmitEvent) => {
     e.preventDefault();
-    setError("");
+    setError(undefined);
+    if (
+      !infos.firstName ||
+      !infos.lastName ||
+      !infos.username ||
+      !infos.email ||
+      !infos.password ||
+      !infos.confirmPassword
+    ) {
+      setError("all-fields-required");
+      return;
+    }
+    if (!isEmailValid(infos.email)) {
+      setError("email-invalid");
+      return;
+    }
     if (infos.password !== infos.confirmPassword) {
-      setError("Passwords do not match");
+      setError("passwords-do-not-match");
       return;
     }
     setIsLoading(true);
@@ -43,7 +59,7 @@ export const SignUp = () => {
       });
       goSignIn();
     } catch {
-      setError("Unable to create your account");
+      setError("error-creating-account");
     } finally {
       setIsLoading(false);
     }
@@ -62,6 +78,9 @@ export const SignUp = () => {
         <form onSubmit={handleSignUp} className="space-y-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <PlayInput.Primary
+              onInputClick={() => {
+                setError(undefined);
+              }}
               placeholder="firstName"
               value={infos.firstName}
               onChange={(e) =>
@@ -69,6 +88,9 @@ export const SignUp = () => {
               }
             />
             <PlayInput.Primary
+              onInputClick={() => {
+                setError(undefined);
+              }}
               placeholder="lastName"
               value={infos.lastName}
               onChange={(e) => setInfos({ ...infos, lastName: e.target.value })}
@@ -76,12 +98,23 @@ export const SignUp = () => {
           </div>
 
           <PlayInput.Primary
+            onInputClick={() => {
+              setError(undefined);
+            }}
             placeholder="username"
             value={infos.username}
             onChange={(e) => setInfos({ ...infos, username: e.target.value })}
           />
 
           <PlayInput.Primary
+            onInputClick={() => {
+              setError(undefined);
+            }}
+            onBlur={() => {
+              if (!isEmailValid(infos.email)) {
+                setError("email-invalid");
+              }
+            }}
             placeholder="email"
             type="email"
             value={infos.email}
@@ -89,6 +122,9 @@ export const SignUp = () => {
           />
 
           <PlayInput.Password
+            onInputClick={() => {
+              setError(undefined);
+            }}
             onClick={() =>
               setIsHidden({ ...isHidden, original: !isHidden.original })
             }
@@ -99,6 +135,9 @@ export const SignUp = () => {
           />
 
           <PlayInput.Password
+            onInputClick={() => {
+              setError(undefined);
+            }}
             onClick={() =>
               setIsHidden({ ...isHidden, confirm: !isHidden.confirm })
             }
@@ -110,7 +149,9 @@ export const SignUp = () => {
             }
           />
 
-          {error && <p className="text-sm text-rose-400">{error}</p>}
+          {error && (
+            <PlayText.Primary id={error} className="text-sm text-rose-400" />
+          )}
 
           <div className="pt-2">
             <PlayButton.Primary

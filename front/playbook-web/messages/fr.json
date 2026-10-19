@@ -84,5 +84,10 @@
   "match": "Match",
   "time-label": "Heure :",
   "players-label": "Joueurs :",
-  "post": "Publication"
+  "post": "Publication",
+  "email-invalid": "Email invalide",
+  "error-credentials": "Nom d'utilisateur/email ou mot de passe invalide",
+  "passwords-do-not-match": "Les mots de passe ne correspondent pas",
+  "error-creating-account": "Impossible de créer votre compte",
+  "all-fields-required": "Tous les champs sont obligatoires"
 }

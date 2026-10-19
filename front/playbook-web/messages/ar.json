@@ -86,5 +86,10 @@
   "match": "المبارة",
   "time-label": "الوقت :",
   "players-label": "اللاعبون :",
-  "post": "المنشور"
+  "post": "المنشور",
+  "email-invalid": "البريد الإلكتروني غير صالح",
+  "error-credentials": "اسم المستخدم/البريد الإلكتروني أو كلمة المرور غير صالحة",
+  "passwords-do-not-match": "كلمات المرور غير متطابقة",
+  "error-creating-account": "غير قادر على إنشاء حسابك",
+  "all-fields-required": "جميع الحقول مطلوبة"
 }
