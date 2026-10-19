@@ -20,6 +20,9 @@ services:
       context: .
       dockerfile: Dockerfile.api
     container_name: playbook-api
+    labels:
+      co.elastic.logs/enabled: "true"
+      co.elastic.logs/json.keys_under_root: "true"
     # restart: always
     ports:
       - "8000:8000"
