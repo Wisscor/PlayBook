@@ -11,11 +11,64 @@ from app.models.user_sport import UserSport
 from app.models.user import User
 
 
+def test_create_sport_success(mock_user_1, mock_db):
+    client = TestClient(app)
+    app.dependency_overrides[get_curr_user] = lambda: mock_user_1
+    app.dependency_overrides[get_db] = lambda: mock_db
+
+    async def assign_id():
+        added_sport = mock_db.add.call_args.args[0]
+        added_sport.id = uuid.uuid4()
+
+    mock_db.commit.side_effect = assign_id
+    res = client.post(
+        "/sports",
+        json={"name": "Tennis", "max_players": 2},
+    )
+
+    assert res.status_code == 201
+    assert res.json()["name"] == "Tennis"
+    assert res.json()["max_players"] == 2
+    mock_db.commit.assert_called_once()
+    app.dependency_overrides.clear()
+
+
+def test_create_sport_duplicate_name(mock_user_1, mock_db):
+    client = TestClient(app)
+    app.dependency_overrides[get_curr_user] = lambda: mock_user_1
+    app.dependency_overrides[get_db] = lambda: mock_db
+    mock_db.commit.side_effect = IntegrityError(None, None, Exception())
+
+    res = client.post(
+        "/sports",
+        json={"name": "Football", "max_players": 11},
+    )
+
+    assert res.status_code == 409
+    assert res.json()["detail"] == "A sport with this name already exists"
+    mock_db.rollback.assert_called_once()
+    app.dependency_overrides.clear()
+
+
+def test_create_sport_invalid_max_players(mock_user_1, mock_db):
+    client = TestClient(app)
+    app.dependency_overrides[get_curr_user] = lambda: mock_user_1
+    app.dependency_overrides[get_db] = lambda: mock_db
+
+    res = client.post(
+        "/sports",
+        json={"name": "Tennis", "max_players": 0},
+    )
+
+    assert res.status_code == 422
+    app.dependency_overrides.clear()
+
+
 def test_list_sports_success(mock_user_1, mock_db):
     client = TestClient(app)
 
-    sport1 = Sport(id=uuid.uuid4(), name="Basketball")
-    sport2 = Sport(id=uuid.uuid4(), name="Football")
+    sport1 = Sport(id=uuid.uuid4(), name="Basketball", max_players=5)
+    sport2 = Sport(id=uuid.uuid4(), name="Football", max_players=11)
 
     mock_scalars = MagicMock()
     mock_scalars.all.return_value = [sport1, sport2]
@@ -39,7 +92,7 @@ def test_list_sports_success(mock_user_1, mock_db):
 def test_list_user_sports_success(mock_user_1, mock_user_2, mock_db):
     client = TestClient(app)
 
-    sport = Sport(id=uuid.uuid4(), name="Football")
+    sport = Sport(id=uuid.uuid4(), name="Football", max_players=11)
     mock_db.get.return_value = mock_user_2
 
     mock_scalars = MagicMock()
@@ -76,7 +129,7 @@ def test_list_user_sports_user_not_found(mock_user_1, mock_db):
 def test_add_my_sport_success(mock_user_1, mock_db):
     client = TestClient(app)
     sport_id = uuid.uuid4()
-    sport = Sport(id=sport_id, name="Basketball")
+    sport = Sport(id=sport_id, name="Basketball", max_players=5)
 
     # 1. db.get(Sport, sport_id) -> sport
     # 2. db.get(UserSport, (me.id, sport_id)) -> None
@@ -95,7 +148,7 @@ def test_add_my_sport_success(mock_user_1, mock_db):
 def test_add_my_sport_already_exists_idempotent(mock_user_1, mock_db):
     client = TestClient(app)
     sport_id = uuid.uuid4()
-    sport = Sport(id=sport_id, name="Basketball")
+    sport = Sport(id=sport_id, name="Basketball", max_players=5)
     existing_link = UserSport(user_id=mock_user_1.id, sport_id=sport_id)
 
     # 1. db.get(Sport, sport_id) -> sport
@@ -115,7 +168,7 @@ def test_add_my_sport_already_exists_idempotent(mock_user_1, mock_db):
 def test_add_my_sport_integrity_error_handled(mock_user_1, mock_db):
     client = TestClient(app)
     sport_id = uuid.uuid4()
-    sport = Sport(id=sport_id, name="Basketball")
+    sport = Sport(id=sport_id, name="Basketball", max_players=5)
 
     mock_db.get.side_effect = [sport, None]
     mock_db.commit.side_effect = IntegrityError(None, None, Exception())
@@ -147,7 +200,7 @@ def test_add_my_sport_not_found(mock_user_1, mock_db):
 def test_remove_my_sport_success(mock_user_1, mock_db):
     client = TestClient(app)
     sport_id = uuid.uuid4()
-    sport = Sport(id=sport_id, name="Basketball")
+    sport = Sport(id=sport_id, name="Basketball", max_players=5)
     link = UserSport(user_id=mock_user_1.id, sport_id=sport_id)
 
     mock_db.get.side_effect = [sport, link]
@@ -166,7 +219,7 @@ def test_remove_my_sport_success(mock_user_1, mock_db):
 def test_remove_my_sport_not_assigned(mock_user_1, mock_db):
     client = TestClient(app)
     sport_id = uuid.uuid4()
-    sport = Sport(id=sport_id, name="Basketball")
+    sport = Sport(id=sport_id, name="Basketball", max_players=5)
 
     # Sport exists, but user doesn't have it
     mock_db.get.side_effect = [sport, None]

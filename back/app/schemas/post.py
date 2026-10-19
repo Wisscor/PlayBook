@@ -25,9 +25,7 @@ class PostResponse(BaseModel):
     user: Optional[UserSummaryResponse] = None
     media: List[PostMediaResponse] = []
     like_count: int = 0
-    likes_count: int = 0
     comment_count: int = 0
-    comments_count: int = 0
     liked_by_me: bool = False
     is_liked_by_me: bool = False
     created_at: datetime
@@ -36,4 +34,4 @@ class PostResponse(BaseModel):
 
 class PostPage(BaseModel):
     items: List[PostResponse]
-    next_cursor: Optional[str] = None
+    next_offset: Optional[int] = None

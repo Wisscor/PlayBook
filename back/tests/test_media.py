@@ -34,7 +34,7 @@ def test_upload_image_success(mock_user_1):
     app.dependency_overrides.clear()
 
 
-def test_upload_video_success(mock_user_1):
+def test_upload_video_rejected(mock_user_1):
     client = TestClient(app)
     app.dependency_overrides[get_curr_user] = lambda: mock_user_1
 
@@ -42,17 +42,8 @@ def test_upload_video_success(mock_user_1):
     files = {"file": ("sample.mp4", io.BytesIO(file_content), "video/mp4")}
 
     res = client.post("/media", files=files)
-    assert res.status_code == 201
-    data = res.json()
-    assert data["media_type"] == "video"
-    assert data["media_url"].startswith("/uploads/")
-    assert data["media_url"].endswith(".mp4")
-
-    # Clean up uploaded test file
-    filename = data["media_url"].replace("/uploads/", "")
-    filepath = Path("uploads") / filename
-    if filepath.exists():
-        filepath.unlink()
+    assert res.status_code == 415
+    assert res.json()["detail"] == "Unsupported file type"
 
     app.dependency_overrides.clear()
 
@@ -61,7 +52,9 @@ def test_upload_unsupported_media_type(mock_user_1):
     client = TestClient(app)
     app.dependency_overrides[get_curr_user] = lambda: mock_user_1
 
-    files = {"file": ("doc.pdf", io.BytesIO(b"%PDF-1.4..."), "application/pdf")}
+    files = {
+        "file": ("doc.pdf", io.BytesIO(b"%PDF-1.4..."), "application/pdf")
+    }
 
     res = client.post("/media", files=files)
     assert res.status_code == 415
@@ -91,4 +84,3 @@ def test_upload_unauthenticated():
     files = {"file": ("test.png", io.BytesIO(b"png"), "image/png")}
     res = client.post("/media", files=files)
     assert res.status_code == 401
-

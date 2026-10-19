@@ -4,14 +4,14 @@ info:
   version: 1.0.0
   description: |
     Sports social media platform. Users post, follow, like, comment, chat,
-    and announce matches to find players or opponents.
+    and announce matches to find players.
 
     **Auth:** session-based. `POST /auth/login` creates a row in `sessions`
     and sets an HttpOnly cookie (`session_id`). Every endpoint except
     register and login requires a valid, unexpired session (otherwise 401).
 
-    **Conventions:** UUID ids, ISO 8601 UTC timestamps, cursor pagination
-    (`limit`, `cursor` -> `items`, `next_cursor`). Likes, follows and user
+    **Conventions:** UUID ids, ISO 8601 UTC timestamps, offset pagination
+    (`limit`, `offset` -> `items`, `next_offset`). Likes, follows and user
     sports use PUT/DELETE so repeated calls are safe (idempotent).
 
     **Realtime:** new messages and new notifications are also pushed by the
@@ -111,7 +111,7 @@ paths:
           in: query
           schema: { type: string, format: uuid }
         - { $ref: '#/components/parameters/Limit' }
-        - { $ref: '#/components/parameters/Cursor' }
+        - { $ref: '#/components/parameters/Offset' }
       responses:
         '200':
           description: Matching users
@@ -136,6 +136,31 @@ paths:
               schema: { $ref: '#/components/schemas/Me' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '422': { $ref: '#/components/responses/ValidationError' }
+  /users/me/avatar:
+    post:
+      tags: [Users]
+      summary: Replace my avatar
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: JPEG, PNG, or WebP image up to 5 MB.
+      responses:
+        '200':
+          description: Updated profile
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Me' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '413': { $ref: '#/components/responses/PayloadTooLarge' }
+        '415': { $ref: '#/components/responses/UnsupportedMediaType' }
   /users/{id}:
     get:
       tags: [Users]
@@ -157,7 +182,7 @@ paths:
       parameters:
         - { $ref: '#/components/parameters/Id' }
         - { $ref: '#/components/parameters/Limit' }
-        - { $ref: '#/components/parameters/Cursor' }
+        - { $ref: '#/components/parameters/Offset' }
       responses:
         '200':
           description: Posts
@@ -169,9 +194,26 @@ paths:
 
   # -------------------------------------------------------------- Sports
   /sports:
+    post:
+      tags: [Sports]
+      summary: Add a sport
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SportCreate' }
+      responses:
+        '201':
+          description: Sport created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Sport' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/ValidationError' }
     get:
       tags: [Sports]
-      summary: List all sports (seed data, read-only)
+      summary: List all sports
       responses:
         '200':
           description: Sports
@@ -248,7 +290,7 @@ paths:
       parameters:
         - { $ref: '#/components/parameters/Id' }
         - { $ref: '#/components/parameters/Limit' }
-        - { $ref: '#/components/parameters/Cursor' }
+        - { $ref: '#/components/parameters/Offset' }
       responses:
         '200':
           description: Followers
@@ -264,7 +306,7 @@ paths:
       parameters:
         - { $ref: '#/components/parameters/Id' }
         - { $ref: '#/components/parameters/Limit' }
-        - { $ref: '#/components/parameters/Cursor' }
+        - { $ref: '#/components/parameters/Offset' }
       responses:
         '200':
           description: Following
@@ -281,8 +323,7 @@ paths:
       summary: Upload one media file
       description: |
         Upload first, then reference the returned `media_url` in
-        `POST /posts`. Default limits (adjustable, not final): images up to
-        10 MB (jpeg, png, webp), videos up to 100 MB (mp4, webm).
+        `POST /posts`. Images up to 10 MB are supported (jpeg, png, webp).
       requestBody:
         required: true
         content:
@@ -369,7 +410,7 @@ paths:
       summary: Posts from people I follow plus mine (newest first)
       parameters:
         - { $ref: '#/components/parameters/Limit' }
-        - { $ref: '#/components/parameters/Cursor' }
+        - { $ref: '#/components/parameters/Offset' }
       responses:
         '200':
           description: Feed
@@ -408,7 +449,7 @@ paths:
       parameters:
         - { $ref: '#/components/parameters/Id' }
         - { $ref: '#/components/parameters/Limit' }
-        - { $ref: '#/components/parameters/Cursor' }
+        - { $ref: '#/components/parameters/Offset' }
       responses:
         '200':
           description: Comments
@@ -486,7 +527,7 @@ paths:
       description: Each item has the other user, the last message and `unread_count`.
       parameters:
         - { $ref: '#/components/parameters/Limit' }
-        - { $ref: '#/components/parameters/Cursor' }
+        - { $ref: '#/components/parameters/Offset' }
       responses:
         '200':
           description: Conversations
@@ -501,7 +542,7 @@ paths:
       parameters:
         - { $ref: '#/components/parameters/Id' }
         - { $ref: '#/components/parameters/Limit' }
-        - { $ref: '#/components/parameters/Cursor' }
+        - { $ref: '#/components/parameters/Offset' }
       responses:
         '200':
           description: Messages
@@ -575,25 +616,44 @@ paths:
       summary: Search match announcements
       description: |
         The time filter returns announcements that fit inside the window:
-        `start_time >= start_from` and `end_time <= end_to`.
+        `start_time >= start_from` and `end_time <= end_to`. Results can be
+        sorted by start time, creation time, or remaining player slots.
       parameters:
         - name: sport_id
           in: query
           schema: { type: string, format: uuid }
-        - name: type
+        - name: match_status
           in: query
-          schema: { $ref: '#/components/schemas/AnnouncementType' }
+          schema: { $ref: '#/components/schemas/MatchAnnouncementStatus' }
         - name: start_from
           in: query
           schema: { type: string, format: date-time }
         - name: end_to
           in: query
           schema: { type: string, format: date-time }
-        - name: owner_id
+        - name: organizer_id
           in: query
           schema: { type: string, format: uuid }
+        - name: min_remaining_player_slots
+          in: query
+          schema: { type: integer, minimum: 0 }
+        - name: max_remaining_player_slots
+          in: query
+          schema: { type: integer, minimum: 0 }
+        - name: sort_by
+          in: query
+          schema:
+            type: string
+            enum: [start_time, created_at, remaining_player_slots]
+            default: start_time
+        - name: sort_order
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: asc
         - { $ref: '#/components/parameters/Limit' }
-        - { $ref: '#/components/parameters/Cursor' }
+        - { $ref: '#/components/parameters/Offset' }
       responses:
         '200':
           description: Matching announcements
@@ -619,7 +679,7 @@ paths:
       tags: [Match Announcements]
       summary: Edit an announcement (owner only)
       description: |
-        Partial update of `sport_id`, `type`, `start_time`, `end_time`.
+        Partial update of `title`, `sport_id`, `remaining_player_slots`, `match_status`, `start_time`, and `end_time`.
         The rule `end_time > start_time` is checked on the resulting values (422).
         Existing play requests are kept.
       parameters:
@@ -667,7 +727,7 @@ paths:
           description: Created
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/PlayRequest' }
+              schema: { $ref: '#/components/schemas/PlayerRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
@@ -678,13 +738,13 @@ paths:
       parameters:
         - { $ref: '#/components/parameters/Id' }
         - { $ref: '#/components/parameters/Limit' }
-        - { $ref: '#/components/parameters/Cursor' }
+        - { $ref: '#/components/parameters/Offset' }
       responses:
         '200':
           description: Requests
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/PlayRequestPage' }
+              schema: { $ref: '#/components/schemas/PlayerRequestPage' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
@@ -700,15 +760,15 @@ paths:
           schema: { type: string, enum: [sent, received] }
         - name: status
           in: query
-          schema: { $ref: '#/components/schemas/PlayRequestStatus' }
+          schema: { $ref: '#/components/schemas/PlayerRequestStatus' }
         - { $ref: '#/components/parameters/Limit' }
-        - { $ref: '#/components/parameters/Cursor' }
+        - { $ref: '#/components/parameters/Offset' }
       responses:
         '200':
           description: Requests
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/PlayRequestPage' }
+              schema: { $ref: '#/components/schemas/PlayerRequestPage' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '422': { $ref: '#/components/responses/ValidationError' }
   /play-requests/{id}:
@@ -722,13 +782,13 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/PlayRequestDecision' }
+            schema: { $ref: '#/components/schemas/PlayerRequestDecision' }
       responses:
         '200':
           description: Updated
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/PlayRequest' }
+              schema: { $ref: '#/components/schemas/PlayerRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
@@ -745,7 +805,7 @@ paths:
           in: query
           schema: { type: boolean, default: false }
         - { $ref: '#/components/parameters/Limit' }
-        - { $ref: '#/components/parameters/Cursor' }
+        - { $ref: '#/components/parameters/Offset' }
       responses:
         '200':
           description: Notifications
@@ -808,11 +868,11 @@ components:
       name: limit
       in: query
       schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
-    Cursor:
-      name: cursor
+    Offset:
+      name: offset
       in: query
-      description: Opaque value taken from the previous page's `next_cursor`.
-      schema: { type: string }
+      description: Number of items to skip before returning the page.
+      schema: { type: integer, minimum: 0, default: 0 }
 
   responses:
     BadRequest:
@@ -822,6 +882,16 @@ components:
           schema: { $ref: '#/components/schemas/Error' }
     Unauthorized:
       description: Not logged in, or session expired
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    PayloadTooLarge:
+      description: Uploaded avatar exceeds the 5 MB limit
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    UnsupportedMediaType:
+      description: Avatar is not a JPEG, PNG, or WebP image
       content:
         application/json:
           schema: { $ref: '#/components/schemas/Error' }
@@ -854,16 +924,16 @@ components:
         detail: { type: string }
 
     # ----- enums
-    AnnouncementType:
+    MatchAnnouncementStatus:
       type: string
-      enum: [player, opponent]
-      description: '`player` = teammate needed, `opponent` = opponent needed.'
-    PlayRequestStatus:
+      enum: [upcoming, live, canceled, finished]
+      description: '`finished` means the match has ended; filling all slots does not close the announcement automatically.'
+    PlayerRequestStatus:
       type: string
       enum: [pending, accepted, declined]
     MediaType:
       type: string
-      enum: [image, video]
+      enum: [image]
     NotificationType:
       type: string
       enum: [like, comment, reply, follow, message, play_request]
@@ -931,20 +1001,27 @@ components:
         phone: { type: string, maxLength: 20 }
     UserPage:
       type: object
-      required: [items, next_cursor]
+      required: [items, next_offset]
       properties:
         items:
           type: array
           items: { $ref: '#/components/schemas/UserSummary' }
-        next_cursor: { type: string, nullable: true }
+        next_offset: { type: integer, minimum: 0, nullable: true }
 
     # ----- sports
     Sport:
       type: object
-      required: [id, name]
+      required: [id, name, max_players]
       properties:
         id: { type: string, format: uuid }
         name: { type: string }
+        max_players: { type: integer, minimum: 1 }
+    SportCreate:
+      type: object
+      required: [name, max_players]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 50 }
+        max_players: { type: integer, minimum: 1 }
 
     # ----- posts
     UploadedMedia:
@@ -998,12 +1075,12 @@ components:
         updated_at: { type: string, format: date-time }
     PostPage:
       type: object
-      required: [items, next_cursor]
+      required: [items, next_offset]
       properties:
         items:
           type: array
           items: { $ref: '#/components/schemas/Post' }
-        next_cursor: { type: string, nullable: true }
+        next_offset: { type: integer, minimum: 0, nullable: true }
 
     # ----- comments
     CommentCreate:
@@ -1041,12 +1118,12 @@ components:
         created_at: { type: string, format: date-time }
     CommentPage:
       type: object
-      required: [items, next_cursor]
+      required: [items, next_offset]
       properties:
         items:
           type: array
           items: { $ref: '#/components/schemas/Comment' }
-        next_cursor: { type: string, nullable: true }
+        next_offset: { type: integer, minimum: 0, nullable: true }
 
     # ----- chat
     ConversationCreate:
@@ -1087,83 +1164,91 @@ components:
         created_at: { type: string, format: date-time }
     ConversationPage:
       type: object
-      required: [items, next_cursor]
+      required: [items, next_offset]
       properties:
         items:
           type: array
           items: { $ref: '#/components/schemas/Conversation' }
-        next_cursor: { type: string, nullable: true }
+        next_offset: { type: integer, minimum: 0, nullable: true }
     MessagePage:
       type: object
-      required: [items, next_cursor]
+      required: [items, next_offset]
       properties:
         items:
           type: array
           items: { $ref: '#/components/schemas/Message' }
-        next_cursor: { type: string, nullable: true }
+        next_offset: { type: integer, minimum: 0, nullable: true }
 
     # ----- match announcements
     MatchAnnouncementCreate:
       type: object
-      required: [sport_id, type, start_time, end_time]
+      required: [title, sport_id, remaining_player_slots, start_time, end_time]
       properties:
+        title: { type: string, minLength: 1, maxLength: 255 }
         sport_id: { type: string, format: uuid }
-        type: { $ref: '#/components/schemas/AnnouncementType' }
+        remaining_player_slots: { type: integer, minimum: 1 }
         start_time: { type: string, format: date-time }
         end_time: { type: string, format: date-time }
     MatchAnnouncementUpdate:
       type: object
       minProperties: 1
       properties:
+        title: { type: string, minLength: 1, maxLength: 255 }
         sport_id: { type: string, format: uuid }
-        type: { $ref: '#/components/schemas/AnnouncementType' }
+        remaining_player_slots: { type: integer, minimum: 0 }
+        status: { $ref: '#/components/schemas/MatchAnnouncementStatus' }
         start_time: { type: string, format: date-time }
         end_time: { type: string, format: date-time }
     MatchAnnouncement:
       type: object
-      required: [id, owner, sport, type, start_time, end_time, created_at]
+      required: [id, title, owner, sport, remaining_player_slots, match_status, accepted_players, start_time, end_time, created_at]
       properties:
         id: { type: string, format: uuid }
+        title: { type: string }
         owner: { $ref: '#/components/schemas/UserSummary' }
         sport: { $ref: '#/components/schemas/Sport' }
-        type: { $ref: '#/components/schemas/AnnouncementType' }
+        remaining_player_slots: { type: integer, minimum: 0 }
+        match_status: { $ref: '#/components/schemas/MatchAnnouncementStatus' }
+        accepted_players:
+          type: array
+          items: { $ref: '#/components/schemas/UserSummary' }
         start_time: { type: string, format: date-time }
         end_time: { type: string, format: date-time }
         created_at: { type: string, format: date-time }
     MatchAnnouncementPage:
       type: object
-      required: [items, next_cursor]
+      required: [items, next_offset]
       properties:
         items:
           type: array
           items: { $ref: '#/components/schemas/MatchAnnouncement' }
-        next_cursor: { type: string, nullable: true }
+        next_offset: { type: integer, minimum: 0, nullable: true }
 
     # ----- play requests
-    PlayRequestDecision:
+    PlayerRequestDecision:
       type: object
       required: [status]
       properties:
         status:
           type: string
           enum: [accepted, declined]
-    PlayRequest:
+    PlayerRequest:
       type: object
       required: [id, announcement_id, sender, status, created_at]
       properties:
         id: { type: string, format: uuid }
         announcement_id: { type: string, format: uuid }
         sender: { $ref: '#/components/schemas/UserSummary' }
-        status: { $ref: '#/components/schemas/PlayRequestStatus' }
+        status: { $ref: '#/components/schemas/PlayerRequestStatus' }
         created_at: { type: string, format: date-time }
-    PlayRequestPage:
+    PlayerRequestPage:
       type: object
-      required: [items, next_cursor]
+      required: [items, next_offset]
       properties:
         items:
           type: array
-          items: { $ref: '#/components/schemas/PlayRequest' }
-        next_cursor: { type: string, nullable: true }
+          items: { $ref: '#/components/schemas/PlayerRequest' }
+        next_offset: { type: integer, minimum: 0, nullable: true }
 
     # ----- notifications
     Notification:
@@ -1180,9 +1265,9 @@ components:
         created_at: { type: string, format: date-time }
     NotificationPage:
       type: object
-      required: [items, next_cursor]
+      required: [items, next_offset]
       properties:
         items:
           type: array
           items: { $ref: '#/components/schemas/Notification' }
-        next_cursor: { type: string, nullable: true }
+        next_offset: { type: integer, minimum: 0, nullable: true }

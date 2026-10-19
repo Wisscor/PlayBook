@@ -5,27 +5,19 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 WORKDIR /back-end
 
-# Enable bytecode compilation and copy mode for uv
+# UV will compile Python source files to bytecode after installation.
 ENV UV_COMPILE_BYTECODE=1
+# copy packages instead of linking them
 ENV UV_LINK_MODE=copy
 
-# Copy dependency specifications for layer caching
 COPY pyproject.toml uv.lock ./
 
 # Install production dependencies only (no dev, frozen lockfile)
 RUN uv sync --frozen --no-dev --no-install-project
-
-# Copy application source code and migrations
-COPY ./app /back-end/app
-COPY ./alembic /back-end/alembic
-COPY alembic.ini /back-end/alembic.ini
-COPY entrypoint.sh /back-end/entrypoint.sh
-RUN chmod +x /back-end/entrypoint.sh
 
 # Place virtual environment executables at front of PATH
 ENV PATH="/back-end/.venv/bin:$PATH"
 
 EXPOSE 8000
 
-ENTRYPOINT ["/back-end/entrypoint.sh"]
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

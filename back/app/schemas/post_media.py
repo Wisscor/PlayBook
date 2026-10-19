@@ -4,7 +4,7 @@ import uuid
 
 class PostMediaBase(BaseModel):
     media_url: str
-    media_type: str  # "image" | "video"
+    media_type: Literal["image"]
     # for ordering media items in a post, default is 0
     position: int = 0
 
@@ -15,7 +15,7 @@ class PostMediaCreate(PostMediaBase):
 
 class PostMediaUpdate(BaseModel):
     media_url: Optional[str] = None
-    media_type: Optional[str] = None
+    media_type: Optional[Literal["image"]] = None
     position: Optional[int] = None
 
 
@@ -27,4 +27,4 @@ class PostMediaResponse(PostMediaBase):
 
 class UploadedMedia(BaseModel):
     media_url: str
-    media_type: Literal["image", "video"]
+    media_type: Literal["image"]

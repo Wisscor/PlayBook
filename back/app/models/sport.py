@@ -13,6 +13,15 @@ class Sport(Base):
     __tablename__ = "sports"
 
     id: Mapped[uuid.UUID] = mapped_column(
-        Uuid, primary_key=True, default=uuid.uuid4
+        Uuid,
+        primary_key=True,
+        default=uuid.uuid4,
     )
-    name: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
+    name: Mapped[str] = mapped_column(
+        String(50),
+        unique=True,
+        nullable=False,
+    )
+    max_players: Mapped[int] = mapped_column(
+        nullable=False,
+    )

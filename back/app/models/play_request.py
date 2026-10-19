@@ -1,6 +1,7 @@
 import enum
 import uuid
 from datetime import datetime, timezone
+from typing import TYPE_CHECKING
 
 from sqlalchemy import (
     DateTime,
@@ -13,18 +14,22 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database.base import Base
 
+if TYPE_CHECKING:
+    from app.models.match_announcement import MatchAnnouncement
+    from app.models.user import User
+
 
 def _utcnow() -> datetime:
     return datetime.now(timezone.utc)
 
 
-class PlayRequestStatusEnum(str, enum.Enum):
+class PlayerRequestStatusEnum(str, enum.Enum):
     pending = "pending"
     accepted = "accepted"
     declined = "declined"
 
 
-class PlayRequest(Base):
+class PlayerRequest(Base):
     """A user's request to join a match announcement. The receiver is the
     announcement's owner, so there is no receiver column.
 
@@ -51,9 +56,9 @@ class PlayRequest(Base):
     sender_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False
     )
-    status: Mapped[PlayRequestStatusEnum] = mapped_column(
-        Enum(PlayRequestStatusEnum),
-        default=PlayRequestStatusEnum.pending,
+    status: Mapped[PlayerRequestStatusEnum] = mapped_column(
+        Enum(PlayerRequestStatusEnum),
+        default=PlayerRequestStatusEnum.pending,
         nullable=False,
     )
     created_at: Mapped[datetime] = mapped_column(
