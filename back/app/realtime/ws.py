@@ -1,11 +1,17 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from pydantic import ValidationError
 
 from ..database.database import session_maker
-from . import frames
+from . import frames, service
 from . import registry
+from .schemas import MessageSend
 from .ws_auth import authenticate_socket
 
 router = APIRouter()
+
+
+async def _reject(ws: WebSocket, reason: str) -> None:
+    await ws.send_json({"type": frames.ERROR, "reason": reason})
 
 
 @router.websocket("/ws")
@@ -28,8 +34,29 @@ async def websocket_endpoint(websocket: WebSocket):
         )
 
         while True:
-            frame = await websocket.receive_json()
-            await websocket.send_json({"type": "echo", "received": frame})
+            try:
+                frame = await websocket.receive_json()
+            except ValueError:
+                await _reject(websocket, "invalid_json")
+                continue
+
+            kind = frame.get("type") if isinstance(frame, dict) else None
+            try:
+                match kind:
+                    case frames.MESSAGE_SEND:
+                        data = MessageSend.model_validate(frame)
+                        async with session_maker() as db:
+                            message = await service.create_message(
+                                db, user.id, data.conversation_id, data.body
+                            )
+                    case _:
+                        await _reject(websocket, "unknown_type")
+            except ValidationError:
+                await _reject(websocket, "invalid_frame")
+                continue
+            except PermissionError:
+                await _reject(websocket, "conversation_not_found")
+                continue
     except WebSocketDisconnect:
         pass
     finally:

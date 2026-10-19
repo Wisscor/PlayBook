@@ -13,6 +13,7 @@ from app.database.base import Base
 from app.database.seed import seed_sports
 from app.core.config import settings
 from .realtime import models as realtime_models
+from .realtime import rest as realtime_rest
 from .realtime import ws as realtime_ws
 from app.routers import (
     auth,
@@ -109,9 +110,8 @@ app.add_middleware(
 app.include_router(
     auth.router,
 )
-app.include_router(
-    realtime_ws.router,
-)
+app.include_router(realtime_rest.router)
+app.include_router(realtime_ws.router)
 app.include_router(
     users.router,
 )
