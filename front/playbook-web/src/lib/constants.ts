@@ -20,11 +20,12 @@ export const languages = [
 ];
 
 export const ROUTES = {
-  HOME: "/",
+  ROOT: "/",
   SIGNIN: "/auth?mode=signin",
   SIGNUP: "/auth?mode=signup",
   POSTS: "/history?type=posts",
   MATCHES: "/history?type=matches",
-  MATCHES_POSTS: "/history?type=all",
+  EDIT_PROFILE: "/edit-profile",
   PROFILE: "/profile",
+  HOME: "/home",
 } as const;

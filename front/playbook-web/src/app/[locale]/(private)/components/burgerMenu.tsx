@@ -1,4 +1,5 @@
 import { PlayText } from "@/components/ui/Text";
+import { usePathname } from "next/navigation";
 import React from "react";
 import { Link } from "../../../../../i18n/navigation";
 
@@ -11,28 +12,44 @@ export const BurgerMenu: React.FC<{
   locale: string;
   close: () => void;
 }> = ({ isOpen, menu, locale, close }) => {
+  const pathname = usePathname();
+
   return (
     <div
-      className={` ${
+      className={`absolute z-30 min-w-50 p-2 rounded-2xl border border-white/10 bg-slate-950/95 backdrop-blur-xl shadow-2xl top-full mt-3 transition-all duration-200 ease-out transform ${
+        locale === "ar" ? "left-0" : "right-0"
+      } ${
         isOpen
           ? "opacity-100 translate-y-0 pointer-events-auto"
           : "opacity-0 -translate-y-2 pointer-events-none"
-      } bg-white100 z-10 px-6 absolute top-full w-fit ${locale === "ar" ? "left-0" : "right-0"} transition-all duration-300 ease-in-out shadow-lg rounded-md overflow-hidden`}
+      }`}
     >
-      {menu.map((el) => {
-        return (
-          <Link
-            onClick={() => {
-              close();
-            }}
-            key={el.name}
-            href={el.route}
-            className="  w-full py-2 block"
-          >
-            <PlayText.Primary id={el.name} className="text-black text-sm" />
-          </Link>
-        );
-      })}
+      <div className="flex flex-col gap-1">
+        {menu.map((el) => {
+          const isActive = pathname.includes(el.route);
+          return (
+            <Link
+              key={el.name}
+              href={el.route}
+              onClick={() => close()}
+              className={`flex w-full cursor-pointer items-center rounded-xl px-4 py-2.5 transition-colors ${
+                isActive
+                  ? "bg-white/15 text-white font-semibold"
+                  : "text-slate-300 hover:bg-white/5 hover:text-white"
+              }`}
+            >
+              <PlayText.Primary
+                id={el.name}
+                className={`text-sm ${
+                  isActive
+                    ? "text-white font-semibold"
+                    : "text-slate-300 font-medium"
+                }`}
+              />
+            </Link>
+          );
+        })}
+      </div>
     </div>
   );
 };

@@ -4,13 +4,33 @@ import Image from "next/image";
 import React from "react";
 import { twMerge } from "tailwind-merge";
 
-const Primary: React.FC<{
-  placeholder: string;
+interface InputProps {
+  placeholder?: string;
   value: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   type?: React.HTMLInputTypeAttribute;
   className?: string;
-}> = ({ placeholder, value, onChange, type, className }) => {
+}
+
+interface AreaProps {
+  placeholder?: string;
+  value: string;
+  className?: string;
+  onChange?: React.ChangeEventHandler<HTMLTextAreaElement>;
+}
+
+interface PasswordProps extends InputProps {
+  isHidden: boolean;
+  onClick: () => void;
+}
+
+const Primary: React.FC<InputProps> = ({
+  placeholder,
+  value,
+  onChange,
+  type,
+  className,
+}) => {
   const t = useTranslations();
 
   return (
@@ -18,10 +38,10 @@ const Primary: React.FC<{
       value={value}
       onChange={onChange}
       type={type ?? "text"}
-      placeholder={t(placeholder)}
+      placeholder={placeholder ? t(placeholder) : undefined}
       className={twMerge(
         clsx(
-          "bg-white100/20 outline-0 backdrop-opacity-20 rounded-xl px-6 py-4 text-white text-lg w-full placeholder:text-black placeholder:text-sm ",
+          "w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-3.5 text-base text-white placeholder:text-slate-400 placeholder:text-sm backdrop-blur-md transition-all outline-none focus:border-white/30 focus:bg-white/10 focus:ring-2 focus:ring-white/20",
           className,
         ),
       )}
@@ -29,23 +49,22 @@ const Primary: React.FC<{
   );
 };
 
-const Area: React.FC<{
-  placeholder: string;
-  value: string;
-  type?: React.HTMLInputTypeAttribute;
-  className?: string;
-  onChange?: React.ChangeEventHandler<HTMLTextAreaElement, HTMLTextAreaElement>;
-}> = ({ placeholder, value, type, className, onChange }) => {
+const Area: React.FC<AreaProps> = ({
+  placeholder,
+  value,
+  className,
+  onChange,
+}) => {
   const t = useTranslations();
 
   return (
     <textarea
       value={value}
       onChange={onChange}
-      placeholder={t(placeholder)}
+      placeholder={placeholder ? t(placeholder) : undefined}
       className={twMerge(
         clsx(
-          "w-full rounded-xl bg-white100/10 backdrop-blur-md border border-white100/20 px-6 py-4 text-lg text-white placeholder:text-black/50 placeholder:text-sm focus:outline-none focus:ring-2 focus:ring-white/40 resize-y min-h-30",
+          "w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-3.5 text-base text-white placeholder:text-slate-400 placeholder:text-sm backdrop-blur-md transition-all outline-none focus:border-white/30 focus:bg-white/10 focus:ring-2 focus:ring-white/20 resize-y min-h-30",
           className,
         ),
       )}
@@ -53,48 +72,48 @@ const Area: React.FC<{
   );
 };
 
-const Password: React.FC<{
-  placeholder: string;
-  value: string;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  type?: React.HTMLInputTypeAttribute;
-  isHidden: boolean;
-  onClick: () => void;
-  className?: string;
-}> = ({ placeholder, value, onChange, type, isHidden, onClick, className }) => {
+const Password: React.FC<PasswordProps> = ({
+  placeholder,
+  value,
+  onChange,
+  type,
+  isHidden,
+  onClick,
+  className,
+}) => {
   const t = useTranslations();
   const locale = useLocale();
 
   return (
-    <div className="relative">
+    <div className="relative w-full">
       <input
         value={value}
         onChange={onChange}
         type={isHidden ? "password" : "text"}
-        placeholder={t(placeholder)}
+        placeholder={placeholder ? t(placeholder) : undefined}
         className={twMerge(
           clsx(
-            "bg-white100/20 outline-0 backdrop-opacity-20 rounded-xl px-6 py-4 text-white text-lg w-full placeholder:text-black placeholder:text-sm ",
+            "w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-3.5 text-base text-white placeholder:text-slate-400 placeholder:text-sm backdrop-blur-md transition-all outline-none focus:border-white/30 focus:bg-white/10 focus:ring-2 focus:ring-white/20 pr-12",
             className,
           ),
         )}
       />
-      <Image
-        onClick={() => {
-          onClick();
-        }}
-        loading="eager"
-        alt="hide"
-        src={!isHidden ? "/icons/view.png" : "/icons/hide.png"}
-        width={20}
-        height={20}
-        className={twMerge(
-          clsx(
-            `absolute ${locale === "ar" ? "left-6" : "right-6"} top-1/2 -translate-y-1/2 cursor-pointer `,
-            className,
-          ),
-        )}
-      />
+      <button
+        type="button"
+        onClick={onClick}
+        className={`absolute top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-white transition-colors ${
+          locale === "ar" ? "left-4" : "right-4"
+        }`}
+      >
+        <Image
+          loading="eager"
+          alt="toggle visibility"
+          src={!isHidden ? "/icons/view.png" : "/icons/hide.png"}
+          width={20}
+          height={20}
+          className="opacity-70 hover:opacity-100 transition-opacity"
+        />
+      </button>
     </div>
   );
 };
