@@ -1,6 +1,15 @@
 import uuid
 from typing import List
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status, Query, Response
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    HTTPException,
+    status,
+    Query,
+    Response,
+    Request,
+)
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -10,6 +19,7 @@ from app.schemas.like import LikeToggleResponse
 from app.schemas.user import UserSummaryResponse
 from app.core.deps import get_curr_user
 from app.realtime.notify import emit_notification
+from app.core.limiter import limiter
 
 router = APIRouter(
     prefix="/posts",
@@ -22,9 +32,11 @@ router = APIRouter(
     status_code=status.HTTP_201_CREATED,
     response_model=LikeToggleResponse,
 )
+@limiter.limit("30/minute")
 async def like_post(
     post_id: uuid.UUID,
     background_tasks: BackgroundTasks,
+    request: Request,
     curr_user: User = Depends(get_curr_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -71,8 +83,10 @@ async def like_post(
     "/{post_id}/like",
     status_code=status.HTTP_204_NO_CONTENT,
 )
+@limiter.limit("30/minute")
 async def unlike_post(
     post_id: uuid.UUID,
+    request: Request,
     curr_user: User = Depends(get_curr_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -107,8 +121,10 @@ async def unlike_post(
     "/{post_id}/likes",
     response_model=List[UserSummaryResponse],
 )
+@limiter.limit("60/minute")
 async def get_post_likes(
     post_id: uuid.UUID,
+    request: Request,
     limit: int = Query(50, ge=1, le=100),
     offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),

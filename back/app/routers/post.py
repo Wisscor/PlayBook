@@ -11,6 +11,7 @@ from fastapi import (
     File,
     UploadFile,
     status,
+    Request,
 )
 from sqlalchemy import select, func, or_
 from sqlalchemy.orm import selectinload
@@ -30,6 +31,7 @@ from app.schemas.post import PostCreate, PostUpdate, PostResponse, PostPage
 from app.schemas.user import UserSummaryResponse
 from app.schemas.post_media import PostMediaResponse, UploadedMedia
 from app.core.deps import get_curr_user
+from app.core.limiter import limiter
 
 router = APIRouter(
     tags=["Posts"],
@@ -51,7 +53,9 @@ ALLOWED_MEDIA_TYPES = {
     status_code=status.HTTP_201_CREATED,
     response_model=UploadedMedia,
 )
+@limiter.limit("10/minute")
 async def upload_media(
+    request: Request,
     file: UploadFile = File(...),
     _: User = Depends(get_curr_user),
 ):
@@ -185,8 +189,10 @@ async def _enrich_posts(
     status_code=status.HTTP_201_CREATED,
     response_model=PostResponse,
 )
+@limiter.limit("30/minute")
 async def create_post(
     body: PostCreate,
+    request: Request,
     curr_user: User = Depends(get_curr_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -239,7 +245,9 @@ async def create_post(
     response_model=PostPage,
     include_in_schema=False,
 )
+@limiter.limit("60/minute")
 async def get_feed(
+    request: Request,
     limit: int = Query(default=20, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
     curr_user: User = Depends(get_curr_user),
@@ -277,7 +285,9 @@ async def get_feed(
     status_code=status.HTTP_200_OK,
     response_model=List[PostResponse],
 )
+@limiter.limit("60/minute")
 async def list_posts(
+    request: Request,
     user_id: Optional[uuid.UUID] = Query(default=None),
     limit: int = Query(default=20, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
@@ -308,8 +318,10 @@ async def list_posts(
     status_code=status.HTTP_200_OK,
     response_model=PostResponse,
 )
+@limiter.limit("60/minute")
 async def get_post(
     post_id: uuid.UUID,
+    request: Request,
     curr_user: Optional[User] = Depends(get_curr_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -337,9 +349,11 @@ async def get_post(
     status_code=status.HTTP_200_OK,
     response_model=PostResponse,
 )
+@limiter.limit("30/minute")
 async def update_post(
     post_id: uuid.UUID,
     data: PostUpdate,
+    request: Request,
     curr_user: User = Depends(get_curr_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -380,8 +394,10 @@ async def update_post(
     "/posts/{post_id}",
     status_code=status.HTTP_204_NO_CONTENT,
 )
+@limiter.limit("10/minute")
 async def delete_post(
     post_id: uuid.UUID,
+    request: Request,
     curr_user: User = Depends(get_curr_user),
     db: AsyncSession = Depends(get_db),
 ):

@@ -1,4 +1,3 @@
-import logging
 import time
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -7,7 +6,10 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import structlog
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 
+from app.core.limiter import limiter
 from app.database.database import engine, get_db
 from app.database.base import Base
 from app.database.seed import seed_sports
@@ -57,6 +59,9 @@ app = FastAPI(
     title=settings.app_name,
     debug=settings.debug,
 )
+# Stores the limiter in the app's state for global access
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 UPLOAD_DIR = Path("uploads")
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
@@ -139,7 +144,8 @@ app.include_router(
 
 
 @app.get("/health", status_code=200)
-async def health_check():
+@limiter.limit("5/minute")
+async def health_check(request: Request):
     """
     Health check endpoint to verify the application's status.
     Returns a 200 OK response if the application is running.

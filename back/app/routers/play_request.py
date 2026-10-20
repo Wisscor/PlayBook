@@ -1,7 +1,15 @@
 import uuid
 from typing import Optional
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, status
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    HTTPException,
+    Query,
+    status,
+    Request,
+)
 from sqlalchemy import Select, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -22,6 +30,7 @@ from app.schemas.play_request import (
     PlayerRequestResponse,
 )
 from app.realtime.notify import emit_notification
+from app.core.limiter import limiter
 
 router = APIRouter(tags=["Play Requests"])
 
@@ -67,9 +76,11 @@ async def _paginate(
     response_model=PlayerRequestResponse,
     status_code=status.HTTP_201_CREATED,
 )
+@limiter.limit("30/minute")
 async def send_play_request(
     id: uuid.UUID,
     background_tasks: BackgroundTasks,
+    request: Request,
     db: AsyncSession = Depends(get_db),
     me: User = Depends(get_curr_user),
 ):
@@ -132,8 +143,10 @@ async def send_play_request(
 @router.get(
     "/match-announcements/{id}/play-requests", response_model=PlayerRequestPage
 )
+@limiter.limit("60/minute")
 async def list_announcement_requests(
     id: uuid.UUID,
+    request: Request,
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
@@ -151,7 +164,9 @@ async def list_announcement_requests(
 
 
 @router.get("/play-requests", response_model=PlayerRequestPage)
+@limiter.limit("60/minute")
 async def list_my_requests(
+    request: Request,
     filters: PlayerRequestFilter = Depends(),
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
@@ -173,10 +188,12 @@ async def list_my_requests(
 
 
 @router.patch("/play-requests/{id}", response_model=PlayerRequestResponse)
+@limiter.limit("30/minute")
 async def decide_play_request(
     id: uuid.UUID,
     body: PlayerRequestDecision,
     background_tasks: BackgroundTasks,
+    request: Request,
     db: AsyncSession = Depends(get_db),
     me: User = Depends(get_curr_user),
 ):

@@ -10,6 +10,7 @@ from fastapi import (
     status,
     File,
     UploadFile,
+    Request,
 )
 from sqlalchemy import select, func, or_, and_
 from sqlalchemy.orm import selectinload
@@ -31,6 +32,7 @@ from ..schemas.user import (
 from ..schemas.post import PostPage
 from .post import _enrich_posts
 from app.core.deps import get_curr_user
+from app.core.limiter import limiter
 
 router = APIRouter(
     prefix="/users",
@@ -51,7 +53,9 @@ MAX_AVATAR_SIZE = 5 * 1024 * 1024
     status_code=HTTPStatus.OK,
     response_model=UserProfileResponse,
 )
+@limiter.limit("60/minute")
 async def get_my_profile(
+    request: Request,
     curr_user: User = Depends(get_curr_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -98,8 +102,10 @@ async def get_my_profile(
     status_code=HTTPStatus.OK,
     response_model=UserResponse,
 )
+@limiter.limit("30/minute")
 async def update(
     data: UserUpdate,
+    request: Request,
     curr_user: User = Depends(get_curr_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -120,7 +126,9 @@ async def update(
     status_code=HTTPStatus.OK,
     response_model=UserResponse,
 )
+@limiter.limit("10/minute")
 async def upload_avatar(
+    request: Request,
     file: UploadFile = File(...),
     curr_user: User = Depends(get_curr_user),
     db: AsyncSession = Depends(get_db),
@@ -165,7 +173,9 @@ async def upload_avatar(
 
 
 @router.delete(path="/me", status_code=HTTPStatus.NO_CONTENT)
+@limiter.limit("5/hour")
 async def delete_user(
+    request: Request,
     curr_user: User = Depends(get_curr_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -182,7 +192,9 @@ async def delete_user(
     status_code=HTTPStatus.OK,
     response_model=List[UserSummaryResponse],
 )
+@limiter.limit("60/minute")
 async def search_users(
+    request: Request,
     search: Optional[str] = Query(default=None, min_length=1),
     limit: int = Query(default=20, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
@@ -211,8 +223,10 @@ async def search_users(
     status_code=HTTPStatus.OK,
     response_model=UserProfileResponse,
 )
+@limiter.limit("60/minute")
 async def get_user(
     user_id: uuid.UUID,
+    request: Request,
     curr_user: User = Depends(get_curr_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -276,8 +290,10 @@ async def get_user(
     status_code=HTTPStatus.OK,
     response_model=PostPage,
 )
+@limiter.limit("60/minute")
 async def list_user_posts(
     user_id: uuid.UUID,
+    request: Request,
     limit: int = Query(default=20, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
     curr_user: Optional[User] = Depends(get_curr_user),

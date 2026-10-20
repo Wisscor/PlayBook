@@ -1,6 +1,15 @@
 import uuid
 from typing import Optional, List
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status, Query, Response
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    HTTPException,
+    status,
+    Query,
+    Response,
+    Request,
+)
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from http import HTTPStatus
@@ -11,6 +20,7 @@ from ..schemas.follower import FollowToggleResponse
 from ..schemas.user import UserSummaryResponse
 from ..core.deps import get_curr_user
 from ..realtime.notify import emit_notification
+from app.core.limiter import limiter
 
 router = APIRouter(
     prefix="/users",
@@ -23,9 +33,11 @@ router = APIRouter(
     status_code=status.HTTP_201_CREATED,
     response_model=FollowToggleResponse,
 )
+@limiter.limit("30/minute")
 async def follow_user(
     user_id: uuid.UUID,
     background_tasks: BackgroundTasks,
+    request: Request,
     curr_user: User = Depends(get_curr_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -80,8 +92,10 @@ async def follow_user(
     "/{user_id}/follow",
     status_code=status.HTTP_204_NO_CONTENT,
 )
+@limiter.limit("30/minute")
 async def unfollow_user(
     user_id: uuid.UUID,
+    request: Request,
     curr_user: User = Depends(get_curr_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -118,8 +132,10 @@ async def unfollow_user(
     status_code=status.HTTP_200_OK,
     response_model=List[UserSummaryResponse],
 )
+@limiter.limit("60/minute")
 async def get_user_followers(
     user_id: uuid.UUID,
+    request: Request,
     limit: int = Query(default=20, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
     db: AsyncSession = Depends(get_db),
@@ -151,8 +167,10 @@ async def get_user_followers(
     status_code=status.HTTP_200_OK,
     response_model=List[UserSummaryResponse],
 )
+@limiter.limit("60/minute")
 async def get_user_following(
     user_id: uuid.UUID,
+    request: Request,
     limit: int = Query(default=20, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
     db: AsyncSession = Depends(get_db),

@@ -1,6 +1,15 @@
 import uuid
 from typing import List, Optional
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status, Query, Response
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    HTTPException,
+    status,
+    Query,
+    Response,
+    Request,
+)
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,6 +19,7 @@ from app.models import User, Post, Comment
 from app.schemas.comment import CommentCreate, CommentUpdate, CommentResponse
 from app.core.deps import get_curr_user
 from app.realtime.notify import emit_notification
+from app.core.limiter import limiter
 
 router = APIRouter(
     tags=["Comments"],
@@ -21,9 +31,11 @@ router = APIRouter(
     status_code=status.HTTP_201_CREATED,
     response_model=CommentResponse,
 )
+@limiter.limit("30/minute")
 async def create_comment(
     post_id: uuid.UUID,
     data: CommentCreate,
+    request: Request,
     background_tasks: BackgroundTasks,
     curr_user: User = Depends(get_curr_user),
     db: AsyncSession = Depends(get_db),
@@ -83,8 +95,10 @@ async def create_comment(
     "/posts/{post_id}/comments",
     response_model=List[CommentResponse],
 )
+@limiter.limit("60/minute")
 async def get_post_comments(
     post_id: uuid.UUID,
+    request: Request,
     limit: int = Query(50, ge=1, le=100),
     offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
@@ -119,9 +133,11 @@ async def get_post_comments(
     "/comments/{comment_id}",
     response_model=CommentResponse,
 )
+@limiter.limit("30/minute")
 async def update_comment(
     comment_id: uuid.UUID,
     data: CommentUpdate,
+    request: Request,
     curr_user: User = Depends(get_curr_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -156,8 +172,10 @@ async def update_comment(
     "/comments/{comment_id}",
     status_code=status.HTTP_204_NO_CONTENT,
 )
+@limiter.limit("10/minute")
 async def delete_comment(
     comment_id: uuid.UUID,
+    request: Request,
     curr_user: User = Depends(get_curr_user),
     db: AsyncSession = Depends(get_db),
 ):

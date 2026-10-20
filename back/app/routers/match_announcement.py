@@ -1,7 +1,15 @@
 import uuid
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    Query,
+    Response,
+    status,
+    Request,
+)
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, selectinload
@@ -21,6 +29,7 @@ from app.schemas.match_announcement import (
     MatchAnnouncementUpdate,
 )
 from app.schemas.user import UserSummaryResponse
+from app.core.limiter import limiter
 
 router = APIRouter(prefix="/match-announcements", tags=["Match Announcements"])
 
@@ -74,8 +83,10 @@ def _require_owner(announcement: MatchAnnouncement, user: User) -> None:
     response_model=MatchAnnouncementResponse,
     status_code=status.HTTP_201_CREATED,
 )
+@limiter.limit("30/minute")
 async def create_announcement(
     body: MatchAnnouncementCreate,
+    request: Request,
     db: AsyncSession = Depends(get_db),
     me: User = Depends(get_curr_user),
 ):
@@ -92,7 +103,9 @@ async def create_announcement(
 
 
 @router.get("", response_model=MatchAnnouncementPage)
+@limiter.limit("60/minute")
 async def search_announcements(
+    request: Request,
     filters: MatchAnnouncementFilter = Depends(),
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
@@ -170,8 +183,10 @@ async def search_announcements(
 
 
 @router.get("/{id}", response_model=MatchAnnouncementResponse)
+@limiter.limit("60/minute")
 async def get_announcement(
     id: uuid.UUID,
+    request: Request,
     db: AsyncSession = Depends(get_db),
     _: User = Depends(get_curr_user),
 ):
@@ -179,9 +194,11 @@ async def get_announcement(
 
 
 @router.patch("/{id}", response_model=MatchAnnouncementResponse)
+@limiter.limit("30/minute")
 async def update_announcement(
     id: uuid.UUID,
     body: MatchAnnouncementUpdate,
+    request: Request,
     db: AsyncSession = Depends(get_db),
     me: User = Depends(get_curr_user),
 ):
@@ -242,8 +259,10 @@ async def update_announcement(
 
 
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
+@limiter.limit("10/minute")
 async def delete_announcement(
     id: uuid.UUID,
+    request: Request,
     db: AsyncSession = Depends(get_db),
     me: User = Depends(get_curr_user),
 ):
