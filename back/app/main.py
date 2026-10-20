@@ -8,10 +8,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import structlog
 
-from app.database.database import engine
+from app.database.database import engine, get_db
 from app.database.base import Base
+from app.database.seed import seed_sports
 from app.core.config import settings
 from .realtime import models as realtime_models
+from .realtime import rest as realtime_rest
 from .realtime import ws as realtime_ws
 from app.routers import (
     auth,
@@ -34,9 +36,11 @@ logger = structlog.get_logger()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     try:
-        # Create database tables if they don't exist
+        # Create database tables if they don't exist, then seed required data.
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
+        async for db in get_db():
+            await seed_sports(db)
     except Exception as e:
         logger.error(
             "Failed to create database tables",
@@ -106,9 +110,8 @@ app.add_middleware(
 app.include_router(
     auth.router,
 )
-app.include_router(
-    realtime_ws.router,
-)
+app.include_router(realtime_rest.router)
+app.include_router(realtime_ws.router)
 app.include_router(
     users.router,
 )

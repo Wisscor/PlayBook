@@ -9,6 +9,7 @@ from app.database.database import get_db
 from app.core.deps import get_curr_user
 from app.core.config import settings
 from app.models import Session
+from app.realtime import registry
 
 
 def test_signup_success(mock_db):
@@ -160,7 +161,7 @@ def test_login_user_not_found(mock_db):
     app.dependency_overrides.clear()
 
 
-def test_logout_success(mock_user_1, mock_db):
+def test_logout_success(mock_user_1, mock_db, monkeypatch):
     client = TestClient(app)
     session_id = uuid.uuid4()
     session_obj = Session(
@@ -174,11 +175,14 @@ def test_logout_success(mock_user_1, mock_db):
     mock_db.execute.return_value = mock_result
 
     app.dependency_overrides[get_db] = lambda: mock_db
+    close_user = AsyncMock()
+    monkeypatch.setattr(registry, "close_user", close_user)
 
     client.cookies.set(settings.session_cookie_name, str(session_id))
     res = client.post("/auth/logout")
     assert res.status_code == 200
     assert res.json()["message"] == "Logout successful"
+    close_user.assert_awaited_once_with(mock_user_1.id)
 
     app.dependency_overrides.clear()
 

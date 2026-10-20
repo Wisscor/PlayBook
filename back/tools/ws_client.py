@@ -38,6 +38,12 @@ async def read_from_keyboard(ws):
         loop.remove_reader(stdin_fd)
 
 
+async def keepalive(ws):
+    while True:
+        await asyncio.sleep(20)
+        await ws.send('{"type": "ping"}')
+
+
 async def main(session_id):
     async with websockets.connect(
         URL, additional_headers={"Cookie": f"session_id={session_id}"}
@@ -45,7 +51,8 @@ async def main(session_id):
         print("Connected. Type a message and press Enter; Ctrl+C to quit.", flush=True)
         server_task = asyncio.create_task(read_from_server(ws))
         keyboard_task = asyncio.create_task(read_from_keyboard(ws))
-        tasks = (server_task, keyboard_task)
+        keepalive_task = asyncio.create_task(keepalive(ws))
+        tasks = (server_task, keyboard_task, keepalive_task)
         try:
             done, _ = await asyncio.wait(
                 tasks, return_when=asyncio.FIRST_COMPLETED

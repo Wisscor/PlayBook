@@ -1,7 +1,7 @@
 import uuid
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, status
 from sqlalchemy import Select, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -21,6 +21,7 @@ from app.schemas.play_request import (
     PlayerRequestPage,
     PlayerRequestResponse,
 )
+from app.realtime.notify import emit_notification
 
 router = APIRouter(tags=["Play Requests"])
 
@@ -68,6 +69,7 @@ async def _paginate(
 )
 async def send_play_request(
     id: uuid.UUID,
+    background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
     me: User = Depends(get_curr_user),
 ):
@@ -117,6 +119,13 @@ async def send_play_request(
         raise HTTPException(
             status.HTTP_409_CONFLICT, detail="Request already sent"
         )
+    background_tasks.add_task(
+        emit_notification,
+        event_type="play_request",
+        actor_id=me.id,
+        target_user_id=announcement.organizer_id,
+        target_id=announcement.id,
+    )
     return await _get_request(db, request_id)
 
 
@@ -167,6 +176,7 @@ async def list_my_requests(
 async def decide_play_request(
     id: uuid.UUID,
     body: PlayerRequestDecision,
+    background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
     me: User = Depends(get_curr_user),
 ):
@@ -210,4 +220,11 @@ async def decide_play_request(
     if play_request.status == PlayerRequestStatusEnum.accepted:
         announcement.remaining_player_slots -= 1
     await db.commit()
+    background_tasks.add_task(
+        emit_notification,
+        event_type=f"play_request_{body.status}",
+        actor_id=me.id,
+        target_user_id=play_request.sender_id,
+        target_id=play_request.announcement_id,
+    )
     return await _get_request(db, id)

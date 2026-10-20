@@ -7,6 +7,8 @@ services:
     environment:
       - discovery.type=single-node
       - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g
+    mem_limit: 2g
     volumes:
       - elasticsearch_data:/usr/share/elasticsearch/data
     healthcheck:
