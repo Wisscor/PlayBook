@@ -21,3 +21,5 @@ dist/
 *.log
 .DS_Store
 *.cookies
+# Local documentation and generated diagrams
+/docs/

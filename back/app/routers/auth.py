@@ -21,6 +21,7 @@ from datetime import datetime, timedelta, timezone
 from ..schemas.user import UserCreate, UserLogin, UserResponse
 from ..core.security import hash_password, verify_password
 from app.core.config import settings
+from app.realtime import registry
 
 router = APIRouter(
     prefix="/auth",
@@ -138,6 +139,7 @@ async def logout(
     # Delete the session from the database
     await db.delete(session)
     await db.commit()
+    await registry.close_user(session.user_id)
     response.delete_cookie(
         key=settings.session_cookie_name,
     )

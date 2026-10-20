@@ -1,6 +1,6 @@
 import uuid
 from typing import Optional, List
-from fastapi import APIRouter, Depends, HTTPException, status, Query, Response
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status, Query, Response
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from http import HTTPStatus
@@ -10,6 +10,7 @@ from ..models import User, Follower
 from ..schemas.follower import FollowToggleResponse
 from ..schemas.user import UserSummaryResponse
 from ..core.deps import get_curr_user
+from ..realtime.notify import emit_notification
 
 router = APIRouter(
     prefix="/users",
@@ -24,6 +25,7 @@ router = APIRouter(
 )
 async def follow_user(
     user_id: uuid.UUID,
+    background_tasks: BackgroundTasks,
     curr_user: User = Depends(get_curr_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -64,6 +66,12 @@ async def follow_user(
     )
     db.add(new_follower)
     await db.commit()
+    background_tasks.add_task(
+        emit_notification,
+        event_type="follow",
+        actor_id=curr_user.id,
+        target_user_id=user_id,
+    )
 
     return FollowToggleResponse(following=True, user_id=user_id)
 
