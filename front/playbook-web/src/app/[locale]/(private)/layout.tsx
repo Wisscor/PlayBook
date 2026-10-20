@@ -4,12 +4,14 @@ import { PlayText } from "@/components/ui/Text";
 import { ROUTES } from "@/lib/constants";
 import { useLocale } from "next-intl";
 import Image from "next/image";
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Link } from "../../../../i18n/navigation";
 import { usePathname } from "next/navigation";
 import { BurgerMenu } from "./components/burgerMenu";
 import { signOut } from "@/services/auth";
 import { useNavigation } from "@/hooks/useNavigation";
+import { NotificationPopUp } from "./notificationPopUp";
+import { PlayButton } from "@/components/ui/Button";
 
 export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
   const locale = useLocale();
@@ -18,6 +20,43 @@ export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [logoutError, setLogoutError] = useState("");
   const { goSignIn } = useNavigation();
+
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const notificationRef = useRef<HTMLDivElement>(null);
+
+  const [notifications, setNotifications] = useState([
+    {
+      id: 1,
+      text: "Alex Johnson invited you to a basketball match.",
+      time: "10m ago",
+      read: false,
+    },
+    {
+      id: 2,
+      text: "Your match 'Weekend Football' starts tomorrow.",
+      time: "1h ago",
+      read: false,
+    },
+    {
+      id: 3,
+      text: "Sarah Connor liked your post.",
+      time: "3h ago",
+      read: true,
+    },
+  ]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        notificationRef.current &&
+        !notificationRef.current.contains(event.target as Node)
+      ) {
+        setIsNotificationsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const menu = [
     {
@@ -46,6 +85,8 @@ export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
       setIsLoggingOut(false);
     }
   };
+
+  const unreadCount = notifications.filter((n) => !n.read).length;
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-950 text-white">
@@ -86,7 +127,40 @@ export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
             })}
           </nav>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-stretch gap-3">
+            <div className="relative  block" ref={notificationRef}>
+              <PlayButton.Complexe
+                type="button"
+                onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
+                className="relative rounded-xl border border-white/10 bg-white/5 p-2.5 backdrop-blur-md transition-all hover:bg-white/10 cursor-pointer"
+                aria-label="Notifications"
+              >
+                <PlayText.Span
+                  texts={[
+                    {
+                      content: "🔔",
+                      className: "text-base",
+                    },
+                    unreadCount > 0
+                      ? {
+                          content: unreadCount.toString(),
+                          className:
+                            "absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white shadow-md",
+                        }
+                      : {},
+                  ]}
+                />
+              </PlayButton.Complexe>
+
+              {isNotificationsOpen && (
+                <NotificationPopUp
+                  setNotifications={setNotifications}
+                  notifications={notifications}
+                  unreadCount={unreadCount}
+                />
+              )}
+            </div>
+
             <button
               type="button"
               onClick={handleLogout}

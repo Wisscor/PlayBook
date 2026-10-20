@@ -111,5 +111,8 @@
 
   "follow": "متابعة",
   "about": "عن",
-  "unfollow": "إلغاء المتابعة"
+  "unfollow": "إلغاء المتابعة",
+  "notifications": "الإشعارات",
+  "unread": "غير مقروء",
+  "no-notifications": "لا توجد إشعارات بعد."
 }

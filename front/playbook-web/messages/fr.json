@@ -110,5 +110,8 @@
 
   "follow": "Suivre",
   "about": "À propos",
-  "unfollow": "Ne plus suivre"
+  "unfollow": "Ne plus suivre",
+  "notifications": "Notifications",
+  "unread": "Non lu",
+  "no-notifications": "Aucune notification pour le moment."
 }

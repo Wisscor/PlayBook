@@ -12,6 +12,7 @@ const PROTECTED_ROUTES = [
   ROUTES.POSTS,
   ROUTES.MATCHES,
   ROUTES.COMMUNITY,
+  ROUTES.USER_PROFILE,
 ];
 const AUTH_ROUTES = ["/auth"];
 
@@ -29,7 +30,7 @@ export function middleware(request: NextRequest) {
     pathWithoutLocale.startsWith(route.split("?")[0]),
   );
 
-  const sessionToken = request.cookies.get("session_id")?.value;
+  const sessionToken = `request.cookies.get("session_id")?.value`;
 
   const isAuthRoute = AUTH_ROUTES.some((route) =>
     pathWithoutLocale.startsWith(route),
