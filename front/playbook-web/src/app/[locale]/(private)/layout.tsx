@@ -91,7 +91,7 @@ export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
               type="button"
               onClick={handleLogout}
               disabled={isLoggingOut}
-              className="hidden rounded-xl border border-rose-500/20 bg-rose-500/10 px-4 py-2 text-sm font-semibold text-rose-300 transition-colors hover:bg-rose-500/20 disabled:cursor-not-allowed disabled:opacity-60 lg:block"
+              className="hidden rounded-xl border border-rose-500/20 bg-rose-500/10 px-4 py-2 text-sm font-semibold text-rose-300 transition-colors hover:bg-rose-500/20 disabled:cursor-not-allowed cursor-pointer disabled:opacity-60 lg:block"
             >
               <PlayText.Primary
                 id={isLoggingOut ? "logging-out" : "logout"}

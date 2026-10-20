@@ -33,13 +33,12 @@
   "make-matche-room": "إنشاء غرفة مباراة",
   "make-post": "إنشاء منشور",
   "go-to-profile": "الذهاب إلى الملف الشخصي",
-  "go-to-matches-posts": "الذهاب إلى المباريات والمنشورات",
+  "go-to-community": "الذهاب إلى المباريات والمنشورات",
 
   "make-matche-room-description": "قم بإنشاء غرفة مباراة للعثور على لاعبين مهتمين",
   "make-post-description": "انشر أفكارك أو مبارياتك أو ملاحظاتك لجذب انتباه المجتمع",
   "go-to-profile-description": "تحقق من ملفك الشخصي، وقم بتحديث معلوماتك وإدارة إعداداتك",
-  "go-to-matches-posts-description": "ابحث عن غرف مباريات وشاهد منشورات المستخدمين الآخرين للتفاعل معهم",
-
+  "go-to-community-description": "ابحث عن غرف مباريات وشاهد منشورات المستخدمين الآخرين للتفاعل معهم",
   "login-to-see": "تسجيل الدخول لرؤية هذه الصفحة",
   "not-set": "غير محدد",
   "firstname-label": ": الاسم الأول",
@@ -91,5 +90,22 @@
   "error-credentials": "اسم المستخدم/البريد الإلكتروني أو كلمة المرور غير صالحة",
   "passwords-do-not-match": "كلمات المرور غير متطابقة",
   "error-creating-account": "غير قادر على إنشاء حسابك",
-  "all-fields-required": "جميع الحقول مطلوبة"
+
+  "all-fields-required": "جميع الحقول مطلوبة",
+  "find-matches": "ابحث عن المباريات",
+  "search-matches": "ابحث عن اسم المبارة أو نوعها...",
+  "join-match": "انضم إلى المبارة",
+  "filter-matches": "فلتر المباريات حسب التاريخ والوقت",
+
+  "view-profile": "عرض الملف الشخصي",
+  "match-filter-search": "ابحث عن اسم المبارة ...",
+  "search-by-date-range": "ابحث عن نطاق تاريخ ...",
+
+  "reset": "إعادة تعيين",
+  "apply-filter": "تطبيق الفلتر",
+
+  "filtered-from": "تم التصفية من",
+  "filtered-to": "إلى",
+
+  "available": "متاح"
 }

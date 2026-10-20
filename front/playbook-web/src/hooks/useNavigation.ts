@@ -9,5 +9,6 @@ export const useNavigation = () => {
     goSignIn: () => push(ROUTES.SIGNIN),
     goEdit: () => push(ROUTES.EDIT_PROFILE),
     goProfile: () => push(ROUTES.PROFILE),
+    goCommunity: () => push(ROUTES.COMMUNITY),
   };
 };

@@ -27,5 +27,6 @@ export const ROUTES = {
   MATCHES: "/history?type=matches",
   EDIT_PROFILE: "/edit-profile",
   PROFILE: "/profile",
+  COMMUNITY: "/community",
   HOME: "/home",
 } as const;

@@ -32,12 +32,12 @@
   "make-matche-room": "Créer une salle de match",
   "make-post": "Créer une publication",
   "go-to-profile": "Aller à mon profil",
-  "go-to-matches-posts": "Aller aux matches et publications",
+  "go-to-community": "Aller aux matches et publications",
 
   "make-matche-room-description": "Créez une salle de match pour trouver des joueurs intéressés",
   "make-post-description": "Publiez vos idées, macthes ou retours pour attirer l'attention de la communauté",
   "go-to-profile-description": "Consultez votre profil, mettez à jour vos informations et gérez vos paramètres",
-  "go-to-matches-posts-description": "Recherche des salles de match et voir publications des autres utilisateurs pour interagir avec eux",
+  "go-to-community-description": "Recherche des salles de match et voir publications des autres utilisateurs pour interagir avec eux",
   "login-to-see": "Connectez-vous pour voir ce page",
   "not-set": "Non défini",
   "firstname-label": "Prénom :",
@@ -89,5 +89,22 @@
   "error-credentials": "Nom d'utilisateur/email ou mot de passe invalide",
   "passwords-do-not-match": "Les mots de passe ne correspondent pas",
   "error-creating-account": "Impossible de créer votre compte",
-  "all-fields-required": "Tous les champs sont obligatoires"
+  "all-fields-required": "Tous les champs sont obligatoires",
+
+  "find-matches": "Trouver des matches",
+  "search-matches": "Rechercher un nom de match ou un type...",
+  "join-match": "Rejoindre un match",
+  "filter-matches": "Filtrer les matches par date et heure",
+
+  "view-profile": "Voir le profil",
+  "match-filter-search": "Rechercher par nom de match ...",
+  "search-by-date-range": "Rechercher par plage de dates ...",
+
+  "reset": "Réinitialiser",
+  "apply-filter": "Appliquer le filtre",
+
+  "filtered-from": "Filtré de",
+  "filtered-to": "à",
+
+  "available": "disponible"
 }

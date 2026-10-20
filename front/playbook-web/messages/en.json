@@ -32,12 +32,12 @@
   "make-matche-room": "Create a match room",
   "make-post": "Create a post",
   "go-to-profile": "Go to my profile",
-  "go-to-matches-posts": "Go to matches and posts",
+  "go-to-community": "Go to community",
 
   "make-matche-room-description": "Create a match room to find interested players",
   "make-post-description": "Publish your ideas, matches or feedback to attract the attention of the community",
   "go-to-profile-description": "Check your profile, update your information and manage your settings",
-  "go-to-matches-posts-description": "Search for match rooms and view other users' posts to interact with them",
+  "go-to-community-description": "Search for match rooms and view other users' posts to interact with them",
   "login-to-see": "Login to see this page",
   "not-set": "Not set",
   "firstname-label": "First Name :",
@@ -89,5 +89,22 @@
   "error-credentials": "Invalid username/email or password",
   "passwords-do-not-match": "Passwords do not match",
   "error-creating-account": "Unable to create your account",
-  "all-fields-required": "All fields are required"
+
+  "all-fields-required": "All fields are required",
+  "find-matches": "Find Matches",
+  "search-matches": "Search match name or type...",
+  "join-match": "Join Match",
+  "filter-matches": "Filter Matches by Date & Time",
+
+  "view-profile": "View Profile",
+  "match-filter-search": "Search by match name ...",
+  "search-by-date-range": "Search by date range ...",
+
+  "reset": "Reset",
+  "apply-filter": "Apply Filter",
+
+  "filtered-from": "Filtered from",
+  "filtered-to": "to",
+
+  "available": "available"
 }
