@@ -55,8 +55,7 @@ class UserUpdate(BaseModel):
     phone: Optional[str] = Field(default=None, min_length=3, max_length=15)
     bio: Optional[str] = Field(default=None, min_length=3, max_length=500)
 
-
-# What should the client see?
+# Used as a response model for the user
 class UserResponse(UserBase):
     model_config = ConfigDict(from_attributes=True)
 
@@ -64,6 +63,7 @@ class UserResponse(UserBase):
     created_at: datetime
 
 
+# Used as a field in another Schema
 class UserSummaryResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -73,9 +73,10 @@ class UserSummaryResponse(BaseModel):
     lastname: str
     avatar: Optional[str] = None
 
-
+# Used for the user profile respons
 class UserProfileResponse(UserResponse):
     followers_count: int = 0
     following_count: int = 0
     posts_count: int = 0
     is_following: Optional[bool] = None
+# 

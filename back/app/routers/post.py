@@ -168,14 +168,12 @@ async def _enrich_posts(
         resp = PostResponse(
             id=p.id,
             user_id=p.user_id,
-            user=user_summary,
             author=user_summary,
             caption=p.caption,
             media=media_items,
             like_count=likes_map.get(p.id, 0),
             comment_count=comments_map.get(p.id, 0),
             is_liked_by_me=p.id in user_liked_set,
-            liked_by_me=p.id in user_liked_set,
             created_at=p.created_at,
             updated_at=p.updated_at,
         )
