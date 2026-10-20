@@ -1,14 +1,16 @@
 import { PlayText } from "@/components/ui/Text";
+import { COMING_FROM } from "@/lib/constants";
 import React from "react";
 
 export const AboutSection: React.FC<{
   bio?: string;
-}> = ({ bio }) => {
+  comingFrom: COMING_FROM;
+}> = ({ bio, comingFrom }) => {
   return (
     <div className="order-2 md:order-1 rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl p-6 sm:p-8 shadow-xl flex flex-col gap-4 h-full justify-between">
       <div className="space-y-3">
         <PlayText.Primary
-          id="about-me"
+          id={comingFrom == COMING_FROM.ME ? "about-me" : "about"}
           className="text-lg font-bold text-white tracking-wide"
         />
 

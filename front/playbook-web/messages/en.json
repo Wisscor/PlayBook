@@ -106,5 +106,9 @@
   "filtered-from": "Filtered from",
   "filtered-to": "to",
 
-  "available": "available"
+  "available": "available",
+
+  "follow": "Follow",
+  "about": "About",
+  "unfollow": "Unfollow"
 }

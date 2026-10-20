@@ -1,5 +1,7 @@
 import { PlayText } from "@/components/ui/Text";
 import React from "react";
+import { Link } from "../../../../../../i18n/navigation";
+import { ROUTES } from "@/lib/constants";
 
 export const PostsFeed: React.FC<{
   posts: {
@@ -34,7 +36,10 @@ export const PostsFeed: React.FC<{
           key={post.id}
           className="rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl p-6 shadow-xl flex flex-col gap-4"
         >
-          <div className="flex items-center justify-between">
+          <Link
+            href={ROUTES.USER_PROFILE}
+            className="flex items-center justify-between"
+          >
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-linear-to-tr from-indigo-900 to-indigo-600 font-bold text-sm text-white shadow-md">
                 {post.avatar}
@@ -50,7 +55,7 @@ export const PostsFeed: React.FC<{
                 />
               </div>
             </div>
-          </div>
+          </Link>
 
           <PlayText.Primary
             content={post.content}

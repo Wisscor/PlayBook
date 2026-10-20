@@ -29,4 +29,10 @@ export const ROUTES = {
   PROFILE: "/profile",
   COMMUNITY: "/community",
   HOME: "/home",
+  USER_PROFILE: "/user-profile",
 } as const;
+
+export enum COMING_FROM {
+  ME = "me",
+  OTHER = "other",
+}

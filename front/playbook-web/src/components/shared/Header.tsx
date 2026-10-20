@@ -3,8 +3,9 @@
 import Image from "next/image";
 import React, { useState } from "react";
 import { LanguageSwitcher } from "./languageSwitcher";
-import { languages } from "@/lib/constants";
+import { languages, ROUTES } from "@/lib/constants";
 import { useLocale } from "next-intl";
+import { Link } from "../../../i18n/navigation";
 
 export const Header: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -14,15 +15,15 @@ export const Header: React.FC = () => {
 
   return (
     <header className="relative flex flex-row items-center justify-between">
-      <div className="relative h-9 w-32">
+      <Link href={ROUTES.ROOT} className="relative h-9 w-32">
         <Image
           loading="eager"
           alt="app-logo-dark"
           src="/logos/app-logo.png"
           fill
-          className="object-contain hidden lg:block"
+          className="object-contain  block"
         />
-      </div>
+      </Link>
 
       <div className="relative">
         <button

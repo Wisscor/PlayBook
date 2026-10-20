@@ -1,13 +1,17 @@
 import { PlayText } from "@/components/ui/Text";
 import React from "react";
 import { Link } from "../../../../../../i18n/navigation";
-import { ROUTES } from "@/lib/constants";
+import { COMING_FROM, ROUTES } from "@/lib/constants";
 import { PlayButton } from "@/components/ui/Button";
 import { User } from "@/types/user";
 import { useTranslations } from "next-intl";
 
-export const MainDetails: React.FC<{ user: User }> = ({ user }) => {
+export const MainDetails: React.FC<{ user: User; comingFrom: COMING_FROM }> = ({
+  user,
+  comingFrom,
+}) => {
   const t = useTranslations();
+  const isFollowing = true; // Replace with actual logic to determine if the current user is following the profile user
 
   return (
     <div className="order-3 rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl p-6 sm:p-8 shadow-xl flex flex-col justify-between h-full gap-6">
@@ -67,13 +71,26 @@ export const MainDetails: React.FC<{ user: User }> = ({ user }) => {
       </div>
 
       <div className="pt-2">
-        <Link href={ROUTES.EDIT_PROFILE}>
+        {comingFrom == COMING_FROM.ME ? (
+          <Link href={ROUTES.EDIT_PROFILE}>
+            <PlayButton.Primary
+              textClassName="text-sm font-semibold text-white"
+              title="edit-profile"
+              type="button"
+              className="w-full rounded-xl border border-white/20 bg-white/10 py-2.5 backdrop-blur-md transition-all hover:bg-white/20 active:scale-95 cursor-pointer shadow-md text-center"
+            />
+          </Link>
+        ) : (
           <PlayButton.Primary
-            title="edit-profile"
+            onClick={() => {
+              //TODO: here the follow logic
+            }}
+            textClassName="text-sm font-semibold text-white"
+            title={isFollowing ? "unfollow" : "follow"}
             type="button"
-            className="w-full rounded-xl border border-white/20 bg-white/10 py-2.5 text-sm font-semibold text-white backdrop-blur-md transition-all hover:bg-white/20 active:scale-95 cursor-pointer shadow-md text-center"
+            className="w-full rounded-xl border border-white/20 bg-white/10 py-2.5 backdrop-blur-md transition-all hover:bg-white/20 active:scale-95 cursor-pointer shadow-md text-center"
           />
-        </Link>
+        )}
       </div>
     </div>
   );

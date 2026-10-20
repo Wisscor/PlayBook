@@ -107,5 +107,9 @@
   "filtered-from": "تم التصفية من",
   "filtered-to": "إلى",
 
-  "available": "متاح"
+  "available": "متاح",
+
+  "follow": "متابعة",
+  "about": "عن",
+  "unfollow": "إلغاء المتابعة"
 }
