@@ -16,6 +16,7 @@ class ConnectionContext:
     websocket: WebSocket
     user: User
     last_seen: float
+    inbound_frames: SlidingWindow
     sends: SlidingWindow
     strikes: SlidingWindow
 

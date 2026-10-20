@@ -5,6 +5,7 @@ import time
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from pydantic import ValidationError
 
+from ..core.config import settings
 from ..database.database import session_maker
 from . import connection, frames, registry
 from .handlers import HANDLERS, CloseConnection, ConnectionContext
@@ -14,20 +15,35 @@ from .ws_auth import authenticate_socket
 router = APIRouter()
 
 
+def _origin_is_allowed(origin: str | None) -> bool:
+    return origin is not None and origin in settings.cors_origins
+
+
 async def _reject(ws: WebSocket, reason: str) -> None:
     await ws.send_json({"type": frames.ERROR, "reason": reason})
 
 
 async def receive_loop(ctx: ConnectionContext) -> None:
     while True:
+        invalid_json = False
         try:
             frame = await ctx.websocket.receive_json()
         except ValueError:
-            ctx.last_seen = time.monotonic()
+            invalid_json = True
+
+        now = time.monotonic()
+        ctx.last_seen = now
+        if (
+            ctx.inbound_frames.hit(now)
+            > frames.MAX_INBOUND_FRAMES_PER_WINDOW
+        ):
+            await ctx.websocket.close(code=frames.CLOSE_RATE_LIMIT)
+            return
+
+        if invalid_json:
             await _reject(ctx.websocket, "invalid_json")
             continue
 
-        ctx.last_seen = time.monotonic()
         kind = frame.get("type") if isinstance(frame, dict) else None
         handler = HANDLERS.get(kind) if isinstance(kind, str) else None
         if handler is None:
@@ -60,6 +76,10 @@ async def _idle_watchdog(ctx: ConnectionContext) -> None:
 
 @router.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
+    if not _origin_is_allowed(websocket.headers.get("origin")):
+        await websocket.close(code=1008)
+        return
+
     await websocket.accept()
     last_seen = time.monotonic()
 
@@ -72,6 +92,7 @@ async def websocket_endpoint(websocket: WebSocket):
         websocket=websocket,
         user=user,
         last_seen=last_seen,
+        inbound_frames=SlidingWindow(frames.INBOUND_FRAME_WINDOW_SECONDS),
         sends=SlidingWindow(10),
         strikes=SlidingWindow(60),
     )
