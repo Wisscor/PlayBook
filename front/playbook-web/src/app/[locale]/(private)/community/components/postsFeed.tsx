@@ -2,16 +2,10 @@ import { PlayText } from "@/components/ui/Text";
 import React from "react";
 import { Link } from "../../../../../../i18n/navigation";
 import { ROUTES } from "@/lib/constants";
+import { Post } from "@/types/api";
 
 export const PostsFeed: React.FC<{
-  posts: {
-    id: number;
-    author: string;
-    username: string;
-    avatar: string;
-    createdAt: string;
-    content: string;
-  }[];
+  posts: Post[];
 }> = ({ posts }) => {
   const getTimeAgo = (dateString: string) => {
     const date = new Date(dateString);
@@ -42,15 +36,21 @@ export const PostsFeed: React.FC<{
           >
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-linear-to-tr from-indigo-900 to-indigo-600 font-bold text-sm text-white shadow-md">
-                {post.avatar}
+                {post.author
+                  ? `${post.author.firstname.charAt(0)}${post.author.lastname.charAt(0)}`
+                  : "P"}
               </div>
               <div>
                 <PlayText.Primary
-                  content={post.author}
+                  content={
+                    post.author
+                      ? `${post.author.firstname} ${post.author.lastname}`
+                      : "Post"
+                  }
                   className="font-bold text-sm text-white"
                 />
                 <PlayText.Primary
-                  content={`@${post.username} • ${getTimeAgo(post.createdAt)}`}
+                  content={`@${post.author?.username ?? "unknown"} • ${getTimeAgo(post.created_at)}`}
                   className="text-xs text-slate-400"
                 />
               </div>
@@ -58,7 +58,7 @@ export const PostsFeed: React.FC<{
           </Link>
 
           <PlayText.Primary
-            content={post.content}
+            content={post.caption}
             className="text-sm text-slate-200 leading-relaxed"
           />
         </div>

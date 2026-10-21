@@ -78,7 +78,7 @@ export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
     setLogoutError("");
     try {
       await signOut();
-      goSignIn();
+      window.location.reload();
     } catch (error) {
       console.error("Unable to log out:", error);
       setLogoutError("Unable to log out");

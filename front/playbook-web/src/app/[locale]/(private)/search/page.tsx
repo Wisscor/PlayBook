@@ -2,47 +2,47 @@
 
 import { PlayInput } from "@/components/ui/Input";
 import { PlayText } from "@/components/ui/Text";
-import React, { useState } from "react";
+import { api } from "@/services/api";
+import { UserSummary } from "@/types/user";
+import React, { useEffect, useState } from "react";
 import { UserCard } from "./components/userCard";
-import { User } from "@/types/user";
 
 export const SearchPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [users, setUsers] = useState<UserSummary[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const [users, setUsers] = useState<User[]>([
-    {
-      id: "1",
-      firstname: "Alex",
-      lastname: "Johnson",
-      username: "alexj",
-      bio: "Basketball player & tournament coach",
-      email: "alex@example.com",
-    },
-    {
-      id: "2",
-      firstname: "Sarah",
-      lastname: "Connor",
-      username: "sconnor",
-      bio: "Football enthusiast and community organizer",
-      email: "sarah@example.com",
-    },
-    {
-      id: "3",
-      firstname: "Michael",
-      lastname: "Smith",
-      username: "msmith",
-      bio: "Casual tennis player looking for doubles matches",
-      email: "michael@example.com",
-    },
-    {
-      id: "4",
-      firstname: "Wissam",
-      lastname: "Azadou",
-      username: "wazadou",
-      bio: "Full-stack developer and match coordinator",
-      email: "wissam@example.com",
-    },
-  ]);
+  useEffect(() => {
+    const loadUsers = async () => {
+      try {
+        const limit = 100;
+        const allUsers: UserSummary[] = [];
+        let offset = 0;
+
+        while (true) {
+          const response = await api.get<UserSummary[]>("/users", {
+            params: { limit, offset },
+          });
+          allUsers.push(...response.data);
+
+          if (response.data.length < limit) {
+            break;
+          }
+          offset += limit;
+        }
+
+        setUsers(allUsers);
+      } catch (requestError) {
+        console.error("Unable to load users:", requestError);
+        setError("Unable to load users");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    void loadUsers();
+  }, []);
 
   const filteredUsers = users.filter(
     (u) =>
@@ -76,7 +76,15 @@ export const SearchPage = () => {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {filteredUsers.length === 0 ? (
+          {isLoading ? (
+            <p className="col-span-full py-12 text-center text-slate-300">
+              Loading...
+            </p>
+          ) : error ? (
+            <p className="col-span-full py-12 text-center text-rose-400">
+              {error}
+            </p>
+          ) : filteredUsers.length === 0 ? (
             <div className="col-span-full flex flex-col items-center justify-center rounded-3xl border border-dashed border-white/10 bg-white/5 p-12 text-center backdrop-blur-xl">
               <PlayText.Primary
                 id="no-users-found"

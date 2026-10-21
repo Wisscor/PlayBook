@@ -134,7 +134,8 @@ export const MatchModal: React.FC<MatchModalProps> = ({
             </option>
           ))}
         </select>
-        <PlayInput.Primary
+        {form.sport_id && (
+          <PlayInput.Primary
           type="number"
           placeholder="select-player-number"
           value={String(form.remaining_player_slots)}
@@ -152,7 +153,9 @@ export const MatchModal: React.FC<MatchModalProps> = ({
             )
           }
         />
-        <PlayLabel.Primary id="start-time" className="text-sm text-slate-300">
+        )}
+        {form.remaining_player_slots > 0 && (
+          <PlayLabel.Primary id="start-time" className="text-sm text-slate-300">
           <PlayInput.Primary
             type="datetime-local"
             value={form.start_time}
@@ -160,6 +163,7 @@ export const MatchModal: React.FC<MatchModalProps> = ({
             className="mt-1 w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-3.5 text-white"
           />
         </PlayLabel.Primary>
+        )}
         <PlayLabel.Primary id="end-time" className="text-sm text-slate-300">
           <PlayInput.Primary
             type="datetime-local"

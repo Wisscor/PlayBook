@@ -17,6 +17,13 @@ export interface Post {
   } | null;
   like_count: number;
   comment_count: number;
+  liked_by_me?: boolean;
+  is_liked_by_me?: boolean;
+}
+
+export interface PostPage {
+  items: Post[];
+  next_offset: number | null;
 }
 
 export interface Sport {

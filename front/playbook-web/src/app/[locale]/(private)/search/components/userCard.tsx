@@ -1,10 +1,10 @@
 import { PlayButton } from "@/components/ui/Button";
 import { PlayText } from "@/components/ui/Text";
 import { useNavigation } from "@/hooks/useNavigation";
-import { User } from "@/types/user";
+import { UserSummary } from "@/types/user";
 import React from "react";
 
-export const UserCard: React.FC<{ user: User }> = ({ user }) => {
+export const UserCard: React.FC<{ user: UserSummary }> = ({ user }) => {
   const { goUserProfile } = useNavigation();
   return (
     <div
@@ -27,11 +27,6 @@ export const UserCard: React.FC<{ user: User }> = ({ user }) => {
           />
         </div>
       </div>
-
-      <PlayText.Primary
-        content={user.bio}
-        className="text-sm text-slate-300 line-clamp-2"
-      />
 
       <div className="pt-2 flex justify-end">
         <PlayButton.Primary
