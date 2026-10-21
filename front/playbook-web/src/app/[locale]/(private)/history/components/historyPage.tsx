@@ -1,11 +1,11 @@
 "use client";
 
 import { PlayText } from "@/components/ui/Text";
-import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import React from "react";
 import { MatchesSection } from "./matchesSection";
 import { PostsSection } from "./postsSection";
-import { useTranslations } from "next-intl";
 
 export const HistoryPageContent: React.FC = () => {
   const searchParams = useSearchParams();

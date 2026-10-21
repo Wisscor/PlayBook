@@ -40,6 +40,30 @@ export const PostsSection: React.FC = () => {
     }
   };
 
+  let postsContent: React.ReactNode;
+  if (isLoading) {
+    postsContent = (
+      <p className="py-12 text-center text-slate-300">Loading...</p>
+    );
+  } else if (posts.length === 0) {
+    postsContent = (
+      <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-white/10 p-12 text-center">
+        <PlayText.Primary
+          id="no-posts"
+          className="text-base font-medium text-amber-400"
+        />
+      </div>
+    );
+  } else {
+    postsContent = (
+      <div className="flex flex-col gap-4">
+        {posts.map((post) => (
+          <Post key={post.id} post={post} onDelete={handleDelete} />
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div className="flex w-full flex-col gap-6">
       <div className="flex items-center justify-between border-b border-white/10 pb-4">
@@ -57,22 +81,7 @@ export const PostsSection: React.FC = () => {
           ]}
         />
       </div>
-      {isLoading ? (
-        <p className="py-12 text-center text-slate-300">Loading...</p>
-      ) : posts.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-white/10 p-12 text-center">
-          <PlayText.Primary
-            id="no-posts"
-            className="text-base font-medium text-amber-400"
-          />
-        </div>
-      ) : (
-        <div className="flex flex-col gap-4">
-          {posts.map((post) => (
-            <Post key={post.id} post={post} onDelete={handleDelete} />
-          ))}
-        </div>
-      )}
+      {postsContent}
     </div>
   );
 };

@@ -2,14 +2,13 @@
 
 import { useNavigation } from "@/hooks/useNavigation";
 import { api } from "@/services/api";
-import { MatchFormData } from "./components/matchModal";
 import { useState } from "react";
 import { Action } from "./components/action";
-import { MatchModal } from "./components/matchModal";
 import { PostModal } from "./components/postModal";
+import MatchModal, { MatchFormData } from "./components/matchModal";
 
 export const HomePage = () => {
-  const { goProfile } = useNavigation();
+  const { goProfile, goCommunity } = useNavigation();
   const [matchModalOpen, setMatchModalOpen] = useState(false);
   const [postModalOpen, setPostModalOpen] = useState(false);
 
@@ -39,11 +38,11 @@ export const HomePage = () => {
       },
     },
     {
-      action: "go-to-matches-posts",
-      description: "go-to-matches-posts-description",
-      icon: "/icons/view-files.png",
+      action: "go-to-community",
+      description: "go-to-community-description",
+      icon: "/icons/globe.png",
       onClick: () => {
-        //TODO: Implement navigation to community page
+        goCommunity();
       },
     },
   ];

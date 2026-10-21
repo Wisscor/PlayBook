@@ -1,8 +1,8 @@
 "use client";
 
+import React from "react";
 import { PlayText } from "@/components/ui/Text";
 import { Post as PostData } from "@/types/api";
-import React from "react";
 
 export interface PostProps {
   post: PostData;

@@ -1,16 +1,16 @@
 "use client";
 
+import { PlayButton } from "@/components/ui/Button";
 import { PlayInput } from "@/components/ui/Input";
+import { PlayLabel } from "@/components/ui/Label";
 import { PlayText } from "@/components/ui/Text";
+import { isEmailValid } from "@/lib/utils";
+import { api } from "@/services/api";
+import { User } from "@/types/user";
+import { useTranslations } from "next-intl";
 import Image from "next/image";
 import React, { useEffect, useState } from "react";
 import { Info } from "./info";
-import { User } from "@/types/user";
-import { isEmailValid } from "@/lib/utils";
-import { useTranslations } from "next-intl";
-import { PlayButton } from "@/components/ui/Button";
-import { PlayLabel } from "@/components/ui/Label";
-import { api } from "@/services/api";
 
 export const EditProfilePageContent: React.FC = () => {
   const t = useTranslations();

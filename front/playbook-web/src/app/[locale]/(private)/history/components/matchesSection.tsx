@@ -11,7 +11,9 @@ import { Match } from "./match";
 export const MatchesSection: React.FC = () => {
   const t = useTranslations();
   const [matches, setMatches] = useState<MatchAnnouncement[]>([]);
-  const [selectedMatch, setSelectedMatch] = useState<MatchFormData | null>(null);
+  const [selectedMatch, setSelectedMatch] = useState<MatchFormData | null>(
+    null,
+  );
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -81,6 +83,50 @@ export const MatchesSection: React.FC = () => {
     end_time: match.end_time.slice(0, 16),
   });
 
+  let matchContent: React.ReactNode;
+  if (isLoading) {
+    matchContent = (
+      <p className="py-12 text-center text-slate-300">Loading...</p>
+    );
+  } else if (matches.length === 0) {
+    matchContent = (
+      <p className="rounded-3xl border border-dashed border-white/10 p-12 text-center text-amber-400">
+        {t("no-matches")}
+      </p>
+    );
+  } else {
+    matchContent = (
+      <div className="grid grid-cols-1 gap-4">
+        {matches.map((match) => (
+          <Match
+            key={match.id}
+            match={{
+              id: match.id,
+              matchname: match.title,
+              matchType: match.sport.name,
+              playerNbr: match.remaining_player_slots,
+              date: new Date(match.start_time).toLocaleDateString(),
+              startTime: new Date(match.start_time).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              }),
+              endTime: new Date(match.end_time).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              }),
+              status: match.match_status,
+            }}
+            onEdit={() => {
+              setSelectedMatch(toForm(match));
+              setIsModalOpen(true);
+            }}
+            onDelete={handleDelete}
+          />
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div className="flex w-full flex-col gap-6">
       <div className="flex items-center justify-between border-b border-white/10 pb-4">
@@ -99,42 +145,8 @@ export const MatchesSection: React.FC = () => {
           className="rounded-xl px-4 py-2"
         />
       </div>
-      {isLoading ? (
-        <p className="py-12 text-center text-slate-300">Loading...</p>
-      ) : matches.length === 0 ? (
-        <p className="rounded-3xl border border-dashed border-white/10 p-12 text-center text-amber-400">
-          {t("no-matches")}
-        </p>
-      ) : (
-        <div className="grid grid-cols-1 gap-4">
-          {matches.map((match) => (
-            <Match
-              key={match.id}
-              match={{
-                id: match.id,
-                matchname: match.title,
-                matchType: match.sport.name,
-                playerNbr: match.remaining_player_slots,
-                date: new Date(match.start_time).toLocaleDateString(),
-                startTime: new Date(match.start_time).toLocaleTimeString([], {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                }),
-                endTime: new Date(match.end_time).toLocaleTimeString([], {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                }),
-                status: match.match_status,
-              }}
-              onEdit={() => {
-                setSelectedMatch(toForm(match));
-                setIsModalOpen(true);
-              }}
-              onDelete={handleDelete}
-            />
-          ))}
-        </div>
-      )}
+      {matchContent}
+
       <MatchModal
         isOpen={isModalOpen}
         close={() => {

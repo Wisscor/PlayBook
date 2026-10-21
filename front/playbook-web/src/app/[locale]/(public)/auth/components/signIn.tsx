@@ -5,6 +5,7 @@ import { PlayInput } from "@/components/ui/Input";
 import { PlayText } from "@/components/ui/Text";
 import { useNavigation } from "@/hooks/useNavigation";
 import { ROUTES } from "@/lib/constants";
+import { isEmailValid } from "@/lib/utils";
 import { signIn } from "@/services/auth";
 import React, { useState } from "react";
 
@@ -15,18 +16,25 @@ export const SignIn = () => {
     password: "",
   });
   const [isHidden, setIsHidden] = useState(true);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<string | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleLogin = async (e: React.SubmitEvent) => {
     e.preventDefault();
-    setError("");
+
+    if (error) return;
+
+    if (!isEmailValid(infos.username_or_email)) {
+      setError("email-invalid");
+      return;
+    }
+    setError(undefined);
     setIsLoading(true);
     try {
       await signIn(infos);
       goHome();
     } catch {
-      setError("Invalid username/email or password");
+      setError("error-credentials");
     } finally {
       setIsLoading(false);
     }
@@ -66,14 +74,25 @@ export const SignIn = () => {
         <form onSubmit={handleLogin} className="space-y-5">
           <div className="space-y-4">
             <PlayInput.Primary
+              onInputClick={() => {
+                setError(undefined);
+              }}
+              onBlur={() => {
+                if (!isEmailValid(infos.username_or_email)) {
+                  setError("email-invalid");
+                }
+              }}
               className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-slate-400 backdrop-blur-md focus:border-white/30 focus:outline-none transition-all"
-              placeholder="username"
+              placeholder="email"
               value={infos.username_or_email}
               onChange={(e) =>
                 setInfos({ ...infos, username_or_email: e.target.value })
               }
             />
             <PlayInput.Password
+              onInputClick={() => {
+                setError(undefined);
+              }}
               className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-slate-400 backdrop-blur-md focus:border-white/30 focus:outline-none transition-all"
               onClick={() => setIsHidden(!isHidden)}
               isHidden={isHidden}
@@ -83,7 +102,9 @@ export const SignIn = () => {
             />
           </div>
 
-          {error && <p className="text-sm text-rose-400">{error}</p>}
+          {error && (
+            <PlayText.Primary id={error} className="text-sm text-rose-400" />
+          )}
 
           <div className="pt-2">
             <PlayButton.Primary

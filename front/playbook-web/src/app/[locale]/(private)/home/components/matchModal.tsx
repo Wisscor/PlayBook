@@ -2,6 +2,7 @@
 
 import { PlayButton } from "@/components/ui/Button";
 import { PlayInput } from "@/components/ui/Input";
+import { PlayLabel } from "@/components/ui/Label";
 import { PlayModal } from "@/components/ui/Modal";
 import { getSports } from "@/services/sports";
 import { Sport } from "@/types/api";
@@ -90,6 +91,16 @@ export const MatchModal: React.FC<MatchModalProps> = ({
     }
   };
 
+  const isFormComplete =
+    !Object.values(form).some((val) => val === "") && !error;
+
+  const handleFormSubmit = () => {
+    onSave(form);
+    close();
+  };
+
+  const isEditing = Boolean(initialData?.id !== undefined);
+
   return (
     <PlayModal.Primary
       title={initialData ? "edit-match" : "create-match"}
@@ -108,10 +119,7 @@ export const MatchModal: React.FC<MatchModalProps> = ({
           onChange={(event) => {
             const sport = sports.find((item) => item.id === event.target.value);
             update("sport_id", event.target.value);
-            if (
-              sport &&
-              form.remaining_player_slots > sport.max_players
-            ) {
+            if (sport && form.remaining_player_slots > sport.max_players) {
               update("remaining_player_slots", sport.max_players);
             }
           }}
@@ -144,27 +152,27 @@ export const MatchModal: React.FC<MatchModalProps> = ({
             )
           }
         />
-        <label className="text-sm text-slate-300">
-          Start time
-          <input
+        <PlayLabel.Primary id="start-time" className="text-sm text-slate-300">
+          <PlayInput.Primary
             type="datetime-local"
             value={form.start_time}
             onChange={(event) => update("start_time", event.target.value)}
             className="mt-1 w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-3.5 text-white"
           />
-        </label>
-        <label className="text-sm text-slate-300">
-          End time
-          <input
+        </PlayLabel.Primary>
+        <PlayLabel.Primary id="end-time" className="text-sm text-slate-300">
+          <PlayInput.Primary
             type="datetime-local"
             value={form.end_time}
             onChange={(event) => update("end_time", event.target.value)}
             className="mt-1 w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-3.5 text-white"
           />
-        </label>
+        </PlayLabel.Primary>
         {error && <p className="text-sm text-rose-400">{error}</p>}
         <PlayButton.Primary
-          title={isSaving ? "saving" : initialData ? "save-changes" : "create-match"}
+          title={
+            isSaving ? "saving" : initialData ? "save-changes" : "create-match"
+          }
           onClick={handleSubmit}
           className="w-full"
         />
