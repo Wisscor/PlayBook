@@ -5,6 +5,7 @@ from fastapi import (
     HTTPException,
     status,
     Response,
+    Request,
 )
 
 import uuid
@@ -22,6 +23,7 @@ from ..schemas.user import UserCreate, UserLogin, UserResponse
 from ..core.security import hash_password, verify_password
 from app.core.config import settings
 from app.realtime import registry
+from app.core.limiter import limiter
 
 router = APIRouter(
     prefix="/auth",
@@ -30,8 +32,10 @@ router = APIRouter(
 
 
 @router.post("/signup", response_model=UserResponse)
+@limiter.limit("5/minute")
 async def signup(
     data: UserCreate,
+    request: Request,
     db: AsyncSession = Depends(get_db),
 ) -> User:
     # Create user instance
@@ -60,8 +64,10 @@ async def signup(
 
 
 @router.post("/login", response_model=UserResponse)
+@limiter.limit("10/minute")
 async def login(
     data: UserLogin,
+    request: Request,
     response: Response,
     db: AsyncSession = Depends(get_db),
 ):
@@ -107,7 +113,9 @@ async def login(
 
 
 @router.post("/logout")
+@limiter.limit("20/minute")
 async def logout(
+    request: Request,
     response: Response,
     session_id: Optional[str] = Cookie(
         default=None,
@@ -147,7 +155,9 @@ async def logout(
 
 
 @router.get("/me", response_model=UserResponse)
+@limiter.limit("60/minute")
 async def read_current_user(
+    request: Request,
     current_user: User = Depends(get_curr_user),
 ):
     return current_user

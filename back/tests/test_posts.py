@@ -55,7 +55,7 @@ def test_create_post_success(mock_user_1, mock_db):
     data = res.json()
     assert data["caption"] == "Hello world!"
     assert data["user_id"] == str(mock_user_1.id)
-    assert data["user"]["username"] == mock_user_1.username
+    assert data["author"]["username"] == mock_user_1.username
     mock_db.commit.assert_called_once()
 
     app.dependency_overrides.clear()
