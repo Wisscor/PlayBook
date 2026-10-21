@@ -1,5 +1,4 @@
 import asyncio
-import logging
 import time
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
@@ -62,7 +61,6 @@ async def receive_loop(ctx: ConnectionContext) -> None:
         except WebSocketDisconnect:
             raise
         except Exception:
-            logging.getLogger(__name__).exception("handler failed")
             continue
 
 
