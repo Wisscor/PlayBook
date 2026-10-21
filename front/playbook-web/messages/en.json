@@ -117,5 +117,17 @@
   "search-title": "Search Community Users",
   "search-description": "Find and connect with other players, developers, and organizers in the network.",
   "no-users-found": "No users found",
-  "search-name-username": "Search by name or username..."
+  "search-name-username": "Search by name or username...",
+
+  "messages": "Messages",
+  "no-contacts": "No contacts found.",
+
+  "active-now": "Active Now",
+  "send": "Send",
+
+  "type-message": "Type a message...",
+
+  "search-contacts": "Search contacts...",
+
+  "back-contacts": "Back to Contacts"
 }

@@ -31,6 +31,7 @@ export const ROUTES = {
   HOME: "/home",
   USER_PROFILE: "/user-profile",
   SEARCH: "/search",
+  MESSAGES: "/messages",
 } as const;
 
 export enum COMING_FROM {
