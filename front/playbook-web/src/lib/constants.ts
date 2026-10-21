@@ -30,6 +30,7 @@ export const ROUTES = {
   COMMUNITY: "/community",
   HOME: "/home",
   USER_PROFILE: "/user-profile",
+  SEARCH: "/search",
 } as const;
 
 export enum COMING_FROM {

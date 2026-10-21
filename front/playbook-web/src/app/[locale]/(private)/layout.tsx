@@ -1,17 +1,17 @@
 "use client";
 
+import { PlayButton } from "@/components/ui/Button";
 import { PlayText } from "@/components/ui/Text";
+import { useNavigation } from "@/hooks/useNavigation";
 import { ROUTES } from "@/lib/constants";
+import { signOut } from "@/services/auth";
 import { useLocale } from "next-intl";
 import Image from "next/image";
-import React, { useState, useRef, useEffect } from "react";
-import { Link } from "../../../../i18n/navigation";
 import { usePathname } from "next/navigation";
+import React, { useEffect, useRef, useState } from "react";
+import { Link } from "../../../../i18n/navigation";
 import { BurgerMenu } from "./components/burgerMenu";
-import { signOut } from "@/services/auth";
-import { useNavigation } from "@/hooks/useNavigation";
 import { NotificationPopUp } from "./notificationPopUp";
-import { PlayButton } from "@/components/ui/Button";
 
 export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
   const locale = useLocale();
@@ -19,7 +19,7 @@ export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [logoutError, setLogoutError] = useState("");
-  const { goSignIn } = useNavigation();
+  const { goSignIn, goSearch } = useNavigation();
 
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const notificationRef = useRef<HTMLDivElement>(null);
@@ -127,12 +127,23 @@ export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
             })}
           </nav>
 
-          <div className="flex items-stretch gap-3">
-            <div className="relative  block" ref={notificationRef}>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => goSearch()}
+              className="rounded-xl border border-white/10 bg-white/5 p-2.5 backdrop-blur-md transition-all hover:bg-white/10 cursor-pointer flex items-center justify-center"
+              aria-label="Search Matches & Community"
+            >
+              <PlayText.Span
+                texts={[{ content: "🔍", className: "text-base" }]}
+              />
+            </button>
+
+            <div className="relative block" ref={notificationRef}>
               <PlayButton.Complexe
                 type="button"
                 onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
-                className="relative rounded-xl border border-white/10 bg-white/5 p-2.5 backdrop-blur-md transition-all hover:bg-white/10 cursor-pointer"
+                className="relative rounded-xl border border-white/10 bg-white/5 p-2.5 backdrop-blur-md transition-all hover:bg-white/10 cursor-pointer flex items-center justify-center"
                 aria-label="Notifications"
               >
                 <PlayText.Span
