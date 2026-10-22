@@ -115,16 +115,6 @@ async def search_announcements(
     """Sorted by start_time (soonest first). Time window: the announcement must
     fit inside it (start_time >= start_from and end_time <= end_to)."""
     M = MatchAnnouncement
-    if (
-        filters.min_remaining_player_slots is not None
-        and filters.max_remaining_player_slots is not None
-        and filters.min_remaining_player_slots
-        > filters.max_remaining_player_slots
-    ):
-        raise HTTPException(
-            422,
-            detail="min_remaining_player_slots must be less than or equal to max_remaining_player_slots",
-        )
     stmt = select(M).options(
         joinedload(M.owner),
         joinedload(M.sport),
@@ -161,14 +151,6 @@ async def search_announcements(
         stmt = stmt.where(M.start_time >= filters.start_from)
     if filters.end_to:
         stmt = stmt.where(M.end_time <= filters.end_to)
-    if filters.min_remaining_player_slots is not None:
-        stmt = stmt.where(
-            M.remaining_player_slots >= filters.min_remaining_player_slots
-        )
-    if filters.max_remaining_player_slots is not None:
-        stmt = stmt.where(
-            M.remaining_player_slots <= filters.max_remaining_player_slots
-        )
     rows = list(
         (await db.scalars(stmt.offset(offset).limit(limit + 1))).all()
     )  # one extra row = "has next page"
@@ -228,8 +210,7 @@ async def update_announcement(
     if (
         "match_status" in data
         and data["match_status"] != announcement.match_status
-        and announcement.match_status
-        in {MatchAnnouncementStatus.canceled, MatchAnnouncementStatus.finished}
+        and announcement.match_status == MatchAnnouncementStatus.finished
     ):
         raise HTTPException(
             status.HTTP_409_CONFLICT,
@@ -242,8 +223,7 @@ async def update_announcement(
             MatchAnnouncementStatus.upcoming,
             MatchAnnouncementStatus.live,
         }
-        and announcement.match_status
-        in {MatchAnnouncementStatus.canceled, MatchAnnouncementStatus.finished}
+        and announcement.match_status == MatchAnnouncementStatus.finished
     ):
         raise HTTPException(
             status.HTTP_409_CONFLICT,
