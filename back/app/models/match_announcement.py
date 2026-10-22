@@ -24,7 +24,6 @@ if TYPE_CHECKING:
 class MatchAnnouncementStatus(str, enum.Enum):
     upcoming = "upcoming"
     live = "live"
-    canceled = "canceled"
     finished = "finished"
 
 

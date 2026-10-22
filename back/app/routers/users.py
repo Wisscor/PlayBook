@@ -159,15 +159,15 @@ async def upload_avatar(
                     )
                 destination.write(chunk)
 
-        curr_user.avatar = f"/uploads/{filename}"
+        curr_user.avatar = f"uploads/{filename}"
         await db.commit()
         await db.refresh(curr_user)
     except Exception:
         filepath.unlink(missing_ok=True)
         raise
 
-    if old_avatar and old_avatar.startswith("/uploads/"):
-        Path(old_avatar.removeprefix("/uploads/")).unlink(missing_ok=True)
+    if old_avatar and old_avatar.startswith("uploads/"):
+        Path(old_avatar).unlink(missing_ok=True)
 
     return curr_user
 
@@ -310,7 +310,7 @@ async def list_user_posts(
 
     stmt = (
         select(Post)
-        .options(selectinload(Post.user), selectinload(Post.media))
+        .options(selectinload(Post.user))
         .where(Post.user_id == user_id)
         .order_by(Post.created_at.desc(), Post.id.desc())
     )

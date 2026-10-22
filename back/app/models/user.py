@@ -32,11 +32,6 @@ class User(Base):
         unique=True,
         nullable=False,
     )
-    phone: Mapped[str] = mapped_column(
-        String(20),
-        default=None,
-        nullable=True,
-    )
     avatar: Mapped[str] = mapped_column(
         String(255),
         default=None,
@@ -62,14 +57,6 @@ class User(Base):
         cascade="all, delete-orphan",
     )
     posts: Mapped[list["Post"]] = relationship(
-        back_populates="user",
-        cascade="all, delete-orphan",
-    )
-    comments: Mapped[list["Comment"]] = relationship(
-        back_populates="user",
-        cascade="all, delete-orphan",
-    )
-    likes: Mapped[list["Like"]] = relationship(
         back_populates="user",
         cascade="all, delete-orphan",
     )

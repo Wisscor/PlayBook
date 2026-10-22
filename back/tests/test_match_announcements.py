@@ -189,20 +189,6 @@ def test_search_announcements_with_offset(mock_user_1, mock_db):
     app.dependency_overrides.clear()
 
 
-def test_search_announcements_invalid_slot_range(mock_user_1, mock_db):
-    client = TestClient(app)
-    app.dependency_overrides[get_curr_user] = lambda: mock_user_1
-    app.dependency_overrides[get_db] = lambda: mock_db
-
-    res = client.get(
-        "/match-announcements?min_remaining_player_slots=5&"
-        "max_remaining_player_slots=2"
-    )
-
-    assert res.status_code == 422
-    app.dependency_overrides.clear()
-
-
 def test_get_announcement_success(mock_user_1, mock_db):
     client = TestClient(app)
     sport = Sport(id=uuid.uuid4(), name="Basketball", max_players=11)
@@ -279,7 +265,7 @@ def test_update_announcement_forbidden_non_owner(
     app.dependency_overrides[get_curr_user] = lambda: mock_user_1
     app.dependency_overrides[get_db] = lambda: mock_db
 
-    payload = {"match_status": "canceled"}
+    payload = {"match_status": "finished"}
     res = client.patch(f"/match-announcements/{announcement.id}", json=payload)
     assert res.status_code == 403
     assert res.json()["detail"] == "Not the owner"
@@ -364,24 +350,5 @@ def test_delete_announcement_forbidden_non_owner(
     res = client.delete(f"/match-announcements/{announcement.id}")
     assert res.status_code == 403
     assert res.json()["detail"] == "Not the owner"
-
-    app.dependency_overrides.clear()
-
-
-def test_cancel_announcement_success(mock_user_1, mock_db):
-    client = TestClient(app)
-    sport = Sport(id=uuid.uuid4(), name="Basketball", max_players=11)
-    announcement = _make_announcement(mock_user_1, sport)
-    mock_db.scalar.return_value = announcement
-
-    app.dependency_overrides[get_curr_user] = lambda: mock_user_1
-    app.dependency_overrides[get_db] = lambda: mock_db
-
-    res = client.patch(
-        f"/match-announcements/{announcement.id}",
-        json={"match_status": "canceled"},
-    )
-    assert res.status_code == 200
-    assert announcement.match_status == MatchAnnouncementStatus.canceled
 
     app.dependency_overrides.clear()

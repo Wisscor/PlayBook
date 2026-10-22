@@ -83,8 +83,6 @@ class MatchAnnouncementFilter(BaseModel):
     start_from: Optional[AwareDatetime] = None
     end_to: Optional[AwareDatetime] = None
     organizer_id: Optional[uuid.UUID] = None
-    min_remaining_player_slots: Optional[int] = Field(default=None, ge=0)
-    max_remaining_player_slots: Optional[int] = Field(default=None, ge=0)
     sort_by: Literal["start_time", "created_at", "remaining_player_slots"] = (
         "start_time"
     )

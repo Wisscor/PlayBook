@@ -17,7 +17,7 @@ def test_notification_responses_omit_internal_target_fields():
         id=uuid4(),
         user_id=uuid4(),
         actor_id=uuid4(),
-        event_type="like",
+        event_type="follow",
         target_id=uuid4(),
         read_at=None,
         created_at=datetime.now(timezone.utc),
@@ -44,7 +44,7 @@ def test_unread_duplicate_check_is_scoped_to_target():
     post_id = uuid4()
 
     assert not asyncio.run(
-        unread_duplicate_exists(db, user_id, actor_id, "like", post_id)
+        unread_duplicate_exists(db, user_id, actor_id, "follow", post_id)
     )
 
     statement = db.execute.await_args.args[0]

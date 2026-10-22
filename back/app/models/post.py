@@ -33,16 +33,3 @@ class Post(Base):
 
     # Relationships
     user: Mapped["User"] = relationship(back_populates="posts")
-    media: Mapped[list["PostMedia"]] = relationship(
-        back_populates="post",
-        cascade="all, delete-orphan",
-        order_by="PostMedia.position",
-    )
-    comments: Mapped[list["Comment"]] = relationship(
-        back_populates="post",
-        cascade="all, delete-orphan",
-    )
-    likes: Mapped[list["Like"]] = relationship(
-        back_populates="post",
-        cascade="all, delete-orphan",
-    )
