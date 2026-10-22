@@ -141,7 +141,7 @@ http -v POST localhost:8000/auth/signup \
 ### 2. User Login (`/auth/login`)
 ```bash
 http -v POST localhost:8000/auth/login \
-  username_or_email=zakaria \
+  email=zakaria@example.com \
   password=pass1234
 ```
 

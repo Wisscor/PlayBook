@@ -32,11 +32,6 @@ class User(Base):
         unique=True,
         nullable=False,
     )
-    phone: Mapped[str] = mapped_column(
-        String(20),
-        default=None,
-        nullable=True,
-    )
     avatar: Mapped[str] = mapped_column(
         String(255),
         default=None,
