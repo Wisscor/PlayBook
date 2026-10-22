@@ -32,10 +32,7 @@ async def receive_loop(ctx: ConnectionContext) -> None:
 
         now = time.monotonic()
         ctx.last_seen = now
-        if (
-            ctx.inbound_frames.hit(now)
-            > frames.MAX_INBOUND_FRAMES_PER_WINDOW
-        ):
+        if ctx.inbound_frames.hit(now) > frames.MAX_INBOUND_FRAMES_PER_WINDOW:
             await ctx.websocket.close(code=frames.CLOSE_RATE_LIMIT)
             return
 

@@ -38,11 +38,7 @@ router = APIRouter(tags=["Play Requests"])
 async def _get_request(
     db: AsyncSession, request_id: uuid.UUID
 ) -> PlayerRequest:
-    """Reload a request with its sender.
-
-    Needed after a commit: commit expires every attribute, and async code
-    cannot lazy-load `sender` while building the response.
-    """
+    """Reload a request with its sender."""
     stmt = (
         select(PlayerRequest)
         .options(joinedload(PlayerRequest.sender))
@@ -55,7 +51,7 @@ async def _get_request(
 async def _paginate(
     db: AsyncSession, stmt: Select, limit: int, offset: int
 ) -> PlayerRequestPage:
-    """Newest first. `stmt` must select PlayerRequest."""
+    """List requests newest first with pagination."""
     P = PlayerRequest
     stmt = stmt.options(joinedload(P.sender)).order_by(
         P.created_at.desc(), P.id.desc()
@@ -84,6 +80,7 @@ async def send_play_request(
     db: AsyncSession = Depends(get_db),
     me: User = Depends(get_curr_user),
 ):
+    """Send a play request for an announcement."""
     announcement = await db.get(MatchAnnouncement, id)
     if announcement is None:
         raise HTTPException(
@@ -153,6 +150,7 @@ async def list_announcement_requests(
     db: AsyncSession = Depends(get_db),
     me: User = Depends(get_curr_user),
 ):
+    """List requests for an owned announcement."""
     announcement = await db.get(MatchAnnouncement, id)
     if announcement is None:
         raise HTTPException(
@@ -174,7 +172,7 @@ async def list_my_requests(
     db: AsyncSession = Depends(get_db),
     me: User = Depends(get_curr_user),
 ):
-    """role=sent: requests I sent. role=received: requests on my announcements."""
+    """List sent or received play requests."""
     stmt = select(PlayerRequest)
     if filters.role == "sent":
         stmt = stmt.where(PlayerRequest.sender_id == me.id)
@@ -198,6 +196,7 @@ async def decide_play_request(
     db: AsyncSession = Depends(get_db),
     me: User = Depends(get_curr_user),
 ):
+    """Accept or reject a pending play request."""
     play_request = await db.scalar(
         select(PlayerRequest)
         .options(

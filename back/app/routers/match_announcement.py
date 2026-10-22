@@ -39,12 +39,7 @@ router = APIRouter(prefix="/match-announcements", tags=["Match Announcements"])
 async def _get_or_404(
     db: AsyncSession, announcement_id: uuid.UUID
 ) -> MatchAnnouncement:
-    """Load an announcement with its owner and sport.
-
-    populate_existing makes it safe to call after a commit: commit expires
-    every attribute, and async code cannot lazy-load `owner` or `sport`
-    while the response is built.
-    """
+    """Load an announcement with its related data."""
     stmt = (
         select(MatchAnnouncement)
         .options(
@@ -80,7 +75,9 @@ def _require_owner(announcement: MatchAnnouncement, user: User) -> None:
         raise HTTPException(status.HTTP_403_FORBIDDEN, detail="Not the owner")
 
 
-def _notification_recipients(announcement: MatchAnnouncement) -> set[uuid.UUID]:
+def _notification_recipients(
+    announcement: MatchAnnouncement,
+) -> set[uuid.UUID]:
     return {
         play_request.sender_id
         for play_request in announcement.play_requests
@@ -101,6 +98,7 @@ async def create_announcement(
     db: AsyncSession = Depends(get_db),
     me: User = Depends(get_curr_user),
 ):
+    """Create a match announcement."""
     if await db.get(Sport, body.sport_id) is None:
         raise HTTPException(
             status.HTTP_404_NOT_FOUND, detail="Sport not found"
@@ -123,8 +121,7 @@ async def search_announcements(
     db: AsyncSession = Depends(get_db),
     _: User = Depends(get_curr_user),
 ):
-    """Sorted by start_time (soonest first). Time window: the announcement must
-    fit inside it (start_time >= start_from and end_time <= end_to)."""
+    """Search announcements with sorting and time filters."""
     M = MatchAnnouncement
     stmt = select(M).options(
         joinedload(M.owner),
@@ -183,6 +180,7 @@ async def get_announcement(
     db: AsyncSession = Depends(get_db),
     _: User = Depends(get_curr_user),
 ):
+    """Retrieve a match announcement."""
     return _to_response(await _get_or_404(db, id))
 
 
@@ -196,6 +194,7 @@ async def update_announcement(
     db: AsyncSession = Depends(get_db),
     me: User = Depends(get_curr_user),
 ):
+    """Update an announcement owned by the current user."""
     announcement = await _get_or_404(db, id)
     _require_owner(announcement, me)
 
@@ -245,7 +244,9 @@ async def update_announcement(
     changed = any(
         getattr(announcement, field) != value for field, value in data.items()
     )
-    recipient_ids = _notification_recipients(announcement) if changed else set()
+    recipient_ids = (
+        _notification_recipients(announcement) if changed else set()
+    )
     for field, value in data.items():
         setattr(announcement, field, value)
     await db.commit()
@@ -272,6 +273,7 @@ async def delete_announcement(
     db: AsyncSession = Depends(get_db),
     me: User = Depends(get_curr_user),
 ):
+    """Delete an announcement owned by the current user."""
     announcement = await _get_or_404(db, id)
     _require_owner(announcement, me)
     recipient_ids = _notification_recipients(announcement)

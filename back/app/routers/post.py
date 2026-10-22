@@ -37,7 +37,7 @@ async def _enrich_posts(
     curr_user: Optional[User],
     db: AsyncSession,
 ) -> List[PostResponse]:
-    """Build post responses with their author."""
+    """Build response objects with author summaries."""
     if not posts:
         return []
 
@@ -79,10 +79,7 @@ async def create_post(
     curr_user: User = Depends(get_curr_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """
-    Create a new post.
-    Accepts a caption.
-    """
+    """Create a caption-only post."""
     post = Post(
         user_id=curr_user.id,
         caption=body.caption,
@@ -118,10 +115,7 @@ async def get_feed(
     curr_user: User = Depends(get_curr_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Return recent posts from followed users, excluding the current user.
-
-    Results are ordered newest first and returned in offset-based pages.
-    """
+    """List recent posts from followed users."""
     following_subquery = select(Follower.following_id).where(
         Follower.follower_id == curr_user.id
     )
@@ -155,10 +149,7 @@ async def list_posts(
     curr_user: Optional[User] = Depends(get_curr_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """
-    Feed of posts with filtering by post_type ('post' or 'event_callout'),
-    sport tag, and author user_id.
-    """
+    """List posts with optional author filtering."""
     stmt = (
         select(Post)
         .options(selectinload(Post.user))
@@ -186,9 +177,7 @@ async def get_post(
     curr_user: Optional[User] = Depends(get_curr_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """
-    Retrieve a single post by ID.
-    """
+    """Retrieve one post by ID."""
     stmt = (
         select(Post).where(Post.id == post_id).options(selectinload(Post.user))
     )
@@ -216,10 +205,7 @@ async def update_post(
     curr_user: User = Depends(get_curr_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """
-    Update post caption.
-    Only the author can update their post.
-    """
+    """Update a post owned by the current user."""
     stmt = (
         select(Post).where(Post.id == post_id).options(selectinload(Post.user))
     )
@@ -258,10 +244,7 @@ async def delete_post(
     curr_user: User = Depends(get_curr_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """
-    Delete a post.
-    Only the author can delete their post.
-    """
+    """Delete a post owned by the current user."""
     post = await db.scalar(select(Post).where(Post.id == post_id))
     if not post:
         raise HTTPException(
