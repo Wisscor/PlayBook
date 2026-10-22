@@ -117,5 +117,13 @@
   "search-title": "Rechercher des utilisateurs de la communauté",
   "search-description": "Trouvez et connectez-vous avec d'autres joueurs, développeurs et organisateurs dans le réseau.",
   "no-users-found": "Aucun utilisateur trouvé",
-  "search-name-username": "Rechercher par nom ou nom d'utilisateur..."
+  "search-name-username": "Rechercher par nom ou nom d'utilisateur...",
+  "messages": "Messages",
+  "no-contacts": "Aucun contact trouvé.",
+  "active-now": "Actif maintenant",
+  "offline": "Hors ligne",
+  "send": "Envoyer",
+  "type-message": "Écrire un message...",
+  "search-contacts": "Rechercher des contacts...",
+  "back-contacts": "Retour aux contacts"
 }

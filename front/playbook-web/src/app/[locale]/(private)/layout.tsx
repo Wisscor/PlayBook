@@ -19,7 +19,7 @@ export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [logoutError, setLogoutError] = useState("");
-  const { goSignIn, goSearch } = useNavigation();
+  const { goSignIn, goMessages, goSearch } = useNavigation();
 
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const notificationRef = useRef<HTMLDivElement>(null);
@@ -136,6 +136,17 @@ export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
             >
               <PlayText.Span
                 texts={[{ content: "🔍", className: "text-base" }]}
+              />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => goMessages()}
+              className="rounded-xl border border-white/10 bg-white/5 p-2.5 backdrop-blur-md transition-all hover:bg-white/10 cursor-pointer flex items-center justify-center"
+              aria-label="Messages"
+            >
+              <PlayText.Span
+                texts={[{ content: "💬", className: "text-base" }]}
               />
             </button>
 
