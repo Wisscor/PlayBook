@@ -48,7 +48,7 @@ Message history is separate from live delivery: the frontend loads it through `G
 
 ### Notification flow
 
-1. An HTTP action such as following, liking, commenting, or creating/responding to a play request schedules `notify.emit_notification()` as a background task.
+1. An HTTP action such as following or creating/responding to a play request schedules `notify.emit_notification()` for one user, or `notify.emit_notifications()` for a list of users, as a background task.
 2. It skips self-notifications and an existing matching unread notification, then saves a notification.
 3. If the target user has an active WebSocket, it sends a `notification` frame and marks it delivered. Otherwise, it remains undelivered.
 4. On the target user's next WebSocket connection, `connection._flush_notifications()` sends undelivered notifications, marks them delivered, and sends a `notification.count` frame with the unread count.
@@ -56,7 +56,7 @@ Message history is separate from live delivery: the frontend loads it through `G
 
 “Delivered” and “read” are different: delivery means the server sent the notification over WebSocket; read means the user marked it read.
 
-Notification objects sent over HTTP or WebSocket contain `id`, `event_type`, `actor_id`, `actor_username`, `read_at`, and `created_at`. `target_id` is stored internally but is not sent to the frontend. Unread duplicates are identified by recipient, actor, event type, and target ID. This combines repeated likes on the same post while still creating a separate notification when the actor likes a different post.
+Notification objects sent over HTTP or WebSocket contain `id`, `event_type`, `actor_id`, `actor_username`, `read_at`, `created_at`, and nullable `match_time`. The frontend can format a match time such as `18:30` and pair it with `event_type` values like `match_cancelled`, `match_updated`, `play_request_accepted`, or `play_request_rejected`. Other notification types have `match_time: null`. Match notifications are sent to all pending or accepted requesters through one reusable bulk background task. `Base.metadata.create_all()` adds this column on a new database; it does not alter an existing `notifications` table, so provision the column separately for existing databases.
 
 ### Connection and presence flow
 

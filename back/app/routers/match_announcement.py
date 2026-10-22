@@ -3,6 +3,7 @@ from typing import Optional
 
 from fastapi import (
     APIRouter,
+    BackgroundTasks,
     Depends,
     HTTPException,
     Query,
@@ -30,6 +31,7 @@ from app.schemas.match_announcement import (
 )
 from app.schemas.user import UserSummaryResponse
 from app.core.limiter import limiter
+from app.realtime.notify import emit_notifications
 
 router = APIRouter(prefix="/match-announcements", tags=["Match Announcements"])
 
@@ -76,6 +78,15 @@ def _to_response(announcement: MatchAnnouncement) -> MatchAnnouncementResponse:
 def _require_owner(announcement: MatchAnnouncement, user: User) -> None:
     if announcement.organizer_id != user.id:
         raise HTTPException(status.HTTP_403_FORBIDDEN, detail="Not the owner")
+
+
+def _notification_recipients(announcement: MatchAnnouncement) -> set[uuid.UUID]:
+    return {
+        play_request.sender_id
+        for play_request in announcement.play_requests
+        if play_request.status
+        in {PlayerRequestStatusEnum.pending, PlayerRequestStatusEnum.accepted}
+    }
 
 
 @router.post(
@@ -180,6 +191,7 @@ async def get_announcement(
 async def update_announcement(
     id: uuid.UUID,
     body: MatchAnnouncementUpdate,
+    background_tasks: BackgroundTasks,
     request: Request,
     db: AsyncSession = Depends(get_db),
     me: User = Depends(get_curr_user),
@@ -230,9 +242,22 @@ async def update_announcement(
             detail="Announcement cannot be reopened",
         )
 
+    changed = any(
+        getattr(announcement, field) != value for field, value in data.items()
+    )
+    recipient_ids = _notification_recipients(announcement) if changed else set()
     for field, value in data.items():
         setattr(announcement, field, value)
     await db.commit()
+    if recipient_ids:
+        background_tasks.add_task(
+            emit_notifications,
+            event_type="match_updated",
+            actor_id=me.id,
+            target_user_ids=recipient_ids,
+            target_id=announcement.id,
+            match_time=announcement.start_time,
+        )
     return _to_response(
         await _get_or_404(db, id)
     )  # reload: owner and sport after commit
@@ -242,13 +267,25 @@ async def update_announcement(
 @limiter.limit("10/minute")
 async def delete_announcement(
     id: uuid.UUID,
+    background_tasks: BackgroundTasks,
     request: Request,
     db: AsyncSession = Depends(get_db),
     me: User = Depends(get_curr_user),
 ):
     announcement = await _get_or_404(db, id)
     _require_owner(announcement, me)
+    recipient_ids = _notification_recipients(announcement)
+    match_time = announcement.start_time
     # its play requests are deleted with it
     await db.delete(announcement)  # AsyncSession.delete must be awaited
     await db.commit()
+    if recipient_ids:
+        background_tasks.add_task(
+            emit_notifications,
+            event_type="match_cancelled",
+            actor_id=me.id,
+            target_user_ids=recipient_ids,
+            target_id=announcement.id,
+            match_time=match_time,
+        )
     return Response(status_code=status.HTTP_204_NO_CONTENT)

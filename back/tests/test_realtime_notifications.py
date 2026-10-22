@@ -10,6 +10,7 @@ from app.realtime.services.notifications import (
     notification_payload,
     unread_duplicate_exists,
 )
+from app.realtime.notify import emit_notifications
 
 
 def test_notification_responses_omit_internal_target_fields():
@@ -19,6 +20,7 @@ def test_notification_responses_omit_internal_target_fields():
         actor_id=uuid4(),
         event_type="follow",
         target_id=uuid4(),
+        match_time=None,
         read_at=None,
         created_at=datetime.now(timezone.utc),
     )
@@ -31,7 +33,51 @@ def test_notification_responses_omit_internal_target_fields():
     assert "target_id" not in websocket_payload
     assert notification.target_id is not None
     assert response["actor_username"] == "alice"
+    assert response["match_time"] is None
     assert websocket_payload["type"] == frames.NOTIFICATION
+
+
+def test_match_notification_includes_match_time():
+    match_time = datetime(2026, 10, 22, 18, 30, tzinfo=timezone.utc)
+    notification = Notification(
+        id=uuid4(),
+        user_id=uuid4(),
+        actor_id=uuid4(),
+        event_type="match_cancelled",
+        target_id=uuid4(),
+        match_time=match_time,
+        read_at=None,
+        created_at=datetime.now(timezone.utc),
+    )
+
+    assert notification_dict(notification, "organizer")["match_time"] == (
+        match_time.isoformat()
+    )
+
+
+def test_emit_notifications_fans_out_to_unique_users(monkeypatch):
+    from app.realtime import notify
+
+    emit_one = AsyncMock()
+    monkeypatch.setattr(notify, "emit_notification", emit_one)
+    actor_id = uuid4()
+    user_ids = [uuid4(), uuid4()]
+    match_time = datetime.now(timezone.utc)
+
+    asyncio.run(
+        emit_notifications(
+            event_type="match_cancelled",
+            actor_id=actor_id,
+            target_user_ids=[*user_ids, user_ids[0]],
+            target_id=uuid4(),
+            match_time=match_time,
+        )
+    )
+
+    assert emit_one.await_count == 2
+    assert {call.kwargs["target_user_id"] for call in emit_one.await_args_list} == set(
+        user_ids
+    )
 
 
 def test_unread_duplicate_check_is_scoped_to_target():

@@ -136,6 +136,7 @@ async def send_play_request(
         actor_id=me.id,
         target_user_id=announcement.organizer_id,
         target_id=announcement.id,
+        match_time=announcement.start_time,
     )
     return await _get_request(db, request_id)
 
@@ -239,9 +240,14 @@ async def decide_play_request(
     await db.commit()
     background_tasks.add_task(
         emit_notification,
-        event_type=f"play_request_{body.status}",
+        event_type=(
+            "play_request_accepted"
+            if body.status == PlayerRequestStatusEnum.accepted
+            else "play_request_rejected"
+        ),
         actor_id=me.id,
         target_user_id=play_request.sender_id,
         target_id=play_request.announcement_id,
+        match_time=announcement.start_time,
     )
     return await _get_request(db, id)
