@@ -75,21 +75,6 @@ back/
 | `PUT` | `/posts/{post_id}` | Update an existing post |
 | `DELETE`| `/posts/{post_id}` | Delete a post |
 
-### Comments
-| Method | Route | Description |
-| :--- | :--- | :--- |
-| `POST` | `/posts/{post_id}/comments` | Post a comment on a specific post |
-| `GET` | `/posts/{post_id}/comments` | Retrieve comments for a specific post |
-| `PUT` | `/comments/{comment_id}` | Edit an existing comment |
-| `DELETE`| `/comments/{comment_id}` | Delete a comment |
-
-### Reactions (Likes & Dislikes)
-| Method | Route | Description |
-| :--- | :--- | :--- |
-| `POST` | `/posts/{post_id}/like` | Like a post |
-| `DELETE`| `/posts/{post_id}/like` | Remove like from a post |
-| `GET` | `/posts/{post_id}/likes` | Retrieve likes for a post |
-
 ### Conversations & Messages
 | Method | Route | Description |
 | :--- | :--- | :--- |
@@ -101,11 +86,6 @@ back/
 | `GET` | `/conversations/{conversation_id}/messages` | List messages in conversation |
 | `GET` | `/messages/{message_id}` | Retrieve specific message |
 | `DELETE`| `/messages/{message_id}` | Delete specific message |
-
-### Media Uploads
-| Method | Route | Description |
-| :--- | :--- | :--- |
-| `POST` | `/upload/image` | Upload image file |
 
 ---
 

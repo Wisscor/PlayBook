@@ -310,7 +310,7 @@ async def list_user_posts(
 
     stmt = (
         select(Post)
-        .options(selectinload(Post.user), selectinload(Post.media))
+        .options(selectinload(Post.user))
         .where(Post.user_id == user_id)
         .order_by(Post.created_at.desc(), Post.id.desc())
     )

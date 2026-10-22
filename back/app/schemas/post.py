@@ -2,12 +2,10 @@ from pydantic import BaseModel, Field, ConfigDict
 from datetime import datetime
 from uuid import UUID
 from typing import Optional, List
-from .post_media import PostMediaResponse, PostMediaCreate
 from .user import UserSummaryResponse
 
 
 class PostCreate(BaseModel):
-    media: Optional[List[PostMediaCreate]] = None
     caption: str = Field(..., min_length=1, max_length=2000)
 
 
@@ -22,10 +20,6 @@ class PostResponse(BaseModel):
     caption: str = Field(..., min_length=1, max_length=2000)
     user_id: UUID
     author: Optional[UserSummaryResponse] = None
-    media: List[PostMediaResponse] = []
-    like_count: int = 0
-    comment_count: int = 0
-    is_liked_by_me: bool = False
     created_at: datetime
     updated_at: datetime
 

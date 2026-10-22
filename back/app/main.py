@@ -22,8 +22,6 @@ from app.routers import (
     users,
     post,
     followers,
-    like,
-    comments,
     sport,
     match_announcement,
     play_request,
@@ -125,12 +123,6 @@ app.include_router(
 )
 app.include_router(
     followers.router,
-)
-app.include_router(
-    like.router,
-)
-app.include_router(
-    comments.router,
 )
 app.include_router(
     sport.router,

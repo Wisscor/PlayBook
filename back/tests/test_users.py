@@ -67,13 +67,13 @@ def test_upload_avatar_success(mock_user_1, mock_db):
     res = client.post("/users/me/avatar", files=files)
 
     assert res.status_code == 200
-    assert mock_user_1.avatar.startswith("/uploads/")
+    assert mock_user_1.avatar.startswith("uploads/")
     assert res.json()["avatar"] == mock_user_1.avatar
     assert (
-        Path("uploads") / mock_user_1.avatar.removeprefix("/uploads/")
+        Path("uploads") / mock_user_1.avatar.removeprefix("uploads/")
     ).exists()
 
-    Path("uploads", mock_user_1.avatar.removeprefix("/uploads/")).unlink()
+    Path("uploads", mock_user_1.avatar.removeprefix("uploads/")).unlink()
     app.dependency_overrides.clear()
 
 
