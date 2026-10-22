@@ -53,20 +53,3 @@ export interface MatchAnnouncementPage {
   items: MatchAnnouncement[];
   next_offset: number | null;
 }
-
-export interface Message {
-  id: number;
-  sender: "me" | "them";
-  text: string;
-  time: string;
-}
-
-export interface Contact {
-  id: number;
-  name: string;
-  username: string;
-  avatar: string;
-  lastMessage: string;
-  online: boolean;
-  messages: Message[];
-}
