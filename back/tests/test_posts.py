@@ -266,10 +266,8 @@ def test_get_feed_success(mock_user_1, mock_user_2, mock_db):
     client = TestClient(app)
 
     post1 = _make_post(mock_user_2, caption="Friend's post")
-    post2 = _make_post(mock_user_1, caption="My own post")
-
     mock_scalars = MagicMock()
-    mock_scalars.all.return_value = [post1, post2]
+    mock_scalars.all.return_value = [post1]
     mock_db.scalars.return_value = mock_scalars
 
     app.dependency_overrides[get_curr_user] = lambda: mock_user_1
@@ -279,7 +277,7 @@ def test_get_feed_success(mock_user_1, mock_user_2, mock_db):
     assert res.status_code == 200
     data = res.json()
     assert "items" in data
-    assert len(data["items"]) == 2
+    assert len(data["items"]) == 1
     assert data["next_offset"] is None
     assert data["items"][0]["author"]["username"] == mock_user_2.username
 
@@ -290,7 +288,7 @@ def test_get_feed_pagination(mock_user_1, mock_user_2, mock_db):
     client = TestClient(app)
 
     post1 = _make_post(mock_user_2, caption="First post")
-    post2 = _make_post(mock_user_1, caption="Second post")
+    post2 = _make_post(mock_user_2, caption="Second post")
 
     # limit=1, returning 2 items triggers next_offset
     mock_scalars = MagicMock()
@@ -309,10 +307,10 @@ def test_get_feed_pagination(mock_user_1, mock_user_2, mock_db):
     app.dependency_overrides.clear()
 
 
-def test_get_feed_with_offset(mock_user_1, mock_db):
+def test_get_feed_with_offset(mock_user_1, mock_user_2, mock_db):
     client = TestClient(app)
 
-    post = _make_post(mock_user_1, caption="Feed post")
+    post = _make_post(mock_user_2, caption="Feed post")
     mock_scalars = MagicMock()
     mock_scalars.all.return_value = [post]
     mock_db.scalars.return_value = mock_scalars

@@ -11,7 +11,7 @@ from fastapi import (
     status,
     Request,
 )
-from sqlalchemy import select, or_
+from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 from http import HTTPStatus
@@ -110,12 +110,6 @@ async def create_post(
     status_code=status.HTTP_200_OK,
     response_model=PostPage,
 )
-@router.get(
-    "/posts/feed",
-    status_code=status.HTTP_200_OK,
-    response_model=PostPage,
-    include_in_schema=False,
-)
 @limiter.limit("60/minute")
 async def get_feed(
     request: Request,
@@ -124,8 +118,9 @@ async def get_feed(
     curr_user: User = Depends(get_curr_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """
-    Posts from people I follow plus mine (newest first).
+    """Return recent posts from followed users, excluding the current user.
+
+    Results are ordered newest first and returned in offset-based pages.
     """
     following_subquery = select(Follower.following_id).where(
         Follower.follower_id == curr_user.id
@@ -133,12 +128,7 @@ async def get_feed(
     stmt = (
         select(Post)
         .options(selectinload(Post.user))
-        .where(
-            or_(
-                Post.user_id.in_(following_subquery),
-                Post.user_id == curr_user.id,
-            )
-        )
+        .where(Post.user_id.in_(following_subquery))
         .order_by(Post.created_at.desc(), Post.id.desc())
     )
     rows = list((await db.scalars(stmt.offset(offset).limit(limit + 1))).all())
