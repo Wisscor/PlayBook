@@ -101,8 +101,7 @@ export const MatchModal: React.FC<MatchModalProps> = ({
     }
   };
 
-  const isFormComplete =
-    !Object.values(form).some((val) => val === "") && !error;
+  const isFormComplete = !Object.values(form).includes("") && !error;
 
   const handleFormSubmit = () => {
     onSave(form);

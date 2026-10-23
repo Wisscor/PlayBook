@@ -22,7 +22,7 @@ export const Header: React.FC = () => {
           src="/logos/app-logo.png"
           fill
           className="object-contain  block"
-        />
+        /> 
       </Link>
 
       <div className="relative">

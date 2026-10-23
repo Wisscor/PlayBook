@@ -118,20 +118,15 @@
   "search-description": "Find and connect with other players, developers, and organizers in the network.",
   "no-users-found": "No users found",
   "search-name-username": "Search by name or username...",
-
   "messages": "Messages",
   "no-contacts": "No contacts found.",
-
   "active-now": "Active Now",
+  "offline": "Offline",
   "send": "Send",
-
   "type-message": "Type a message...",
-
   "search-contacts": "Search contacts...",
 
   "back-contacts": "Back to Contacts",
-
-  "offline": "Offline",
 
   "followers": "Followers",
   "following": "Following",

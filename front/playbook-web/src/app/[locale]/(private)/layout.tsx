@@ -13,13 +13,15 @@ import { Link } from "../../../../i18n/navigation";
 import { BurgerMenu } from "./components/burgerMenu";
 import { NotificationPopUp } from "./notificationPopUp";
 
+const unreadMessages = 3; // Replace with actual logic to get the number of unread messages
+
 export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
   const locale = useLocale();
   const pathname = usePathname();
   const [isExpanded, setIsExpanded] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [logoutError, setLogoutError] = useState("");
-  const { goSignIn, goSearch, goMessages } = useNavigation();
+  const { goSignIn, goMessages, goSearch } = useNavigation();
 
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const notificationRef = useRef<HTMLDivElement>(null);
@@ -78,7 +80,7 @@ export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
     setLogoutError("");
     try {
       await signOut();
-      goSignIn();
+      window.location.reload();
     } catch (error) {
       console.error("Unable to log out:", error);
       setLogoutError("Unable to log out");
@@ -87,8 +89,6 @@ export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
   };
 
   const unreadCount = notifications.filter((n) => !n.read).length;
-
-  const unreadMessages = 3;
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-950 text-white">

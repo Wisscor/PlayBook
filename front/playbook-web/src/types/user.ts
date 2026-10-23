@@ -12,3 +12,11 @@ export interface User {
   following_count?: number;
   posts_count?: number;
 }
+
+export interface UserSummary {
+  id: string;
+  firstname: string;
+  lastname: string;
+  username: string;
+  avatar?: string | null;
+}

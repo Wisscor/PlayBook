@@ -12,8 +12,10 @@ export const useNavigation = () => {
     goCommunity: () => push(ROUTES.COMMUNITY),
     goMessages: () => push(ROUTES.MESSAGES),
     goSearch: () => push(ROUTES.SEARCH),
-    goUserProfile: (userId: string) =>
-      push(`${ROUTES.USER_PROFILE}?id=${userId}`),
+    goUserProfile: (userId: string) => {
+      localStorage.setItem("userId", userId);
+      push(`${ROUTES.USER_PROFILE}`);
+    },
     goFollowers: (userId: string) => {
       localStorage.setItem("userid_of_requested_user_for_followers", userId);
       push(`${ROUTES.FOLLOWERS}`);

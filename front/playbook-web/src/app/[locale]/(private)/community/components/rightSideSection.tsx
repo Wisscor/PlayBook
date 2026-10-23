@@ -6,7 +6,7 @@ import React from "react";
 
 export const RightSideSection: React.FC<{
   filteredMatches: {
-    id: number;
+    id: string;
     name: string;
     type: string;
     players: string;
