@@ -130,5 +130,13 @@
 
   "search-contacts": "ابحث عن جهات اتصال...",
 
-  "back-contacts": "العودة إلى جهات الاتصال "
+  "back-contacts": "العودة إلى جهات الاتصال ",
+
+  "offline": "غير متصل",
+
+  "followers": "المتابعون",
+  "following": "المتابعة",
+  "people-following-user": "أشخاص يتابعون هذا المستخدم",
+  "no-followers": "لم يتم العثور على متابعين.",
+  "follow-back": "متابعة مرة أخرى"
 }

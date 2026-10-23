@@ -12,8 +12,11 @@ export const useNavigation = () => {
     goCommunity: () => push(ROUTES.COMMUNITY),
     goMessages: () => push(ROUTES.MESSAGES),
     goSearch: () => push(ROUTES.SEARCH),
-    //TODO: khassna n3rfou kifach ndirou had lroute li kayn f ROUTES.USER_PROFILE wash id oula username (security concern)
     goUserProfile: (userId: string) =>
       push(`${ROUTES.USER_PROFILE}?id=${userId}`),
+    goFollowers: (userId: string) => {
+      localStorage.setItem("userid_of_requested_user_for_followers", userId);
+      push(`${ROUTES.FOLLOWERS}`);
+    },
   };
 };

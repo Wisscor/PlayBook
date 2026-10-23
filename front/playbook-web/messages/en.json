@@ -129,5 +129,13 @@
 
   "search-contacts": "Search contacts...",
 
-  "back-contacts": "Back to Contacts"
+  "back-contacts": "Back to Contacts",
+
+  "offline": "Offline",
+
+  "followers": "Followers",
+  "following": "Following",
+  "people-following-user": "people following this user",
+  "no-followers": "No followers found.",
+  "follow-back": "Follow back"
 }

@@ -37,7 +37,7 @@ export const FilterMatchModal: React.FC<{
       <div className="w-full rounded-3xl border border-white/10 bg-slate-950 p-6 sm:p-8 shadow-2xl flex flex-col self-center gap-6">
         <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-md">
           <DateTimeRangePicker
-            onError={(err) => setHasError(err)}
+            onError={(err) => setHasError(err !== undefined)}
             date={filterDate}
             startTime={filterStartTime}
             endTime={filterEndTime}

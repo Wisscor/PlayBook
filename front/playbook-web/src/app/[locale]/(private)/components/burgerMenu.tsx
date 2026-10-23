@@ -13,13 +13,14 @@ export const BurgerMenu: React.FC<{
   }[];
   locale: string;
   close: () => void;
-}> = ({ isOpen, menu, locale, close }) => {
+  more: React.JSX.Element;
+}> = ({ isOpen, menu, locale, close, more }) => {
   const pathname = usePathname();
   const { goSignIn } = useNavigation();
 
   return (
     <div
-      className={`absolute z-30 min-w-50 p-2 rounded-2xl border border-white/10 bg-slate-950/95 backdrop-blur-xl shadow-2xl top-full mt-3 transition-all duration-200 ease-out transform ${
+      className={`absolute z-30 min-w-50 space-y-5 p-2 rounded-2xl border border-white/10 bg-slate-950/95 backdrop-blur-xl shadow-2xl top-full mt-3 transition-all duration-200 ease-out transform ${
         locale === "ar" ? "left-0" : "right-0"
       } ${
         isOpen
@@ -71,6 +72,7 @@ export const BurgerMenu: React.FC<{
           />
         </button>
       </div>
+      {more}
     </div>
   );
 };
