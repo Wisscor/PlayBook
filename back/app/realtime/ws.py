@@ -86,7 +86,6 @@ async def websocket_endpoint(websocket: WebSocket):
     if user is None:
         return
 
-    # ── Timeout gate ──────────────────────────────────────────────
     remaining = registry.timeout_remaining(user.id)
     if remaining > 0:
         await websocket.send_json(
