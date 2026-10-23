@@ -1,7 +1,11 @@
 import asyncio
+import json
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
 from uuid import uuid4
+
+import pytest
+from starlette.websockets import WebSocketDisconnect
 
 from app.realtime import frames, registry
 from app.realtime.limits import SlidingWindow
@@ -11,10 +15,10 @@ from app.realtime.ws import _idle_watchdog, receive_loop
 def test_receive_loop_closes_after_general_frame_limit(monkeypatch):
     monkeypatch.setattr(frames, "MAX_INBOUND_FRAMES_PER_WINDOW", 2)
     websocket = AsyncMock()
-    websocket.receive_json.side_effect = [
-        {"type": "ping"},
-        {"type": "ping"},
-        {"type": "ping"},
+    websocket.receive_text.side_effect = [
+        json.dumps({"type": "ping"}),
+        json.dumps({"type": "ping"}),
+        json.dumps({"type": "ping"}),
     ]
     handler = AsyncMock()
     user_id = uuid4()
@@ -41,7 +45,7 @@ def test_receive_loop_closes_after_general_frame_limit(monkeypatch):
 def test_malformed_json_counts_toward_general_frame_limit(monkeypatch):
     monkeypatch.setattr(frames, "MAX_INBOUND_FRAMES_PER_WINDOW", 1)
     websocket = AsyncMock()
-    websocket.receive_json.side_effect = [ValueError(), ValueError()]
+    websocket.receive_text.side_effect = ["{", "{"]
     user_id = uuid4()
     registry.register(user_id, websocket)
     ctx = SimpleNamespace(
@@ -59,6 +63,27 @@ def test_malformed_json_counts_toward_general_frame_limit(monkeypatch):
     websocket.close.assert_awaited_once_with(
         code=frames.CLOSE_RATE_LIMIT,
         reason="rate limited – you are timed out",
+    )
+
+
+def test_frame_size_limit_counts_utf8_bytes(monkeypatch):
+    websocket = AsyncMock()
+    websocket.receive_text.side_effect = [
+        "é" * (frames.MAX_FRAME_BYTES // 2 + 1),
+        WebSocketDisconnect(),
+    ]
+    ctx = SimpleNamespace(
+        websocket=websocket,
+        user=SimpleNamespace(id=uuid4()),
+        last_seen=0.0,
+        inbound_frames=SlidingWindow(10),
+    )
+
+    with pytest.raises(WebSocketDisconnect):
+        asyncio.run(receive_loop(ctx))
+
+    websocket.send_json.assert_awaited_once_with(
+        {"type": frames.ERROR, "reason": "frame_too_large"}
     )
 
 

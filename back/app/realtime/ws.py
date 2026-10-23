@@ -1,4 +1,5 @@
 import asyncio
+import json
 import time
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
@@ -24,11 +25,7 @@ async def _reject(ws: WebSocket, reason: str) -> None:
 
 async def receive_loop(ctx: ConnectionContext) -> None:
     while True:
-        invalid_json = False
-        try:
-            frame = await ctx.websocket.receive_json()
-        except ValueError:
-            invalid_json = True
+        raw = await ctx.websocket.receive_text()
 
         now = time.monotonic()
         ctx.last_seen = now
@@ -39,7 +36,13 @@ async def receive_loop(ctx: ConnectionContext) -> None:
             await registry.timeout_user(ctx.user.id)
             return
 
-        if invalid_json:
+        if len(raw.encode("utf-8")) > frames.MAX_FRAME_BYTES:
+            await _reject(ctx.websocket, "frame_too_large")
+            continue
+
+        try:
+            frame = json.loads(raw)
+        except (ValueError, TypeError):
             await _reject(ctx.websocket, "invalid_json")
             continue
 
