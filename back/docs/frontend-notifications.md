@@ -33,6 +33,7 @@ The WebSocket version adds `"type": "notification"`. `match_time` is `null` for 
 | `event_type` | Meaning | Recipient |
 | --- | --- | --- |
 | `follow` | Someone followed the user | Followed user |
+| `post_created` | Someone the user follows published a post | Post author's followers |
 | `play_request` | Someone requested to join a match | Match organizer |
 | `play_request_accepted` | Organizer accepted the request | Request sender |
 | `play_request_rejected` | Organizer declined the request | Request sender |
