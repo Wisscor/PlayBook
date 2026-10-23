@@ -7,7 +7,7 @@ from pydantic import ValidationError
 from ..core.config import settings
 from ..database.database import session_maker
 from . import connection, frames, registry
-from .handlers import HANDLERS, CloseConnection, ConnectionContext
+from .handlers import HANDLERS, ConnectionContext
 from .limits import SlidingWindow
 from .ws_auth import authenticate_socket
 
@@ -36,7 +36,7 @@ async def receive_loop(ctx: ConnectionContext) -> None:
             ctx.inbound_frames.hit(now)
             > frames.MAX_INBOUND_FRAMES_PER_WINDOW
         ):
-            await ctx.websocket.close(code=frames.CLOSE_RATE_LIMIT)
+            await registry.timeout_user(ctx.user.id)
             return
 
         if invalid_json:
@@ -51,9 +51,6 @@ async def receive_loop(ctx: ConnectionContext) -> None:
 
         try:
             await handler(ctx, frame)
-        except CloseConnection as exc:
-            await ctx.websocket.close(code=exc.code)
-            return
         except ValidationError:
             await _reject(ctx.websocket, "invalid_frame")
         except PermissionError:
@@ -67,7 +64,8 @@ async def receive_loop(ctx: ConnectionContext) -> None:
 async def _idle_watchdog(ctx: ConnectionContext) -> None:
     while True:
         await asyncio.sleep(15)
-        if time.monotonic() - ctx.last_seen > 45:
+        registry.sweep_timeouts()
+        if time.monotonic() - ctx.last_seen >= 60:
             await ctx.websocket.close(code=frames.CLOSE_IDLE_TIMEOUT)
             return
 
@@ -84,6 +82,19 @@ async def websocket_endpoint(websocket: WebSocket):
     async with session_maker() as db:
         user = await authenticate_socket(websocket, db)
     if user is None:
+        return
+
+    # ── Timeout gate ──────────────────────────────────────────────
+    remaining = registry.timeout_remaining(user.id)
+    if remaining > 0:
+        await websocket.send_json(
+            {
+                "type": frames.ERROR,
+                "reason": "timed_out",
+                "retry_after": round(remaining, 1),
+            }
+        )
+        await websocket.close(code=frames.CLOSE_TIMED_OUT)
         return
 
     ctx = ConnectionContext(

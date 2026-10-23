@@ -37,7 +37,7 @@ async def _flush_notifications(websocket: WebSocket, user_id: UUID) -> None:
         )
 
 
-async def _send_presence_snapshot(
+async def _send_online_contacts_snapshot(
     websocket: WebSocket, user_id: UUID
 ) -> set[UUID]:
     async with session_maker() as db:
@@ -69,7 +69,7 @@ async def on_connect(
 ) -> set[UUID]:
     await _flush_pending_messages(websocket, user.id)
     await _flush_notifications(websocket, user.id)
-    contacts = await _send_presence_snapshot(websocket, user.id)
+    contacts = await _send_online_contacts_snapshot(websocket, user.id)
     if first_socket:
         await announce_presence(contacts, user.id, True)
     return contacts
