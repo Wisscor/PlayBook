@@ -4,6 +4,7 @@ from typing import Optional, List
 from datetime import datetime
 from fastapi import (
     APIRouter,
+    BackgroundTasks,
     Depends,
     HTTPException,
     Response,
@@ -26,6 +27,7 @@ from app.schemas.post import PostCreate, PostUpdate, PostResponse, PostPage
 from app.schemas.user import UserSummaryResponse
 from app.core.deps import get_curr_user
 from app.core.limiter import limiter
+from app.realtime.notify import emit_notifications
 
 router = APIRouter(
     tags=["Posts"],
@@ -75,6 +77,7 @@ async def _enrich_posts(
 @limiter.limit("30/minute")
 async def create_post(
     body: PostCreate,
+    background_tasks: BackgroundTasks,
     request: Request,
     curr_user: User = Depends(get_curr_user),
     db: AsyncSession = Depends(get_db),
@@ -88,7 +91,24 @@ async def create_post(
         caption=body.caption,
     )
     db.add(post)
+    await db.flush()
+    follower_ids = (
+        await db.scalars(
+            select(Follower.follower_id).where(
+                Follower.following_id == curr_user.id
+            )
+        )
+    ).all()
     await db.commit()
+
+    if follower_ids:
+        background_tasks.add_task(
+            emit_notifications,
+            event_type="post_created",
+            actor_id=curr_user.id,
+            target_user_ids=follower_ids,
+            target_id=post.id,
+        )
 
     # Re-queries post with relationships
     # selectinload() == SELECT ... WHERE parent_id IN (...)

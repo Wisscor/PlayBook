@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime, timezone
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 from fastapi.testclient import TestClient
 
 from app.main import app
@@ -26,6 +26,9 @@ def test_create_post_success(mock_user_1, mock_db):
 
     created_post = _make_post(mock_user_1, caption="Hello world!")
     mock_db.scalar.return_value = created_post
+    mock_scalars = MagicMock()
+    mock_scalars.all.return_value = []
+    mock_db.scalars.return_value = mock_scalars
 
     app.dependency_overrides[get_curr_user] = lambda: mock_user_1
     app.dependency_overrides[get_db] = lambda: mock_db
@@ -39,6 +42,36 @@ def test_create_post_success(mock_user_1, mock_db):
     assert data["author"]["username"] == mock_user_1.username
     mock_db.commit.assert_called_once()
 
+    app.dependency_overrides.clear()
+
+
+def test_create_post_notifies_followers(mock_user_1, mock_user_2, mock_db):
+    client = TestClient(app)
+    created_post = _make_post(mock_user_1, caption="Hello followers!")
+    mock_db.scalar.return_value = created_post
+    async def assign_post_id_on_flush():
+        mock_db.add.call_args.args[0].id = created_post.id
+
+    mock_db.flush.side_effect = assign_post_id_on_flush
+    mock_scalars = MagicMock()
+    mock_scalars.all.return_value = [mock_user_2.id]
+    mock_db.scalars.return_value = mock_scalars
+
+    app.dependency_overrides[get_curr_user] = lambda: mock_user_1
+    app.dependency_overrides[get_db] = lambda: mock_db
+
+    with patch(
+        "app.routers.post.emit_notifications", new_callable=AsyncMock
+    ) as emit_notifications:
+        res = client.post("/posts", json={"caption": "Hello followers!"})
+
+    assert res.status_code == 201
+    emit_notifications.assert_awaited_once_with(
+        event_type="post_created",
+        actor_id=mock_user_1.id,
+        target_user_ids=[mock_user_2.id],
+        target_id=created_post.id,
+    )
     app.dependency_overrides.clear()
 
 
