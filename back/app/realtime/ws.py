@@ -64,7 +64,6 @@ async def receive_loop(ctx: ConnectionContext) -> None:
 async def _idle_watchdog(ctx: ConnectionContext) -> None:
     while True:
         await asyncio.sleep(15)
-        registry.sweep_timeouts()
         if time.monotonic() - ctx.last_seen >= 60:
             await ctx.websocket.close(code=frames.CLOSE_IDLE_TIMEOUT)
             return

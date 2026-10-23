@@ -1,3 +1,4 @@
+import asyncio
 import time
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -48,8 +49,19 @@ async def lifespan(app: FastAPI):
             exc_info=True,
         )
         raise e
+
+    sweep_task = asyncio.create_task(_timeout_sweep_loop())
     yield
+    sweep_task.cancel()
     await engine.dispose()
+
+
+async def _timeout_sweep_loop() -> None:
+    """Single global task that cleans expired timeout entries every 30s."""
+    from .realtime import registry
+    while True:
+        await asyncio.sleep(30)
+        registry.sweep_timeouts()
 
 
 app = FastAPI(
