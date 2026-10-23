@@ -51,8 +51,6 @@ async def send_to_user(user_id: UUID, payload: dict) -> int:
 
 
 
-
-
 async def timeout_user(user_id: UUID) -> None:
     for ws in connections_for(user_id):
         try:
@@ -89,7 +87,6 @@ def timeout_remaining(user_id: UUID) -> float:
 
 
 def sweep_timeouts() -> int:
-    """Remove expired entries from the timeout dict. Returns count removed."""
     now = time.monotonic()
     expired = [uid for uid, expiry in _timeouts.items() if now >= expiry]
     for uid in expired:
