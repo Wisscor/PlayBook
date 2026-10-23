@@ -41,10 +41,7 @@ async def follow_user(
     curr_user: User = Depends(get_curr_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """
-    Follow another user.
-    Cannot follow oneself; returns 409 if already following.
-    """
+    """Follow another user."""
     if curr_user.id == user_id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -99,10 +96,7 @@ async def unfollow_user(
     curr_user: User = Depends(get_curr_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """
-    Unfollow a user.
-    Returns 204 No Content on success.
-    """
+    """Unfollow another user."""
     if curr_user.id == user_id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -140,9 +134,7 @@ async def get_user_followers(
     offset: int = Query(default=0, ge=0),
     db: AsyncSession = Depends(get_db),
 ):
-    """
-    Retrieve the list of users following the specified user.
-    """
+    """List a user's followers."""
     target_user = await db.scalar(select(User).where(User.id == user_id))
     if not target_user:
         raise HTTPException(
@@ -175,9 +167,7 @@ async def get_user_following(
     offset: int = Query(default=0, ge=0),
     db: AsyncSession = Depends(get_db),
 ):
-    """
-    Retrieve the list of users the specified user is following.
-    """
+    """List users followed by a user."""
     target_user = await db.scalar(select(User).where(User.id == user_id))
     if not target_user:
         raise HTTPException(

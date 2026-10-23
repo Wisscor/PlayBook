@@ -59,9 +59,7 @@ async def get_my_profile(
     curr_user: User = Depends(get_curr_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """
-    Get current authenticated user's profile with social counts.
-    """
+    """Return the current user's profile and social counts."""
     followers_count = (
         await db.scalar(
             select(func.count())
@@ -109,9 +107,7 @@ async def update(
     curr_user: User = Depends(get_curr_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """
-    Partially update authenticated user's profile.
-    """
+    """Update the current user's profile."""
     update_data = data.model_dump(exclude_unset=True)
     for key, value in update_data.items():
         setattr(curr_user, key, value)
@@ -133,7 +129,7 @@ async def upload_avatar(
     curr_user: User = Depends(get_curr_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Replace the current user's avatar with an image up to 5 MB."""
+    """Replace the current user's avatar."""
     content_type = (file.content_type or "").lower()
     extension = AVATAR_TYPES.get(content_type)
     if extension is None:
@@ -179,9 +175,7 @@ async def delete_user(
     curr_user: User = Depends(get_curr_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """
-    Delete authenticated user's account.
-    """
+    """Delete the current user's account."""
     await db.delete(curr_user)
     await db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
@@ -200,9 +194,7 @@ async def search_users(
     offset: int = Query(default=0, ge=0),
     db: AsyncSession = Depends(get_db),
 ):
-    """
-    Search users by username, firstname, or lastname.
-    """
+    """Search users by name or username."""
     stmt = select(User)
     if search:
         pattern = f"%{search}%"
@@ -230,9 +222,7 @@ async def get_user(
     curr_user: User = Depends(get_curr_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """
-    Retrieve user public profile along with follower counts and follow status.
-    """
+    """Return a user's public profile and social counts."""
     target_user = await db.scalar(select(User).where(User.id == user_id))
     if not target_user:
         raise HTTPException(
@@ -258,15 +248,6 @@ async def get_user(
         or 0
     )
 
-    # posts_count = (
-    #     await db.scalar(
-    #         select(func.count())
-    #         .select_from(Post)
-    #         .where(Post.user_id == user_id)
-    #     )
-    #     or 0
-    # )
-
     is_following_edge = await db.scalar(
         select(Follower).where(
             and_(
@@ -280,7 +261,6 @@ async def get_user(
     profile = UserProfileResponse.model_validate(target_user)
     profile.followers_count = followers_count
     profile.following_count = following_count
-    # profile.posts_count = posts_count
     profile.is_following = is_following
     return profile
 
@@ -299,9 +279,7 @@ async def list_user_posts(
     curr_user: Optional[User] = Depends(get_curr_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """
-    Retrieve posts authored by a user (newest first) with offset pagination.
-    """
+    """List a user's posts with offset pagination."""
     if await db.get(User, user_id) is None:
         raise HTTPException(
             status_code=HTTPStatus.NOT_FOUND,

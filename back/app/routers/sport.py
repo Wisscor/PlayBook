@@ -37,6 +37,7 @@ async def create_sport(
     db: AsyncSession = Depends(get_db),
     _: User = Depends(get_curr_user),
 ):
+    """Create a sport."""
     sport = Sport(name=data.name, max_players=data.max_players)
     try:
         db.add(sport)
@@ -58,6 +59,7 @@ async def list_sports(
     db: AsyncSession = Depends(get_db),
     _: User = Depends(get_curr_user),
 ):
+    """List all sports."""
     return (await db.scalars(select(Sport).order_by(Sport.name))).all()
 
 
@@ -69,9 +71,7 @@ async def list_user_sports(
     db: AsyncSession = Depends(get_db),
     _: User = Depends(get_curr_user),
 ):
-    """
-    List the sports a user plays.
-    """
+    """List sports linked to a user."""
     if await db.get(User, id) is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="User not found")
     stmt = (
@@ -93,6 +93,7 @@ async def add_my_sport(
     db: AsyncSession = Depends(get_db),
     me: User = Depends(get_curr_user),
 ):
+    """Add a sport to the current user's profile."""
     if await db.get(Sport, sport_id) is None:
         raise HTTPException(
             status.HTTP_404_NOT_FOUND, detail="Sport not found"
@@ -116,6 +117,7 @@ async def remove_my_sport(
     db: AsyncSession = Depends(get_db),
     me: User = Depends(get_curr_user),
 ):
+    """Remove a sport from the current user's profile."""
     if await db.get(Sport, sport_id) is None:
         raise HTTPException(
             status.HTTP_404_NOT_FOUND, detail="Sport not found"

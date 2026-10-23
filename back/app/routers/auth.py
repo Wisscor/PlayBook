@@ -38,6 +38,7 @@ async def signup(
     request: Request,
     db: AsyncSession = Depends(get_db),
 ) -> User:
+    """Create a user account."""
     # Create user instance
     user = User(
         firstname=data.firstname,
@@ -70,10 +71,9 @@ async def login(
     response: Response,
     db: AsyncSession = Depends(get_db),
 ):
+    """Authenticate with email and password."""
     # 1. Find user by email
-    users = await db.execute(
-        select(User).where(User.email == data.email)
-    )
+    users = await db.execute(select(User).where(User.email == data.email))
     user: Optional[User] = users.scalar_one_or_none()
     if user is None or not verify_password(
         data.password,
@@ -117,6 +117,7 @@ async def logout(
     ),
     db: AsyncSession = Depends(get_db),
 ):
+    """End the current session."""
     if session_id is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -154,4 +155,5 @@ async def read_current_user(
     request: Request,
     current_user: User = Depends(get_curr_user),
 ):
+    """Return the authenticated user's profile."""
     return current_user
