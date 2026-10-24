@@ -88,15 +88,6 @@ services:
       start_period: 20s
     restart: unless-stopped
 
-  uptime-kuma:
-    image: louislam/uptime-kuma:1
-    container_name: playbook-status
-    restart: unless-stopped
-    volumes:
-      - uptime_kuma_data:/app/data
-    ports:
-      - "127.0.0.1:3001:3001"
-
 volumes:
   elasticsearch_data:
   elasticsearch_snapshots:
