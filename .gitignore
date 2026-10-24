@@ -1,5 +1,6 @@
 .venv/
 .env
+back/.env
 __pycache__/
 *.pyc
 REALTIME_PLAN.md

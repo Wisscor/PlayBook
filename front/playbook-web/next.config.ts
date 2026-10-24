@@ -1,22 +1,13 @@
 import createNextIntlPlugin from "next-intl/plugin";
+import type { NextConfig } from "next";
 
 const withNextIntl = createNextIntlPlugin({
   requestConfig: "./i18n/request.ts",
 });
 
-module.exports = withNextIntl({});
+const nextConfig: NextConfig = {
+  allowedDevOrigins: ["play-book.dev"],
+};
 
-
-// const createNextIntlPlugin = require("next-intl/plugin");
-
-// const withNextIntl = createNextIntlPlugin({
-//   requestConfig: "./i18n/request.ts",
-// });
-
-// /** @type {import('next').NextConfig} */
-// module.exports = withNextIntl({
-//   images: {
-//     remotePatterns: [new URL('http://localhost:8000/**')]
-//   },
-// });
+export default withNextIntl(nextConfig);
 
