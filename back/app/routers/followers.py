@@ -6,13 +6,14 @@ from fastapi import (
     Depends,
     HTTPException,
     status,
-    Query,
     Response,
     Request,
 )
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from http import HTTPStatus
+from fastapi_pagination import Page
+from fastapi_pagination.ext.sqlalchemy import apaginate
 
 from ..database.database import get_db
 from ..models import User, Follower
@@ -124,14 +125,12 @@ async def unfollow_user(
 @router.get(
     "/{user_id}/followers",
     status_code=status.HTTP_200_OK,
-    response_model=List[UserSummaryResponse],
+    response_model=Page[UserSummaryResponse],
 )
 @limiter.limit("60/minute")
 async def get_user_followers(
     user_id: uuid.UUID,
     request: Request,
-    limit: int = Query(default=20, ge=1, le=100),
-    offset: int = Query(default=0, ge=0),
     db: AsyncSession = Depends(get_db),
 ):
     """List a user's followers."""
@@ -142,29 +141,28 @@ async def get_user_followers(
             detail="User not found.",
         )
 
-    query = (
+    stmt = (
         select(User)
         .join(Follower, Follower.follower_id == User.id)
         .where(Follower.following_id == user_id)
         .order_by(Follower.created_at.desc())
-        .offset(offset)
-        .limit(limit)
     )
-    result = await db.scalars(query)
-    return result.all()
+    return await apaginate(
+        db,
+        stmt,
+        transformer=lambda rows: [UserSummaryResponse.model_validate(r) for r in rows],
+    )
 
 
 @router.get(
     "/{user_id}/following",
     status_code=status.HTTP_200_OK,
-    response_model=List[UserSummaryResponse],
+    response_model=Page[UserSummaryResponse],
 )
 @limiter.limit("60/minute")
 async def get_user_following(
     user_id: uuid.UUID,
     request: Request,
-    limit: int = Query(default=20, ge=1, le=100),
-    offset: int = Query(default=0, ge=0),
     db: AsyncSession = Depends(get_db),
 ):
     """List users followed by a user."""
@@ -175,13 +173,14 @@ async def get_user_following(
             detail="User not found.",
         )
 
-    query = (
+    stmt = (
         select(User)
         .join(Follower, Follower.following_id == User.id)
         .where(Follower.follower_id == user_id)
         .order_by(Follower.created_at.desc())
-        .offset(offset)
-        .limit(limit)
     )
-    result = await db.scalars(query)
-    return result.all()
+    return await apaginate(
+        db,
+        stmt,
+        transformer=lambda rows: [UserSummaryResponse.model_validate(r) for r in rows],
+    )

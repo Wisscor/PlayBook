@@ -17,13 +17,16 @@ from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 from http import HTTPStatus
 
+from fastapi_pagination import Page
+from fastapi_pagination.ext.sqlalchemy import apaginate
+
 from ..database.database import get_db
 from ..models import (
     User,
     Post,
     Follower,
 )
-from app.schemas.post import PostCreate, PostUpdate, PostResponse, PostPage
+from app.schemas.post import PostCreate, PostUpdate, PostResponse
 from app.schemas.user import UserSummaryResponse
 from app.core.deps import get_curr_user
 from app.core.limiter import limiter
@@ -125,13 +128,11 @@ async def create_post(
 @router.get(
     "/feed",
     status_code=status.HTTP_200_OK,
-    response_model=PostPage,
+    response_model=Page[PostResponse],
 )
 @limiter.limit("60/minute")
 async def get_feed(
     request: Request,
-    limit: int = Query(default=20, ge=1, le=100),
-    offset: int = Query(default=0, ge=0),
     curr_user: User = Depends(get_curr_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -145,27 +146,22 @@ async def get_feed(
         .where(Post.user_id.in_(following_subquery))
         .order_by(Post.created_at.desc(), Post.id.desc())
     )
-    rows = list((await db.scalars(stmt.offset(offset).limit(limit + 1))).all())
-    next_offset = None
-    if len(rows) > limit:
-        rows = rows[:limit]
-        next_offset = offset + limit
 
-    enriched = await _enrich_posts(rows, curr_user, db)
-    return PostPage(items=enriched, next_offset=next_offset)
+    async def _transform(rows):
+        return await _enrich_posts(rows, curr_user, db)
+
+    return await apaginate(db, stmt, transformer=_transform)
 
 
 @router.get(
     "/posts",
     status_code=status.HTTP_200_OK,
-    response_model=List[PostResponse],
+    response_model=Page[PostResponse],
 )
 @limiter.limit("60/minute")
 async def list_posts(
     request: Request,
     user_id: Optional[uuid.UUID] = Query(default=None),
-    limit: int = Query(default=20, ge=1, le=100),
-    offset: int = Query(default=0, ge=0),
     curr_user: Optional[User] = Depends(get_curr_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -173,16 +169,16 @@ async def list_posts(
     stmt = (
         select(Post)
         .options(selectinload(Post.user))
-        .order_by(Post.created_at.desc())
+        .order_by(Post.created_at.desc(), Post.id.desc())
     )
 
     if user_id:
         stmt = stmt.where(Post.user_id == user_id)
 
-    stmt = stmt.offset(offset).limit(limit)
-    res = await db.execute(stmt)
-    posts = res.scalars().all()
-    return await _enrich_posts(posts, curr_user, db)
+    async def _transform(rows):
+        return await _enrich_posts(rows, curr_user, db)
+
+    return await apaginate(db, stmt, transformer=_transform)
 
 
 @router.get(

@@ -17,6 +17,9 @@ from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 from http import HTTPStatus
 
+from fastapi_pagination import Page
+from fastapi_pagination.ext.sqlalchemy import apaginate
+
 from ..database.database import get_db
 from ..models import (
     User,
@@ -28,9 +31,8 @@ from ..schemas.user import (
     UserResponse,
     UserProfileResponse,
     UserSummaryResponse,
-    UserPage,
 )
-from ..schemas.post import PostPage
+from ..schemas.post import PostResponse
 from .post import _enrich_posts
 from app.core.deps import get_curr_user
 from app.core.limiter import limiter
@@ -185,14 +187,12 @@ async def delete_user(
 @router.get(
     path="",
     status_code=HTTPStatus.OK,
-    response_model=UserPage,
+    response_model=Page[UserSummaryResponse],
 )
 @limiter.limit("60/minute")
 async def search_users(
     request: Request,
     search: Optional[str] = Query(default=None, min_length=1),
-    limit: int = Query(default=20, ge=1, le=100),
-    offset: int = Query(default=0, ge=0),
     db: AsyncSession = Depends(get_db),
 ):
     """Search users by name or username."""
@@ -206,13 +206,11 @@ async def search_users(
                 User.lastname.ilike(pattern),
             )
         )
-    stmt = stmt.offset(offset).limit(limit + 1)
-    rows = list((await db.scalars(stmt)).all())
-    next_offset = None
-    if len(rows) > limit:
-        rows = rows[:limit]
-        next_offset = offset + limit
-    return UserPage(items=[UserSummaryResponse.model_validate(r) for r in rows], next_offset=next_offset)
+    return await apaginate(
+        db,
+        stmt,
+        transformer=lambda rows: [UserSummaryResponse.model_validate(r) for r in rows],
+    )
 
 
 @router.get(
@@ -273,14 +271,12 @@ async def get_user(
 @router.get(
     path="/{user_id}/posts",
     status_code=HTTPStatus.OK,
-    response_model=PostPage,
+    response_model=Page[PostResponse],
 )
 @limiter.limit("60/minute")
 async def list_user_posts(
     user_id: uuid.UUID,
     request: Request,
-    limit: int = Query(default=20, ge=1, le=100),
-    offset: int = Query(default=0, ge=0),
     curr_user: Optional[User] = Depends(get_curr_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -297,11 +293,9 @@ async def list_user_posts(
         .where(Post.user_id == user_id)
         .order_by(Post.created_at.desc(), Post.id.desc())
     )
-    rows = list((await db.scalars(stmt.offset(offset).limit(limit + 1))).all())
-    next_offset = None
-    if len(rows) > limit:
-        rows = rows[:limit]
-        next_offset = offset + limit
 
-    enriched = await _enrich_posts(rows, curr_user, db)
-    return PostPage(items=enriched, next_offset=next_offset)
+    # TODO: Check me later
+    async def _transform(rows):
+        return await _enrich_posts(rows, curr_user, db)
+
+    return await apaginate(db, stmt, transformer=_transform)

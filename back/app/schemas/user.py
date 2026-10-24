@@ -53,6 +53,7 @@ class UserUpdate(BaseModel):
     email: Optional[EmailStr] = None
     bio: Optional[str] = Field(default=None, min_length=3, max_length=500)
 
+
 # Used as a response model for the user
 class UserResponse(UserBase):
     model_config = ConfigDict(from_attributes=True)
@@ -71,14 +72,10 @@ class UserSummaryResponse(BaseModel):
     lastname: str
     avatar: Optional[str] = None
 
+
 # Used for the user profile respons
 class UserProfileResponse(UserResponse):
     followers_count: int = 0
     following_count: int = 0
     posts_count: int = 0
     is_following: Optional[bool] = None
-
-
-class UserPage(BaseModel):
-    items: list[UserSummaryResponse]
-    next_offset: Optional[int] = None 

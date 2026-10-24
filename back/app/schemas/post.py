@@ -22,8 +22,3 @@ class PostResponse(BaseModel):
     author: Optional[UserSummaryResponse] = None
     created_at: datetime
     updated_at: datetime
-
-
-class PostPage(BaseModel):
-    items: list[PostResponse]
-    next_offset: Optional[int] = None

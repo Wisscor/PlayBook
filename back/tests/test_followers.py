@@ -121,20 +121,20 @@ def test_unfollow_not_following(mock_user_1, mock_user_2, mock_db):
 
 def test_get_followers_success(mock_user_1, mock_user_2, mock_db):
     client = TestClient(app)
-    mock_db.scalar.return_value = mock_user_2  # target user exists
+    mock_db.scalar.side_effect = [mock_user_2, 1]
 
-    mock_scalars = MagicMock()
-    mock_scalars.all.return_value = [mock_user_1]
-    mock_db.scalars.return_value = mock_scalars
+    mock_result = MagicMock()
+    mock_result.unique.return_value.all.return_value = [(mock_user_1,)]
+    mock_db.execute.return_value = mock_result
 
     app.dependency_overrides[get_db] = lambda: mock_db
 
     res = client.get(f"/users/{mock_user_2.id}/followers")
     assert res.status_code == 200
     data = res.json()
-    assert len(data) == 1
-    assert data[0]["id"] == str(mock_user_1.id)
-    assert data[0]["username"] == mock_user_1.username
+    assert len(data["items"]) == 1
+    assert data["items"][0]["id"] == str(mock_user_1.id)
+    assert data["items"][0]["username"] == mock_user_1.username
 
     app.dependency_overrides.clear()
 
@@ -155,20 +155,20 @@ def test_get_followers_target_not_found(mock_db):
 
 def test_get_following_success(mock_user_1, mock_user_2, mock_db):
     client = TestClient(app)
-    mock_db.scalar.return_value = mock_user_1  # target user exists
+    mock_db.scalar.side_effect = [mock_user_1, 1]
 
-    mock_scalars = MagicMock()
-    mock_scalars.all.return_value = [mock_user_2]
-    mock_db.scalars.return_value = mock_scalars
+    mock_result = MagicMock()
+    mock_result.unique.return_value.all.return_value = [(mock_user_2,)]
+    mock_db.execute.return_value = mock_result
 
     app.dependency_overrides[get_db] = lambda: mock_db
 
     res = client.get(f"/users/{mock_user_1.id}/following")
     assert res.status_code == 200
     data = res.json()
-    assert len(data) == 1
-    assert data[0]["id"] == str(mock_user_2.id)
-    assert data[0]["username"] == mock_user_2.username
+    assert len(data["items"]) == 1
+    assert data["items"][0]["id"] == str(mock_user_2.id)
+    assert data["items"][0]["username"] == mock_user_2.username
 
     app.dependency_overrides.clear()
 

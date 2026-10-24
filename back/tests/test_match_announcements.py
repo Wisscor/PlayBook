@@ -130,9 +130,10 @@ def test_search_announcements_success(mock_user_1, mock_db):
     ann1 = _make_announcement(mock_user_1, sport)
     ann2 = _make_announcement(mock_user_1, sport)
 
-    mock_scalars = MagicMock()
-    mock_scalars.all.return_value = [ann1, ann2]
-    mock_db.scalars.return_value = mock_scalars
+    mock_db.scalar.return_value = 2
+    mock_result = MagicMock()
+    mock_result.unique.return_value.all.return_value = [(ann1,), (ann2,)]
+    mock_db.execute.return_value = mock_result
 
     app.dependency_overrides[get_curr_user] = lambda: mock_user_1
     app.dependency_overrides[get_db] = lambda: mock_db
@@ -141,7 +142,7 @@ def test_search_announcements_success(mock_user_1, mock_db):
     assert res.status_code == 200
     data = res.json()
     assert len(data["items"]) == 2
-    assert data["next_offset"] is None
+    assert data["total"] == 2
 
     app.dependency_overrides.clear()
 
@@ -150,21 +151,22 @@ def test_search_announcements_pagination(mock_user_1, mock_db):
     client = TestClient(app)
     sport = Sport(id=uuid.uuid4(), name="Basketball", max_players=11)
     ann1 = _make_announcement(mock_user_1, sport)
-    ann2 = _make_announcement(mock_user_1, sport)
 
-    # limit=1 with 2 items returned simulates extra item for next page
-    mock_scalars = MagicMock()
-    mock_scalars.all.return_value = [ann1, ann2]
-    mock_db.scalars.return_value = mock_scalars
+    mock_db.scalar.return_value = 2
+    mock_result = MagicMock()
+    mock_result.unique.return_value.all.return_value = [(ann1,)]
+    mock_db.execute.return_value = mock_result
 
     app.dependency_overrides[get_curr_user] = lambda: mock_user_1
     app.dependency_overrides[get_db] = lambda: mock_db
 
-    res = client.get("/match-announcements?limit=1")
+    res = client.get("/match-announcements?page=1&size=1")
     assert res.status_code == 200
     data = res.json()
     assert len(data["items"]) == 1
-    assert data["next_offset"] == 1
+    assert data["total"] == 2
+    assert data["page"] == 1
+    assert data["size"] == 1
 
     app.dependency_overrides.clear()
 
@@ -174,17 +176,19 @@ def test_search_announcements_with_offset(mock_user_1, mock_db):
     sport = Sport(id=uuid.uuid4(), name="Basketball", max_players=11)
     ann1 = _make_announcement(mock_user_1, sport)
 
-    mock_scalars = MagicMock()
-    mock_scalars.all.return_value = [ann1]
-    mock_db.scalars.return_value = mock_scalars
+    mock_db.scalar.return_value = 1
+    mock_result = MagicMock()
+    mock_result.unique.return_value.all.return_value = [(ann1,)]
+    mock_db.execute.return_value = mock_result
 
     app.dependency_overrides[get_curr_user] = lambda: mock_user_1
     app.dependency_overrides[get_db] = lambda: mock_db
 
-    res = client.get("/match-announcements?offset=1")
+    res = client.get("/match-announcements?page=2&size=1")
     assert res.status_code == 200
     data = res.json()
     assert len(data["items"]) == 1
+    assert data["page"] == 2
 
     app.dependency_overrides.clear()
 

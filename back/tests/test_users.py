@@ -205,18 +205,19 @@ def test_get_user_invalid_uuid(mock_user_1):
 def test_search_users_matching(mock_user_2, mock_db):
     client = TestClient(app)
 
-    mock_scalars = MagicMock()
-    mock_scalars.all.return_value = [mock_user_2]
-    mock_db.scalars.return_value = mock_scalars
+    mock_db.scalar.return_value = 1
+    mock_result = MagicMock()
+    mock_result.unique.return_value.all.return_value = [(mock_user_2,)]
+    mock_db.execute.return_value = mock_result
 
     app.dependency_overrides[get_db] = lambda: mock_db
 
     res = client.get("/users?search=sarah")
     assert res.status_code == 200
     data = res.json()
-    assert len(data) == 1
-    assert data[0]["username"] == mock_user_2.username
-    assert data[0]["firstname"] == mock_user_2.firstname
+    assert len(data["items"]) == 1
+    assert data["items"][0]["username"] == mock_user_2.username
+    assert data["items"][0]["firstname"] == mock_user_2.firstname
 
     app.dependency_overrides.clear()
 
@@ -224,15 +225,16 @@ def test_search_users_matching(mock_user_2, mock_db):
 def test_search_users_empty(mock_db):
     client = TestClient(app)
 
-    mock_scalars = MagicMock()
-    mock_scalars.all.return_value = []
-    mock_db.scalars.return_value = mock_scalars
+    mock_db.scalar.return_value = 0
+    mock_result = MagicMock()
+    mock_result.unique.return_value.all.return_value = []
+    mock_db.execute.return_value = mock_result
 
     app.dependency_overrides[get_db] = lambda: mock_db
 
     res = client.get("/users?search=no_one")
     assert res.status_code == 200
-    assert res.json() == []
+    assert res.json()["items"] == []
 
     app.dependency_overrides.clear()
 
@@ -240,14 +242,17 @@ def test_search_users_empty(mock_db):
 def test_search_users_pagination(mock_db):
     client = TestClient(app)
 
-    mock_scalars = MagicMock()
-    mock_scalars.all.return_value = []
-    mock_db.scalars.return_value = mock_scalars
+    mock_db.scalar.return_value = 0
+    mock_result = MagicMock()
+    mock_result.unique.return_value.all.return_value = []
+    mock_db.execute.return_value = mock_result
 
     app.dependency_overrides[get_db] = lambda: mock_db
 
-    res = client.get("/users?limit=10&offset=5")
+    res = client.get("/users?page=1&size=10")
     assert res.status_code == 200
-    assert res.json() == []
+    assert res.json()["items"] == []
+    assert res.json()["page"] == 1
+    assert res.json()["size"] == 10
 
     app.dependency_overrides.clear()
