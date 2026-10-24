@@ -1,7 +1,17 @@
-.venv/
+# Secrets
 .env
-back/.env
+**/.env
+!.env.example
+!**/.env.example
+
+# Python
 __pycache__/
-*.pyc
-REALTIME_PLAN.md
-DAY2_WALKTHROUGH.md
+*.py[cod]
+.venv/
+
+# Node / Next.js
+node_modules/
+.next/
+
+# Logs
+*.log
