@@ -23,6 +23,18 @@ services:
       retries: 12
       start_period: 40s
     restart: unless-stopped
+  setup-security:
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.5.4
+    container_name: elasticsearch-security-setup
+    env_file:
+      - .env
+    volumes:
+      - ./elasticsearch/setup-security.sh:/usr/local/bin/setup-security.sh:ro,Z
+    command: ["/bin/bash", "/usr/local/bin/setup-security.sh"]
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    restart: "no"
   kibana:
     image: docker.elastic.co/kibana/kibana:9.5.4
     container_name: kibana
@@ -33,8 +45,8 @@ services:
     environment:
       - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
     depends_on:
-      elasticsearch:
-        condition: service_healthy
+      setup-security:
+        condition: service_completed_successfully
     restart: unless-stopped
   logstash:
     image: docker.elastic.co/logstash/logstash:9.5.4
@@ -44,8 +56,8 @@ services:
     env_file:
       - .env
     depends_on:
-      elasticsearch:
-        condition: service_healthy
+      setup-security:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD-SHELL", "curl --fail --silent http://localhost:9600/_node/pipelines > /dev/null"]
       interval: 10s

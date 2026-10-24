@@ -18,9 +18,16 @@ Start the logging stack:
 
 ```sh
 cd devops
+cp .env.example .env
+# Replace every change-me-* value before continuing.
 docker compose up -d
 docker compose ps
 ```
+
+The one-shot `setup-security` service configures the existing
+`kibana_system` account, then creates the restricted `logstash_writer` role
+and `logstash_internal` user. It is safe to run again because the Elasticsearch
+security APIs create or update the same resources.
 
 Then start the backend:
 
@@ -50,7 +57,8 @@ Status commands:
 ```sh
 docker compose -f devops/docker-compose.yml ps
 docker compose -f back/docker-compose.yaml ps
-curl -fsS 'http://localhost:9200/_cluster/health?pretty'
+curl -fsS --user "elastic:${ELASTIC_PASSWORD}" \
+  'http://localhost:9200/_cluster/health?pretty'
 ```
 
 ## 4. Test the complete logging pipeline
@@ -59,7 +67,8 @@ Create a log, then check that it reaches Elasticsearch:
 
 ```sh
 curl -fsS 'http://localhost:8000/check-logging'
-curl -fsS 'http://localhost:9200/_cat/indices/app-log-*?v'
+curl -fsS --user "elastic:${ELASTIC_PASSWORD}" \
+  'http://localhost:9200/_cat/indices/app-log-*?v'
 docker compose -f devops/docker-compose.yml logs --tail=50 filebeat logstash
 ```
 
@@ -114,6 +123,6 @@ This simple architecture is suitable for a single-server deployment.
 - `devops/elasticsearch/logstash.conf`: receives and indexes events.
 - `devops/docker-compose.yml`: starts and monitors the Elastic stack.
 
-Elasticsearch authentication is disabled in this version. It must remain bound
-to `127.0.0.1` and the private Docker network. TLS and authentication are
-required for direct exposure or a multi-server architecture.
+Elasticsearch authentication is enabled. HTTP traffic inside the local Docker
+network is not encrypted, so Elasticsearch and Kibana must remain bound to
+`127.0.0.1`. TLS is required before exposing either service beyond the host.
