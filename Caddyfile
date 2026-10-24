@@ -11,3 +11,7 @@ play-book.dev {
 kibana.play-book.dev {
 	reverse_proxy 127.0.0.1:5601
 }
+
+status.play-book.dev {
+	reverse_proxy 127.0.0.1:3001
+}

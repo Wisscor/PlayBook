@@ -1,15 +1,13 @@
 COMPOSE = docker compose
 ELK = $(COMPOSE) -f devops/docker-compose.yml
-BACKEND = $(COMPOSE) -f back/docker-compose.yaml
-FRONT_IMAGE = playbook-front
-FRONT_CONTAINER = playbook-front-dev
+FULLSTACK = $(COMPOSE) -f docker-compose.yaml
 
 .DEFAULT_GOAL := help
 
 .PHONY: help up down restart status urls \
-	elk-up elk-down elk-logs \
-	backend-up backend-down backend-logs \
-	frontend-build frontend-up frontend-down frontend-logs \
+	elk-up elk-down \
+	backend-up backend-down  \
+	frontend-build frontend-up frontend-down \
 	traffic
 
 help:
@@ -19,15 +17,12 @@ help:
 		'make restart        Restart all services' \
 		'make status         Show container status' \
 		'make urls           Show application URLs' \
-		'make elk-logs       Follow ELK logs' \
-		'make backend-logs   Follow backend logs' \
-		'make frontend-logs  Follow frontend logs' \
 		'make traffic        Generate API traffic for Kibana'
 
-up: elk-up backend-up frontend-up
+up: elk-up fullstack-up
 	@$(MAKE) --no-print-directory urls
 
-down: frontend-down backend-down elk-down
+down: fullstack-down elk-down
 
 restart: down up
 
@@ -37,30 +32,11 @@ elk-up:
 elk-down:
 	$(ELK) down
 
-elk-logs:
-	$(ELK) logs -f --tail=100
+fullstack-up:
+	$(FULLSTACK) up -d --build
 
-backend-up:
-	$(BACKEND) up -d --build
-
-backend-down:
-	$(BACKEND) down
-
-backend-logs:
-	$(BACKEND) logs -f --tail=100
-
-frontend-build:
-	docker build -t $(FRONT_IMAGE) front/playbook-web
-
-frontend-up: frontend-build
-	@docker rm -f $(FRONT_CONTAINER) >/dev/null 2>&1 || true
-	docker run -p 127.0.0.1:3000:3000 --detach --restart unless-stopped --name $(FRONT_CONTAINER) $(FRONT_IMAGE)
-
-frontend-down:
-	@docker stop $(FRONT_CONTAINER) >/dev/null 2>&1 || true
-
-frontend-logs:
-	docker logs -f --tail=100 $(FRONT_CONTAINER)
+fullstack-down:
+	$(FULLSTACK) down
 
 status:
 	docker ps
