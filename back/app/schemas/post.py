@@ -25,5 +25,5 @@ class PostResponse(BaseModel):
 
 
 class PostPage(BaseModel):
-    items: List[PostResponse]
+    items: list[PostResponse]
     next_offset: Optional[int] = None

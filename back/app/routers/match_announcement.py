@@ -6,7 +6,6 @@ from fastapi import (
     BackgroundTasks,
     Depends,
     HTTPException,
-    Query,
     Response,
     status,
     Request,
@@ -14,6 +13,8 @@ from fastapi import (
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, selectinload
+from fastapi_pagination import Page
+from fastapi_pagination.ext.sqlalchemy import apaginate
 
 from app.core.deps import get_curr_user
 from app.database.database import get_db
@@ -25,7 +26,6 @@ from app.models.user import User
 from app.schemas.match_announcement import (
     MatchAnnouncementCreate,
     MatchAnnouncementFilter,
-    MatchAnnouncementPage,
     MatchAnnouncementResponse,
     MatchAnnouncementUpdate,
 )
@@ -111,13 +111,11 @@ async def create_announcement(
     return _to_response(await _get_or_404(db, announcement_id))
 
 
-@router.get("", response_model=MatchAnnouncementPage)
+@router.get("", response_model=Page[MatchAnnouncementResponse])
 @limiter.limit("60/minute")
 async def search_announcements(
     request: Request,
     filters: MatchAnnouncementFilter = Depends(),
-    limit: int = Query(20, ge=1, le=100),
-    offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
     _: User = Depends(get_curr_user),
 ):
@@ -128,18 +126,7 @@ async def search_announcements(
         joinedload(M.sport),
         selectinload(M.play_requests).joinedload(PlayerRequest.sender),
     )
-    sort_column = {
-        "start_time": M.start_time,
-        "created_at": M.created_at,
-        "remaining_player_slots": M.remaining_player_slots,
-    }[filters.sort_by]
-    sort_expression = (
-        sort_column.asc()
-        if filters.sort_order == "asc"
-        else sort_column.desc()
-    )
-    tie_breaker = M.id.asc() if filters.sort_order == "asc" else M.id.desc()
-    stmt = stmt.order_by(sort_expression, tie_breaker)
+    # Filters
     if filters.sport_id:
         stmt = stmt.where(M.sport_id == filters.sport_id)
     if filters.match_status:
@@ -153,22 +140,29 @@ async def search_announcements(
                 ]
             )
         )
+
     if filters.organizer_id:
         stmt = stmt.where(M.organizer_id == filters.organizer_id)
     if filters.start_from:
         stmt = stmt.where(M.start_time >= filters.start_from)
     if filters.end_to:
         stmt = stmt.where(M.end_time <= filters.end_to)
-    rows = list(
-        (await db.scalars(stmt.offset(offset).limit(limit + 1))).all()
-    )  # one extra row = "has next page"
-    next_offset = None
-    if len(rows) > limit:
-        rows = rows[:limit]
-        next_offset = offset + limit
-    return MatchAnnouncementPage(
-        items=[_to_response(row) for row in rows],
-        next_offset=next_offset,
+
+    # Sorting
+    sort_column = {
+        "start_time": M.start_time,
+        "created_at": M.created_at,
+        "remaining_player_slots": M.remaining_player_slots,
+    }[filters.sort_by]
+
+    ascending = filters.sort_order == "asc"
+    stmt = stmt.order_by(
+        sort_column.asc() if ascending else sort_column.desc(),
+        M.id.asc() if ascending else M.id.desc(),
+    )
+
+    return await apaginate(
+        db, stmt, transformer=lambda rows: [_to_response(r) for r in rows]
     )
 
 

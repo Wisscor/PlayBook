@@ -18,6 +18,7 @@ dependencies = [
     "uvicorn==0.52.4",
     "structlog>=26.1.0",
     "slowapi>=0.1.10",
+    "fastapi-pagination>=0.16.1",
 ]
 
 [dependency-groups]

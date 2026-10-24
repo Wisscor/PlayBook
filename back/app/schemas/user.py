@@ -77,4 +77,8 @@ class UserProfileResponse(UserResponse):
     following_count: int = 0
     posts_count: int = 0
     is_following: Optional[bool] = None
-# 
+
+
+class UserPage(BaseModel):
+    items: list[UserSummaryResponse]
+    next_offset: Optional[int] = None 

@@ -28,6 +28,7 @@ from ..schemas.user import (
     UserResponse,
     UserProfileResponse,
     UserSummaryResponse,
+    UserPage,
 )
 from ..schemas.post import PostPage
 from .post import _enrich_posts
@@ -184,7 +185,7 @@ async def delete_user(
 @router.get(
     path="",
     status_code=HTTPStatus.OK,
-    response_model=List[UserSummaryResponse],
+    response_model=UserPage,
 )
 @limiter.limit("60/minute")
 async def search_users(
@@ -205,9 +206,13 @@ async def search_users(
                 User.lastname.ilike(pattern),
             )
         )
-    stmt = stmt.offset(offset).limit(limit)
-    result = await db.scalars(stmt)
-    return result.all()
+    stmt = stmt.offset(offset).limit(limit + 1)
+    rows = list((await db.scalars(stmt)).all())
+    next_offset = None
+    if len(rows) > limit:
+        rows = rows[:limit]
+        next_offset = offset + limit
+    return UserPage(items=[UserSummaryResponse.model_validate(r) for r in rows], next_offset=next_offset)
 
 
 @router.get(

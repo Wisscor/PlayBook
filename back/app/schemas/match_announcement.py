@@ -87,8 +87,3 @@ class MatchAnnouncementFilter(BaseModel):
         "start_time"
     )
     sort_order: Literal["asc", "desc"] = "asc"
-
-
-class MatchAnnouncementPage(BaseModel):
-    items: list[MatchAnnouncementResponse]
-    next_offset: Optional[int] = None

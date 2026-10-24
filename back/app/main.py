@@ -9,6 +9,7 @@ from fastapi.staticfiles import StaticFiles
 import structlog
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
+from fastapi_pagination import add_pagination
 
 from app.core.limiter import limiter
 from app.database.database import engine, get_db
@@ -145,6 +146,7 @@ app.include_router(
 app.include_router(
     play_request.router,
 )
+add_pagination(app)
 
 
 @app.get("/health", status_code=200)
