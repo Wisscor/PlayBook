@@ -7,6 +7,7 @@ services:
     # restart: always
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ziko -d my-postgres"]
       interval: 1s
@@ -29,6 +30,7 @@ services:
       DATABASE_URL: postgresql+asyncpg://ziko:1234pass@postgres:5432/my-postgres
     env_file:
       - .env
+    restart: unless-stopped
     depends_on:
       postgres:
         condition: service_healthy

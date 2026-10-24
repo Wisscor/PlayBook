@@ -54,7 +54,7 @@ frontend-build:
 
 frontend-up: frontend-build
 	@docker rm -f $(FRONT_CONTAINER) >/dev/null 2>&1 || true
-	docker run -p 127.0.0.1:3000:3000 --detach --rm --name $(FRONT_CONTAINER) $(FRONT_IMAGE)
+	docker run -p 127.0.0.1:3000:3000 --detach --restart unless-stopped --name $(FRONT_CONTAINER) $(FRONT_IMAGE)
 
 frontend-down:
 	@docker stop $(FRONT_CONTAINER) >/dev/null 2>&1 || true
