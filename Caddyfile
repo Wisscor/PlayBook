@@ -1,0 +1,13 @@
+play-book.dev {
+	handle_path /api/* {
+		reverse_proxy 127.0.0.1:8000
+	}
+
+	handle {
+		reverse_proxy 127.0.0.1:3000
+	}
+}
+
+kibana.play-book.dev {
+	reverse_proxy 127.0.0.1:5601
+}
