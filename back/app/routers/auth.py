@@ -5,10 +5,11 @@ from fastapi import (
     HTTPException,
     status,
     Response,
+    Request,
 )
 
 import uuid
-from sqlalchemy import select, or_
+from sqlalchemy import select
 from ..models import Session, User
 from ..database.database import get_db
 from sqlalchemy.exc import IntegrityError
@@ -22,6 +23,7 @@ from ..schemas.user import UserCreate, UserLogin, UserResponse
 from ..core.security import hash_password, verify_password
 from app.core.config import settings
 from app.realtime import registry
+from app.core.limiter import limiter
 
 router = APIRouter(
     prefix="/auth",
@@ -30,10 +32,13 @@ router = APIRouter(
 
 
 @router.post("/signup", response_model=UserResponse)
+@limiter.limit("5/minute")
 async def signup(
     data: UserCreate,
+    request: Request,
     db: AsyncSession = Depends(get_db),
 ) -> User:
+    """Create a user account."""
     # Create user instance
     user = User(
         firstname=data.firstname,
@@ -41,7 +46,6 @@ async def signup(
         username=data.username,
         email=data.email,
         hashed_password=hash_password(data.password),
-        phone=data.phone,
         avatar=data.avatar,
         bio=data.bio,
     )
@@ -60,20 +64,16 @@ async def signup(
 
 
 @router.post("/login", response_model=UserResponse)
+@limiter.limit("10/minute")
 async def login(
     data: UserLogin,
+    request: Request,
     response: Response,
     db: AsyncSession = Depends(get_db),
 ):
-    # 1. Find user by 'username' or 'email'
-    users = await db.execute(
-        select(User).where(
-            or_(
-                User.username == data.username_or_email,
-                User.email == data.username_or_email,
-            )
-        )
-    )
+    """Authenticate with email and password."""
+    # 1. Find user by email
+    users = await db.execute(select(User).where(User.email == data.email))
     user: Optional[User] = users.scalar_one_or_none()
     if user is None or not verify_password(
         data.password,
@@ -81,7 +81,7 @@ async def login(
     ):
         raise HTTPException(
             status_code=401,
-            detail="Invalid username/email or password",
+            detail="Invalid email or password",
         )
 
     # 2. Create 'session' and Store it
@@ -107,7 +107,9 @@ async def login(
 
 
 @router.post("/logout")
+@limiter.limit("20/minute")
 async def logout(
+    request: Request,
     response: Response,
     session_id: Optional[str] = Cookie(
         default=None,
@@ -115,6 +117,7 @@ async def logout(
     ),
     db: AsyncSession = Depends(get_db),
 ):
+    """End the current session."""
     if session_id is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -140,6 +143,7 @@ async def logout(
     await db.delete(session)
     await db.commit()
     await registry.close_user(session.user_id)
+    await registry.close_user(session.user_id)
     response.delete_cookie(
         key=settings.session_cookie_name,
     )
@@ -147,7 +151,10 @@ async def logout(
 
 
 @router.get("/me", response_model=UserResponse)
+@limiter.limit("60/minute")
 async def read_current_user(
+    request: Request,
     current_user: User = Depends(get_curr_user),
 ):
+    """Return the authenticated user's profile."""
     return current_user

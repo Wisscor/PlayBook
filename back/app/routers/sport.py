@@ -2,7 +2,14 @@
 
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    Response,
+    status,
+    Request,
+)
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -13,6 +20,7 @@ from app.models.sport import Sport
 from app.models.user import User
 from app.models.user_sport import UserSport
 from app.schemas.sport import SportCreate, SportResponse
+from app.core.limiter import limiter
 
 router = APIRouter(tags=["Sports"])
 
@@ -22,11 +30,14 @@ router = APIRouter(tags=["Sports"])
     response_model=SportResponse,
     status_code=status.HTTP_201_CREATED,
 )
+@limiter.limit("30/minute")
 async def create_sport(
     data: SportCreate,
+    request: Request,
     db: AsyncSession = Depends(get_db),
     _: User = Depends(get_curr_user),
 ):
+    """Create a sport."""
     sport = Sport(name=data.name, max_players=data.max_players)
     try:
         db.add(sport)
@@ -42,22 +53,25 @@ async def create_sport(
 
 
 @router.get("/sports", response_model=list[SportResponse])
+@limiter.limit("60/minute")
 async def list_sports(
+    request: Request,
     db: AsyncSession = Depends(get_db),
     _: User = Depends(get_curr_user),
 ):
+    """List all sports."""
     return (await db.scalars(select(Sport).order_by(Sport.name))).all()
 
 
 @router.get("/users/{id}/sports", response_model=list[SportResponse])
+@limiter.limit("60/minute")
 async def list_user_sports(
     id: uuid.UUID,
+    request: Request,
     db: AsyncSession = Depends(get_db),
     _: User = Depends(get_curr_user),
 ):
-    '''
-    List the sports a user plays.
-    '''
+    """List sports linked to a user."""
     if await db.get(User, id) is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="User not found")
     stmt = (
@@ -72,17 +86,20 @@ async def list_user_sports(
 @router.put(
     "/users/me/sports/{sport_id}", status_code=status.HTTP_204_NO_CONTENT
 )
+@limiter.limit("30/minute")
 async def add_my_sport(
     sport_id: uuid.UUID,
+    request: Request,
     db: AsyncSession = Depends(get_db),
-    me: User = Depends(get_curr_user),
+    curr_user: User = Depends(get_curr_user),
 ):
+    """Add a sport to the current user's profile."""
     if await db.get(Sport, sport_id) is None:
         raise HTTPException(
             status.HTTP_404_NOT_FOUND, detail="Sport not found"
         )
-    if await db.get(UserSport, (me.id, sport_id)) is None:
-        db.add(UserSport(user_id=me.id, sport_id=sport_id))
+    if await db.get(UserSport, (curr_user.id, sport_id)) is None:
+        db.add(UserSport(user_id=curr_user.id, sport_id=sport_id))
         try:
             await db.commit()
         except IntegrityError:
@@ -93,16 +110,19 @@ async def add_my_sport(
 @router.delete(
     "/users/me/sports/{sport_id}", status_code=status.HTTP_204_NO_CONTENT
 )
+@limiter.limit("30/minute")
 async def remove_my_sport(
     sport_id: uuid.UUID,
+    request: Request,
     db: AsyncSession = Depends(get_db),
-    me: User = Depends(get_curr_user),
+    curr_user: User = Depends(get_curr_user),
 ):
+    """Remove a sport from the current user's profile."""
     if await db.get(Sport, sport_id) is None:
         raise HTTPException(
             status.HTTP_404_NOT_FOUND, detail="Sport not found"
         )
-    link = await db.get(UserSport, (me.id, sport_id))
+    link = await db.get(UserSport, (curr_user.id, sport_id))
     if link is not None:
         await db.delete(link)
         await db.commit()

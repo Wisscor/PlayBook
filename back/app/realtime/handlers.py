@@ -2,7 +2,7 @@ import time
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 
-from fastapi import WebSocket
+from fastapi import WebSocket, WebSocketDisconnect
 
 from ..database.database import session_maker
 from ..models.user import User
@@ -16,14 +16,9 @@ class ConnectionContext:
     websocket: WebSocket
     user: User
     last_seen: float
+    inbound_frames: SlidingWindow
     sends: SlidingWindow
     strikes: SlidingWindow
-
-
-class CloseConnection(Exception):
-    def __init__(self, code: int) -> None:
-        self.code = code
-        super().__init__(f"close websocket with code {code}")
 
 
 async def handle_message_send(ctx: ConnectionContext, frame) -> None:
@@ -33,7 +28,8 @@ async def handle_message_send(ctx: ConnectionContext, frame) -> None:
             {"type": frames.ERROR, "reason": "rate_limited"}
         )
         if ctx.strikes.hit(now) >= 5:
-            raise CloseConnection(frames.CLOSE_RATE_LIMIT)
+            await registry.timeout_user(ctx.user.id)
+            raise WebSocketDisconnect(code=frames.CLOSE_RATE_LIMIT)
         return
 
     data = MessageSend.model_validate(frame)

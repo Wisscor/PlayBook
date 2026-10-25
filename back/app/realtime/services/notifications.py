@@ -12,12 +12,14 @@ async def create_notification(
     actor_id: UUID,
     event_type: str,
     target_id: UUID | None = None,
+    match_time: datetime | None = None,
 ) -> Notification:
     notif = Notification(
         user_id=user_id,
         actor_id=actor_id,
         event_type=event_type,
         target_id=target_id,
+        match_time=match_time,
     )
     db.add(notif)
     await db.commit()
@@ -115,6 +117,7 @@ def notification_dict(notif: Notification, actor_username: str) -> dict:
         "actor_username": actor_username,
         "read_at": notif.read_at.isoformat() if notif.read_at else None,
         "created_at": notif.created_at.isoformat(),
+        "match_time": notif.match_time.isoformat() if notif.match_time else None,
     }
 
 

@@ -118,7 +118,7 @@ def test_send_play_request_closed_announcement(
     client = TestClient(app)
     sport = Sport(id=uuid.uuid4(), name="Football", max_players=11)
     announcement = _make_announcement(mock_user_2, sport)
-    announcement.match_status = MatchAnnouncementStatus.canceled
+    announcement.match_status = MatchAnnouncementStatus.finished
     mock_db.get.return_value = announcement
 
     app.dependency_overrides[get_curr_user] = lambda: mock_user_1

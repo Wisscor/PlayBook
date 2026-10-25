@@ -10,7 +10,6 @@ class UserBase(BaseModel):
     lastname: str = Field(..., min_length=3, max_length=50)
     username: str = Field(..., min_length=3, max_length=50)
     email: EmailStr
-    phone: Optional[str] = Field(default=None, min_length=3, max_length=15)
     avatar: Optional[str] = Field(default=None)
     bio: Optional[str] = Field(default=None, min_length=3, max_length=500)
 
@@ -34,12 +33,12 @@ class UserCreate(UserBase):
 
 # What should the client provide for login?
 class UserLogin(BaseModel):
-    username_or_email: str
+    email: EmailStr
     password: str
     model_config = {
         "json_schema_extra": {
             "example": {
-                "username_or_email": "zouazrou",
+                "email": "zakaria@gmail.com",
                 "password": "ziko1234",
             }
         }
@@ -52,11 +51,10 @@ class UserUpdate(BaseModel):
     lastname: Optional[str] = Field(default=None, min_length=3, max_length=50)
     username: Optional[str] = Field(default=None, min_length=3, max_length=50)
     email: Optional[EmailStr] = None
-    phone: Optional[str] = Field(default=None, min_length=3, max_length=15)
     bio: Optional[str] = Field(default=None, min_length=3, max_length=500)
 
 
-# What should the client see?
+# Used as a response model for the user
 class UserResponse(UserBase):
     model_config = ConfigDict(from_attributes=True)
 
@@ -64,6 +62,7 @@ class UserResponse(UserBase):
     created_at: datetime
 
 
+# Used as a field in another Schema
 class UserSummaryResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -74,6 +73,7 @@ class UserSummaryResponse(BaseModel):
     avatar: Optional[str] = None
 
 
+# Used for the user profile respons
 class UserProfileResponse(UserResponse):
     followers_count: int = 0
     following_count: int = 0

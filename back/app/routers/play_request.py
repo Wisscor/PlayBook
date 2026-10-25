@@ -1,11 +1,21 @@
 import uuid
 from typing import Optional
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, status
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    HTTPException,
+    status,
+    Request,
+)
 from sqlalchemy import Select, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
+
+from fastapi_pagination import Page
+from fastapi_pagination.ext.sqlalchemy import apaginate
 
 from app.core.deps import get_curr_user
 from app.database.database import get_db
@@ -18,10 +28,10 @@ from app.models.user import User
 from app.schemas.play_request import (
     PlayerRequestDecision,
     PlayerRequestFilter,
-    PlayerRequestPage,
     PlayerRequestResponse,
 )
 from app.realtime.notify import emit_notification
+from app.core.limiter import limiter
 
 router = APIRouter(tags=["Play Requests"])
 
@@ -29,11 +39,7 @@ router = APIRouter(tags=["Play Requests"])
 async def _get_request(
     db: AsyncSession, request_id: uuid.UUID
 ) -> PlayerRequest:
-    """Reload a request with its sender.
-
-    Needed after a commit: commit expires every attribute, and async code
-    cannot lazy-load `sender` while building the response.
-    """
+    """Reload a request with its sender."""
     stmt = (
         select(PlayerRequest)
         .options(joinedload(PlayerRequest.sender))
@@ -44,21 +50,17 @@ async def _get_request(
 
 
 async def _paginate(
-    db: AsyncSession, stmt: Select, limit: int, offset: int
-) -> PlayerRequestPage:
-    """Newest first. `stmt` must select PlayerRequest."""
+    db: AsyncSession, stmt: Select
+) -> Page[PlayerRequestResponse]:
+    """List requests newest first with pagination."""
     P = PlayerRequest
     stmt = stmt.options(joinedload(P.sender)).order_by(
         P.created_at.desc(), P.id.desc()
     )
-    rows = list((await db.scalars(stmt.offset(offset).limit(limit + 1))).all())
-    next_offset = None
-    if len(rows) > limit:
-        rows = rows[:limit]
-        next_offset = offset + limit
-    return PlayerRequestPage(
-        items=[PlayerRequestResponse.model_validate(r) for r in rows],
-        next_offset=next_offset,
+    return await apaginate(
+        db,
+        stmt,
+        transformer=lambda rows: [PlayerRequestResponse.model_validate(r) for r in rows],
     )
 
 
@@ -67,12 +69,15 @@ async def _paginate(
     response_model=PlayerRequestResponse,
     status_code=status.HTTP_201_CREATED,
 )
+@limiter.limit("30/minute")
 async def send_play_request(
     id: uuid.UUID,
     background_tasks: BackgroundTasks,
+    request: Request,
     db: AsyncSession = Depends(get_db),
     me: User = Depends(get_curr_user),
 ):
+    """Send a play request for an announcement."""
     announcement = await db.get(MatchAnnouncement, id)
     if announcement is None:
         raise HTTPException(
@@ -125,20 +130,23 @@ async def send_play_request(
         actor_id=me.id,
         target_user_id=announcement.organizer_id,
         target_id=announcement.id,
+        match_time=announcement.start_time,
     )
     return await _get_request(db, request_id)
 
 
 @router.get(
-    "/match-announcements/{id}/play-requests", response_model=PlayerRequestPage
+    "/match-announcements/{id}/play-requests",
+    response_model=Page[PlayerRequestResponse],
 )
+@limiter.limit("60/minute")
 async def list_announcement_requests(
     id: uuid.UUID,
-    limit: int = Query(20, ge=1, le=100),
-    offset: int = Query(0, ge=0),
+    request: Request,
     db: AsyncSession = Depends(get_db),
     me: User = Depends(get_curr_user),
 ):
+    """List requests for an owned announcement."""
     announcement = await db.get(MatchAnnouncement, id)
     if announcement is None:
         raise HTTPException(
@@ -147,18 +155,18 @@ async def list_announcement_requests(
     if announcement.organizer_id != me.id:
         raise HTTPException(status.HTTP_403_FORBIDDEN, detail="Not the owner")
     stmt = select(PlayerRequest).where(PlayerRequest.announcement_id == id)
-    return await _paginate(db, stmt, limit, offset)
+    return await _paginate(db, stmt)
 
 
-@router.get("/play-requests", response_model=PlayerRequestPage)
+@router.get("/play-requests", response_model=Page[PlayerRequestResponse])
+@limiter.limit("60/minute")
 async def list_my_requests(
+    request: Request,
     filters: PlayerRequestFilter = Depends(),
-    limit: int = Query(20, ge=1, le=100),
-    offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
     me: User = Depends(get_curr_user),
 ):
-    """role=sent: requests I sent. role=received: requests on my announcements."""
+    """List sent or received play requests."""
     stmt = select(PlayerRequest)
     if filters.role == "sent":
         stmt = stmt.where(PlayerRequest.sender_id == me.id)
@@ -169,17 +177,20 @@ async def list_my_requests(
         ).where(MatchAnnouncement.organizer_id == me.id)
     if filters.status:
         stmt = stmt.where(PlayerRequest.status == filters.status)
-    return await _paginate(db, stmt, limit, offset)
+    return await _paginate(db, stmt)
 
 
 @router.patch("/play-requests/{id}", response_model=PlayerRequestResponse)
+@limiter.limit("30/minute")
 async def decide_play_request(
     id: uuid.UUID,
     body: PlayerRequestDecision,
     background_tasks: BackgroundTasks,
+    request: Request,
     db: AsyncSession = Depends(get_db),
     me: User = Depends(get_curr_user),
 ):
+    """Accept or reject a pending play request."""
     play_request = await db.scalar(
         select(PlayerRequest)
         .options(
@@ -222,9 +233,14 @@ async def decide_play_request(
     await db.commit()
     background_tasks.add_task(
         emit_notification,
-        event_type=f"play_request_{body.status}",
+        event_type=(
+            "play_request_accepted"
+            if body.status == PlayerRequestStatusEnum.accepted
+            else "play_request_rejected"
+        ),
         actor_id=me.id,
         target_user_id=play_request.sender_id,
         target_id=play_request.announcement_id,
+        match_time=announcement.start_time,
     )
     return await _get_request(db, id)

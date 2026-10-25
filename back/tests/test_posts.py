@@ -1,15 +1,15 @@
 import uuid
 from datetime import datetime, timezone
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 from fastapi.testclient import TestClient
 
 from app.main import app
 from app.database.database import get_db
 from app.core.deps import get_curr_user
-from app.models import Post, PostMedia, User
+from app.models import Post, User
 
 
-def _make_post(user: User, caption: str = "Test post", media_items=None):
+def _make_post(user: User, caption: str = "Test post"):
     p = Post(
         id=uuid.uuid4(),
         user_id=user.id,
@@ -18,23 +18,7 @@ def _make_post(user: User, caption: str = "Test post", media_items=None):
         updated_at=datetime.now(timezone.utc),
     )
     p.user = user
-    p.media = media_items or []
     return p
-
-
-def _mock_enrich_exec(
-    mock_db, likes_map=None, comments_map=None, user_liked_ids=None
-):
-    likes_res = MagicMock()
-    likes_res.all.return_value = list((likes_map or {}).items())
-
-    comments_res = MagicMock()
-    comments_res.all.return_value = list((comments_map or {}).items())
-
-    user_likes_res = MagicMock()
-    user_likes_res.scalars.return_value.all.return_value = user_liked_ids or []
-
-    return [likes_res, comments_res, user_likes_res]
 
 
 def test_create_post_success(mock_user_1, mock_db):
@@ -42,9 +26,9 @@ def test_create_post_success(mock_user_1, mock_db):
 
     created_post = _make_post(mock_user_1, caption="Hello world!")
     mock_db.scalar.return_value = created_post
-
-    enrich_execs = _mock_enrich_exec(mock_db)
-    mock_db.execute.side_effect = enrich_execs
+    mock_scalars = MagicMock()
+    mock_scalars.all.return_value = []
+    mock_db.scalars.return_value = mock_scalars
 
     app.dependency_overrides[get_curr_user] = lambda: mock_user_1
     app.dependency_overrides[get_db] = lambda: mock_db
@@ -55,52 +39,39 @@ def test_create_post_success(mock_user_1, mock_db):
     data = res.json()
     assert data["caption"] == "Hello world!"
     assert data["user_id"] == str(mock_user_1.id)
-    assert data["user"]["username"] == mock_user_1.username
+    assert data["author"]["username"] == mock_user_1.username
     mock_db.commit.assert_called_once()
 
     app.dependency_overrides.clear()
 
 
-def test_create_post_with_media(mock_user_1, mock_db):
+def test_create_post_notifies_followers(mock_user_1, mock_user_2, mock_db):
     client = TestClient(app)
-
-    post_id = uuid.uuid4()
-    media_item = PostMedia(
-        id=uuid.uuid4(),
-        post_id=post_id,
-        media_url="https://example.com/img1.png",
-        media_type="image",
-        position=0,
-    )
-    created_post = _make_post(
-        mock_user_1, caption="Post with media", media_items=[media_item]
-    )
-    created_post.id = post_id
+    created_post = _make_post(mock_user_1, caption="Hello followers!")
     mock_db.scalar.return_value = created_post
+    async def assign_post_id_on_flush():
+        mock_db.add.call_args.args[0].id = created_post.id
 
-    enrich_execs = _mock_enrich_exec(mock_db)
-    mock_db.execute.side_effect = enrich_execs
+    mock_db.flush.side_effect = assign_post_id_on_flush
+    mock_scalars = MagicMock()
+    mock_scalars.all.return_value = [mock_user_2.id]
+    mock_db.scalars.return_value = mock_scalars
 
     app.dependency_overrides[get_curr_user] = lambda: mock_user_1
     app.dependency_overrides[get_db] = lambda: mock_db
 
-    payload = {
-        "caption": "Post with media",
-        "media": [
-            {
-                "media_url": "https://example.com/img1.png",
-                "media_type": "image",
-                "position": 0,
-            }
-        ],
-    }
-    res = client.post("/posts", json=payload)
-    assert res.status_code == 201
-    data = res.json()
-    assert data["caption"] == "Post with media"
-    assert len(data["media"]) == 1
-    assert data["media"][0]["media_url"] == "https://example.com/img1.png"
+    with patch(
+        "app.routers.post.emit_notifications", new_callable=AsyncMock
+    ) as emit_notifications:
+        res = client.post("/posts", json={"caption": "Hello followers!"})
 
+    assert res.status_code == 201
+    emit_notifications.assert_awaited_once_with(
+        event_type="post_created",
+        actor_id=mock_user_1.id,
+        target_user_ids=[mock_user_2.id],
+        target_id=created_post.id,
+    )
     app.dependency_overrides.clear()
 
 
@@ -129,13 +100,7 @@ def test_list_posts_success(mock_user_1, mock_db):
     posts_res = MagicMock()
     posts_res.scalars.return_value.all.return_value = [p1, p2]
 
-    enrich_execs = _mock_enrich_exec(
-        mock_db,
-        likes_map={p1.id: 3},
-        comments_map={p1.id: 1},
-        user_liked_ids=[p1.id],
-    )
-    mock_db.execute.side_effect = [posts_res] + enrich_execs
+    mock_db.execute.side_effect = [posts_res]
 
     app.dependency_overrides[get_curr_user] = lambda: mock_user_1
     app.dependency_overrides[get_db] = lambda: mock_db
@@ -145,11 +110,7 @@ def test_list_posts_success(mock_user_1, mock_db):
     data = res.json()
     assert len(data) == 2
     assert data[0]["caption"] == "Post 1"
-    assert data[0]["like_count"] == 3
-    assert data[0]["comment_count"] == 1
-    assert data[0]["is_liked_by_me"] is True
     assert data[1]["caption"] == "Post 2"
-    assert data[1]["like_count"] == 0
 
     app.dependency_overrides.clear()
 
@@ -161,8 +122,7 @@ def test_list_posts_with_user_filter(mock_user_1, mock_db):
     posts_res = MagicMock()
     posts_res.scalars.return_value.all.return_value = [p1]
 
-    enrich_execs = _mock_enrich_exec(mock_db)
-    mock_db.execute.side_effect = [posts_res] + enrich_execs
+    mock_db.execute.side_effect = [posts_res]
 
     app.dependency_overrides[get_curr_user] = lambda: mock_user_1
     app.dependency_overrides[get_db] = lambda: mock_db
@@ -181,8 +141,7 @@ def test_list_posts_pagination(mock_user_1, mock_db):
 
     posts_res = MagicMock()
     posts_res.scalars.return_value.all.return_value = []
-    enrich_execs = _mock_enrich_exec(mock_db)
-    mock_db.execute.side_effect = [posts_res] + enrich_execs
+    mock_db.execute.side_effect = [posts_res]
 
     app.dependency_overrides[get_curr_user] = lambda: mock_user_1
     app.dependency_overrides[get_db] = lambda: mock_db
@@ -200,9 +159,6 @@ def test_get_post_by_id_success(mock_user_1, mock_db):
     post = _make_post(mock_user_1, caption="Specific post")
     mock_db.scalar.return_value = post
 
-    enrich_execs = _mock_enrich_exec(mock_db, likes_map={post.id: 10})
-    mock_db.execute.side_effect = enrich_execs
-
     app.dependency_overrides[get_curr_user] = lambda: mock_user_1
     app.dependency_overrides[get_db] = lambda: mock_db
 
@@ -211,7 +167,6 @@ def test_get_post_by_id_success(mock_user_1, mock_db):
     data = res.json()
     assert data["id"] == str(post.id)
     assert data["caption"] == "Specific post"
-    assert data["like_count"] == 10
 
     app.dependency_overrides.clear()
 
@@ -241,9 +196,6 @@ def test_update_post_success(mock_user_1, mock_db):
         pass
 
     mock_db.refresh.side_effect = mock_refresh
-
-    enrich_execs = _mock_enrich_exec(mock_db)
-    mock_db.execute.side_effect = enrich_execs
 
     app.dependency_overrides[get_curr_user] = lambda: mock_user_1
     app.dependency_overrides[get_db] = lambda: mock_db
@@ -347,16 +299,9 @@ def test_get_feed_success(mock_user_1, mock_user_2, mock_db):
     client = TestClient(app)
 
     post1 = _make_post(mock_user_2, caption="Friend's post")
-    post2 = _make_post(mock_user_1, caption="My own post")
-
     mock_scalars = MagicMock()
-    mock_scalars.all.return_value = [post1, post2]
+    mock_scalars.all.return_value = [post1]
     mock_db.scalars.return_value = mock_scalars
-
-    enrich_execs = _mock_enrich_exec(
-        mock_db, likes_map={post1.id: 2}, comments_map={post1.id: 1}
-    )
-    mock_db.execute.side_effect = enrich_execs
 
     app.dependency_overrides[get_curr_user] = lambda: mock_user_1
     app.dependency_overrides[get_db] = lambda: mock_db
@@ -365,11 +310,9 @@ def test_get_feed_success(mock_user_1, mock_user_2, mock_db):
     assert res.status_code == 200
     data = res.json()
     assert "items" in data
-    assert len(data["items"]) == 2
+    assert len(data["items"]) == 1
     assert data["next_offset"] is None
     assert data["items"][0]["author"]["username"] == mock_user_2.username
-    assert data["items"][0]["like_count"] == 2
-    assert data["items"][0]["comment_count"] == 1
 
     app.dependency_overrides.clear()
 
@@ -378,15 +321,12 @@ def test_get_feed_pagination(mock_user_1, mock_user_2, mock_db):
     client = TestClient(app)
 
     post1 = _make_post(mock_user_2, caption="First post")
-    post2 = _make_post(mock_user_1, caption="Second post")
+    post2 = _make_post(mock_user_2, caption="Second post")
 
     # limit=1, returning 2 items triggers next_offset
     mock_scalars = MagicMock()
     mock_scalars.all.return_value = [post1, post2]
     mock_db.scalars.return_value = mock_scalars
-
-    enrich_execs = _mock_enrich_exec(mock_db)
-    mock_db.execute.side_effect = enrich_execs
 
     app.dependency_overrides[get_curr_user] = lambda: mock_user_1
     app.dependency_overrides[get_db] = lambda: mock_db
@@ -400,16 +340,13 @@ def test_get_feed_pagination(mock_user_1, mock_user_2, mock_db):
     app.dependency_overrides.clear()
 
 
-def test_get_feed_with_offset(mock_user_1, mock_db):
+def test_get_feed_with_offset(mock_user_1, mock_user_2, mock_db):
     client = TestClient(app)
 
-    post = _make_post(mock_user_1, caption="Feed post")
+    post = _make_post(mock_user_2, caption="Feed post")
     mock_scalars = MagicMock()
     mock_scalars.all.return_value = [post]
     mock_db.scalars.return_value = mock_scalars
-
-    enrich_execs = _mock_enrich_exec(mock_db)
-    mock_db.execute.side_effect = enrich_execs
 
     app.dependency_overrides[get_curr_user] = lambda: mock_user_1
     app.dependency_overrides[get_db] = lambda: mock_db
@@ -431,9 +368,6 @@ def test_list_user_posts_success(mock_user_1, mock_user_2, mock_db):
     mock_scalars = MagicMock()
     mock_scalars.all.return_value = [post]
     mock_db.scalars.return_value = mock_scalars
-
-    enrich_execs = _mock_enrich_exec(mock_db)
-    mock_db.execute.side_effect = enrich_execs
 
     app.dependency_overrides[get_curr_user] = lambda: mock_user_1
     app.dependency_overrides[get_db] = lambda: mock_db
@@ -458,9 +392,6 @@ def test_list_user_posts_pagination(mock_user_1, mock_user_2, mock_db):
     mock_scalars = MagicMock()
     mock_scalars.all.return_value = [post1, post2]
     mock_db.scalars.return_value = mock_scalars
-
-    enrich_execs = _mock_enrich_exec(mock_db)
-    mock_db.execute.side_effect = enrich_execs
 
     app.dependency_overrides[get_curr_user] = lambda: mock_user_1
     app.dependency_overrides[get_db] = lambda: mock_db
