@@ -19,8 +19,9 @@ from typing import Optional
 from app.core.deps import get_curr_user
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from datetime import datetime, timedelta, timezone
-from ..schemas.user import UserCreate, UserLogin, UserResponse
+from ..schemas.user import UserCreate, UserLogin, UserProfileResponse
 from ..core.security import hash_password, verify_password
+from .users import build_user_profile
 from app.core.config import settings
 from app.realtime import registry
 from app.core.limiter import limiter
@@ -31,7 +32,7 @@ router = APIRouter(
 )
 
 
-@router.post("/signup", response_model=UserResponse)
+@router.post("/signup", response_model=UserProfileResponse)
 @limiter.limit("5/minute")
 async def signup(
     data: UserCreate,
@@ -63,7 +64,7 @@ async def signup(
     return user
 
 
-@router.post("/login", response_model=UserResponse)
+@router.post("/login", response_model=UserProfileResponse)
 @limiter.limit("10/minute")
 async def login(
     data: UserLogin,
@@ -103,7 +104,7 @@ async def login(
         httponly=settings.session_cookie_http_only,
         samesite=settings.session_cookie_same_site,
     )
-    return user
+    return await build_user_profile(db, user, user)
 
 
 @router.post("/logout")
@@ -150,7 +151,7 @@ async def logout(
     return {"message": "Logout successful"}
 
 
-@router.get("/me", response_model=UserResponse)
+@router.get("/me", response_model=UserProfileResponse)
 @limiter.limit("60/minute")
 async def read_current_user(
     request: Request,
