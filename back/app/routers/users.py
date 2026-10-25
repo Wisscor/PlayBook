@@ -59,7 +59,6 @@ async def build_user_profile(
 
     If viewer_id is None (e.g. /me), is_following is set to None.
     """
-    breakpoint()
     followers_count = (
         await db.scalar(
             select(func.count())
