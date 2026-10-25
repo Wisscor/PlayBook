@@ -132,6 +132,7 @@ async def get_user_followers(
     user_id: uuid.UUID,
     request: Request,
     db: AsyncSession = Depends(get_db),
+    _: User = Depends(get_curr_user),
 ):
     """List a user's followers."""
     target_user = await db.scalar(select(User).where(User.id == user_id))
@@ -150,7 +151,9 @@ async def get_user_followers(
     return await apaginate(
         db,
         stmt,
-        transformer=lambda rows: [UserSummaryResponse.model_validate(r) for r in rows],
+        transformer=lambda rows: [
+            UserSummaryResponse.model_validate(r) for r in rows
+        ],
     )
 
 
@@ -164,6 +167,7 @@ async def get_user_following(
     user_id: uuid.UUID,
     request: Request,
     db: AsyncSession = Depends(get_db),
+    _: User = Depends(get_curr_user),
 ):
     """List users followed by a user."""
     target_user = await db.scalar(select(User).where(User.id == user_id))
@@ -182,5 +186,7 @@ async def get_user_following(
     return await apaginate(
         db,
         stmt,
-        transformer=lambda rows: [UserSummaryResponse.model_validate(r) for r in rows],
+        transformer=lambda rows: [
+            UserSummaryResponse.model_validate(r) for r in rows
+        ],
     )

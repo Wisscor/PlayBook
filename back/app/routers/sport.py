@@ -91,15 +91,15 @@ async def add_my_sport(
     sport_id: uuid.UUID,
     request: Request,
     db: AsyncSession = Depends(get_db),
-    me: User = Depends(get_curr_user),
+    curr_user: User = Depends(get_curr_user),
 ):
     """Add a sport to the current user's profile."""
     if await db.get(Sport, sport_id) is None:
         raise HTTPException(
             status.HTTP_404_NOT_FOUND, detail="Sport not found"
         )
-    if await db.get(UserSport, (me.id, sport_id)) is None:
-        db.add(UserSport(user_id=me.id, sport_id=sport_id))
+    if await db.get(UserSport, (curr_user.id, sport_id)) is None:
+        db.add(UserSport(user_id=curr_user.id, sport_id=sport_id))
         try:
             await db.commit()
         except IntegrityError:
@@ -115,14 +115,14 @@ async def remove_my_sport(
     sport_id: uuid.UUID,
     request: Request,
     db: AsyncSession = Depends(get_db),
-    me: User = Depends(get_curr_user),
+    curr_user: User = Depends(get_curr_user),
 ):
     """Remove a sport from the current user's profile."""
     if await db.get(Sport, sport_id) is None:
         raise HTTPException(
             status.HTTP_404_NOT_FOUND, detail="Sport not found"
         )
-    link = await db.get(UserSport, (me.id, sport_id))
+    link = await db.get(UserSport, (curr_user.id, sport_id))
     if link is not None:
         await db.delete(link)
         await db.commit()

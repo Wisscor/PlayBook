@@ -194,6 +194,7 @@ async def search_users(
     request: Request,
     search: Optional[str] = Query(default=None, min_length=1),
     db: AsyncSession = Depends(get_db),
+    _: User = Depends(get_curr_user)
 ):
     """Search users by name or username."""
     stmt = select(User)
