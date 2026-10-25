@@ -25,33 +25,6 @@ from app.core.limiter import limiter
 router = APIRouter(tags=["Sports"])
 
 
-@router.post(
-    "/sports",
-    response_model=SportResponse,
-    status_code=status.HTTP_201_CREATED,
-)
-@limiter.limit("30/minute")
-async def create_sport(
-    data: SportCreate,
-    request: Request,
-    db: AsyncSession = Depends(get_db),
-    _: User = Depends(get_curr_user),
-):
-    """Create a sport."""
-    sport = Sport(name=data.name, max_players=data.max_players)
-    try:
-        db.add(sport)
-        await db.commit()
-    # IntegrityError is raised when a unique constraint is violated (e.g. duplicate name)
-    except IntegrityError:
-        await db.rollback()
-        raise HTTPException(
-            status.HTTP_409_CONFLICT,
-            detail="A sport with this name already exists",
-        )
-    return sport
-
-
 @router.get("/sports", response_model=list[SportResponse])
 @limiter.limit("60/minute")
 async def list_sports(
@@ -83,7 +56,7 @@ async def list_user_sports(
     return (await db.scalars(stmt)).all()
 
 
-@router.put(
+@router.post(
     "/users/me/sports/{sport_id}", status_code=status.HTTP_204_NO_CONTENT
 )
 @limiter.limit("30/minute")
