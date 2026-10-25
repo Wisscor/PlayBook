@@ -5,8 +5,6 @@ services:
       dockerfile: Dockerfile.db
     container_name: postgres
     # restart: always
-    ports:
-      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -25,7 +23,7 @@ services:
       co.elastic.logs/json.keys_under_root: "true"
     # restart: always
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
       # 'environment' attr has a higher priority than 'env_file' attr
     environment:
       DATABASE_URL: postgresql+asyncpg://ziko:1234pass@postgres:5432/my-postgres

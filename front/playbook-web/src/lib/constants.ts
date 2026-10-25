@@ -20,10 +20,22 @@ export const languages = [
 ];
 
 export const ROUTES = {
-  HOME: "/",
+  ROOT: "/",
   SIGNIN: "/auth?mode=signin",
   SIGNUP: "/auth?mode=signup",
   POSTS: "/history?type=posts",
   MATCHES: "/history?type=matches",
+  EDIT_PROFILE: "/edit-profile",
   PROFILE: "/profile",
+  COMMUNITY: "/community",
+  HOME: "/home",
+  USER_PROFILE: "/user-profile",
+  SEARCH: "/search",
+  MESSAGES: "/messages",
+  FOLLOWERS: "/followers",
 } as const;
+
+export enum COMING_FROM {
+  ME = "me",
+  OTHER = "other",
+}

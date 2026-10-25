@@ -11,36 +11,51 @@ interface SpanText {
   path?: string;
 }
 
-const Primary: React.FC<{
+interface PrimaryTextProps {
   id?: string;
   className?: string;
   content?: string;
-}> = ({ id, className, content }) => {
+}
+
+interface SpanTextProps {
+  texts: SpanText[];
+  className?: string;
+}
+
+const Primary: React.FC<PrimaryTextProps> = ({ id, className, content }) => {
   const t = useTranslations();
   return (
-    <p className={twMerge(clsx("text-white", className))}>
+    <p className={twMerge(clsx("text-white font-medium", className))}>
       {id ? t(id) : content}
     </p>
   );
 };
 
-const Span: React.FC<{
-  texts: SpanText[];
-  className?: string;
-}> = ({ texts, className }) => {
+const Span: React.FC<SpanTextProps> = ({ texts, className }) => {
   const t = useTranslations();
 
   return (
-    <p className={twMerge(clsx("flex flex-wrap ", className))}>
-      {texts.map((text, _index) => {
-        if (text.path) {
+    <p
+      className={twMerge(
+        clsx("flex flex-wrap items-center gap-1.5", className),
+      )}
+    >
+      {texts.map((item, index) => {
+        const textContent = item.text ? t(item.text) : item.content;
+        const key = item.text || item.content || index;
+
+        if (item.path) {
           return (
-            <Link key={text.text} href={text.path}>
+            <Link key={key} href={item.path}>
               <span
-                key={text.text}
-                className={twMerge(clsx("text-white", text.className))}
+                className={twMerge(
+                  clsx(
+                    "text-white font-semibold underline underline-offset-4 transition-colors hover:text-slate-200",
+                    item.className,
+                  ),
+                )}
               >
-                {text.text ? t(text.text) : text.content}
+                {textContent}
               </span>
             </Link>
           );
@@ -48,10 +63,10 @@ const Span: React.FC<{
 
         return (
           <span
-            key={text.text}
-            className={twMerge(clsx("text-white", text.className))}
+            key={key}
+            className={twMerge(clsx("text-white font-medium", item.className))}
           >
-            {text.text ? t(text.text) : text.content}
+            {textContent}
           </span>
         );
       })}

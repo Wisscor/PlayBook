@@ -3,18 +3,36 @@ import clsx from "clsx";
 import { twMerge } from "tailwind-merge";
 import { PlayText } from "./Text";
 
-const Primary: React.FC<{
+interface ButtonProps {
   title: string;
   type?: "button" | "submit" | "reset";
   className?: string;
   textClassName?: string;
   onClick?: React.MouseEventHandler<HTMLButtonElement>;
-}> = ({ title, type, className, textClassName, onClick }) => {
+  disabled?: boolean;
+}
+interface ButtonChildrenProps {
+  type?: "button" | "submit" | "reset";
+  className?: string;
+  onClick?: React.MouseEventHandler<HTMLButtonElement>;
+  disabled?: boolean;
+  children: React.ReactNode;
+}
+
+const Primary: React.FC<ButtonProps> = ({
+  title,
+  type,
+  className,
+  textClassName,
+  onClick,
+  disabled,
+}) => {
   return (
     <button
+      disabled={disabled}
       className={twMerge(
         clsx(
-          "rounded-xl bg-white100 cursor-pointer text-black text-[12px] lg:text-lg py-3 w-full drop-shadow-lg shadow-black",
+          ` ${disabled ? "cursor-not-allowed" : "cursor-pointer"} group relative flex items-center justify-center rounded-2xl bg-white px-6 py-3.5 text-sm lg:text-base font-semibold text-slate-950 shadow-xl shadow-white/5 transition-all duration-200 ease-out hover:bg-slate-100 hover:shadow-white/10 active:scale-[0.98]`,
           className,
         ),
       )}
@@ -23,31 +41,60 @@ const Primary: React.FC<{
     >
       <PlayText.Primary
         id={title}
-        className={twMerge(clsx("text-black", textClassName))}
+        className={twMerge(clsx("text-slate-950 font-semibold", textClassName))}
       />
     </button>
   );
 };
 
-const Secondary: React.FC<{
-  title: string;
-  type?: "button" | "submit" | "reset";
-  className?: string;
-  textClassName?: string;
-  onClick?: React.MouseEventHandler<HTMLButtonElement>;
-}> = ({ title, type, className, textClassName, onClick }) => {
+const Secondary: React.FC<ButtonProps> = ({
+  title,
+  type,
+  className,
+  textClassName,
+  onClick,
+  disabled,
+}) => {
   return (
     <button
+      disabled={disabled}
       className={twMerge(
         clsx(
-          "rounded-xl bg-transparent cursor-pointer border-2 border-white100 border-o text-white100 drop-shadow-lg shadow-black text-[12px] lg:text-lg py-3 w-full",
+          `${disabled ? "cursor-not-allowed" : "cursor-pointer"} group relative flex items-center justify-center rounded-2xl border border-white/20 bg-white/5 px-6 py-3.5 text-sm lg:text-base font-semibold text-white backdrop-blur-md transition-all duration-200 ease-out hover:border-white/40 hover:bg-white/10 active:scale-[0.98]`,
           className,
         ),
       )}
       type={type ?? "button"}
       onClick={onClick}
     >
-      <PlayText.Primary id={title} className={`text-black ${textClassName}`} />
+      <PlayText.Primary
+        id={title}
+        className={twMerge(clsx("text-white font-semibold", textClassName))}
+      />
+    </button>
+  );
+};
+
+const Complexe: React.FC<ButtonChildrenProps> = ({
+  disabled,
+  className,
+  type,
+  onClick,
+  children,
+}) => {
+  return (
+    <button
+      disabled={disabled}
+      className={twMerge(
+        clsx(
+          `${disabled ? "cursor-not-allowed" : "cursor-pointer"} group relative flex items-center justify-center rounded-2xl border border-white/20 bg-white/5 px-6 py-3.5 text-sm lg:text-base font-semibold text-white backdrop-blur-md transition-all duration-200 ease-out hover:border-white/40 hover:bg-white/10 active:scale-[0.98]`,
+          className,
+        ),
+      )}
+      type={type ?? "button"}
+      onClick={onClick}
+    >
+      {children}
     </button>
   );
 };
@@ -55,4 +102,5 @@ const Secondary: React.FC<{
 export const PlayButton = {
   Primary,
   Secondary,
+  Complexe,
 };

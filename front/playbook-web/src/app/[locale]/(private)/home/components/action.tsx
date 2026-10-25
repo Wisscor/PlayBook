@@ -12,16 +12,29 @@ export const Action: FC<{
 }> = ({ action }) => {
   return (
     <button
-      onClick={() => {
-        action.onClick();
-      }}
-      className="flex flex-col  items-center p-8 gap-4 rounded-md bg-primary/10 hover:bg-primary/20 transition-all duration-300 cursor-pointer hover:scale-105"
+      onClick={() => action.onClick()}
+      className="group relative flex flex-col items-center justify-between rounded-3xl border border-white/10 bg-white/5 p-8 text-center backdrop-blur-xl shadow-xl transition-all duration-300 ease-out hover:-translate-y-1 hover:border-white/30 hover:bg-white/10 hover:shadow-2xl cursor-pointer w-full"
     >
-      <div className="p-4 rounded-md bg-primary">
-        <Image alt={action.action} src={action.icon} width={32} height={32} />
+      <div className="mb-2 flex h-16 w-16 items-center justify-center rounded-2xl border border-white/10 bg-white/10 backdrop-blur-md shadow-lg transition-transform duration-300 group-hover:scale-110">
+        <Image
+          alt={action.action}
+          src={action.icon}
+          width={32}
+          height={32}
+          className="object-contain filter drop-shadow"
+        />
       </div>
-      <PlayText.Primary id={action.action} className="text-black text-xl" />
-      <PlayText.Primary id={action.description} className="text-black" />
+
+      <div className="flex flex-col gap-2">
+        <PlayText.Primary
+          id={action.action}
+          className="text-lg font-bold tracking-tight text-white transition-colors group-hover:text-slate-100"
+        />
+        <PlayText.Primary
+          id={action.description}
+          className="text-xs leading-relaxed text-slate-300"
+        />
+      </div>
     </button>
   );
 };

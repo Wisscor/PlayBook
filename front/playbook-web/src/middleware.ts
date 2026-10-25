@@ -1,10 +1,22 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { ROUTES } from "./lib/constants";
 
 const LOCALES = new Set(["en", "fr", "ar"]);
 const DEFAULT_LOCALE = "en";
 
-const PROTECTED_ROUTES = ["/home", "/profile"];
+const PROTECTED_ROUTES = [
+  ROUTES.HOME,
+  ROUTES.EDIT_PROFILE,
+  ROUTES.PROFILE,
+  ROUTES.POSTS,
+  ROUTES.MATCHES,
+  ROUTES.COMMUNITY,
+  ROUTES.USER_PROFILE,
+  ROUTES.SEARCH,
+  ROUTES.MESSAGES,
+  ROUTES.FOLLOWERS,
+];
 const AUTH_ROUTES = ["/auth"];
 
 export function middleware(request: NextRequest) {
@@ -18,7 +30,7 @@ export function middleware(request: NextRequest) {
   const pathWithoutLocale = pathname.replace(`/${currentLocale}`, "") || "/";
 
   const isProtectedRoute = PROTECTED_ROUTES.some((route) =>
-    pathWithoutLocale.startsWith(route),
+    pathWithoutLocale.startsWith(route.split("?")[0]),
   );
 
   const sessionToken = request.cookies.get("session_id")?.value;
@@ -27,20 +39,14 @@ export function middleware(request: NextRequest) {
     pathWithoutLocale.startsWith(route),
   );
 
-  const previewMode = process.env.NEXT_PUBLIC_PREVIEW_MODE === "true";
-
-  if (previewMode) {
-    return NextResponse.next();
-  }
-
   if (isAuthRoute && sessionToken) {
     return NextResponse.redirect(
-      new URL(`/${currentLocale}/home`, request.url),
+      new URL(`/${currentLocale}${ROUTES.HOME}`, request.url),
     );
   }
 
   if (isProtectedRoute && !sessionToken) {
-    const loginUrl = new URL(`/${currentLocale}/auth?mode=signin`, request.url);
+    const loginUrl = new URL(`/${currentLocale}${ROUTES.SIGNIN}`, request.url);
 
     loginUrl.searchParams.set("callbackUrl", pathname);
 

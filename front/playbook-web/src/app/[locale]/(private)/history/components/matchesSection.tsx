@@ -1,93 +1,163 @@
-import { PlayText } from "@/components/ui/Text";
-import React, { useState } from "react";
+"use client";
+
+import { PlayButton } from "@/components/ui/Button";
+import { api } from "@/services/api";
+import { MatchAnnouncement } from "@/types/api";
+import { useTranslations } from "next-intl";
+import React, { useEffect, useState } from "react";
+import MatchModal, { MatchFormData } from "../../home/components/matchModal";
 import { Match } from "./match";
 
 export const MatchesSection: React.FC = () => {
-  const [matches, setMatches] = useState([
-    {
-      id: 0,
-      matchname: "Friendly Football Match",
-      matchType: "Friendly",
-      playerNbr: "10",
-      date: "2026-06-01",
-      startTime: "09:00",
-      endTime: "10:00",
-      status: "Upcoming",
-    },
-    {
-      id: 1,
-      matchname: "Summer Championship",
-      matchType: "Tournament",
-      playerNbr: "22",
-      date: "2026-06-05",
-      startTime: "14:00",
-      endTime: "16:00",
-      status: "Live",
-    },
-  ]);
+  const t = useTranslations();
+  const [matches, setMatches] = useState<MatchAnnouncement[]>([]);
+  const [selectedMatch, setSelectedMatch] = useState<MatchFormData | null>(
+    null,
+  );
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const [matchInfos, setMatchInfos] = useState({
-    matchname: "",
-    matchType: "",
-    playerNbr: "",
-    date: "",
-    startTime: "09:00",
-    endTime: "10:00",
-    status: "Upcoming",
-  });
-
-  const [editingId, setEditingId] = useState<number | null>(null);
-
-  // Edit action
-  const handleEdit = (id: number) => {
-    const targetMatch = matches.find((m) => m.id === id);
-    if (targetMatch) {
-      setMatchInfos({
-        matchname: targetMatch.matchname,
-        matchType: targetMatch.matchType,
-        playerNbr: targetMatch.playerNbr.toString(),
-        date: targetMatch.date,
-        startTime: targetMatch.startTime,
-        endTime: targetMatch.endTime,
-        status: targetMatch.status,
+  const loadMatches = async () => {
+    try {
+      const profile = await api.get<{ id: string }>("/users/me");
+      const response = await api.get<{
+        items: MatchAnnouncement[];
+        next_offset: number | null;
+      }>("/match-announcements", {
+        params: { organizer_id: profile.data.id, limit: 100 },
       });
-      setEditingId(id);
+      setMatches(response.data.items);
+    } catch (error) {
+      console.error("Unable to load matches:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // Delete action
-  const handleDelete = (id: number) => {
-    setMatches((prev) => prev.filter((match) => match.id !== id));
+  useEffect(() => {
+    const timer = window.setTimeout(loadMatches, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  const handleSave = async (form: MatchFormData) => {
+    const payload = {
+      title: form.title.trim(),
+      sport_id: form.sport_id,
+      remaining_player_slots: form.remaining_player_slots,
+      start_time: new Date(form.start_time).toISOString(),
+      end_time: new Date(form.end_time).toISOString(),
+    };
+    if (form.id) {
+      const response = await api.patch<MatchAnnouncement>(
+        `/match-announcements/${form.id}`,
+        payload,
+      );
+      setMatches((current) =>
+        current.map((match) => (match.id === form.id ? response.data : match)),
+      );
+    } else {
+      const response = await api.post<MatchAnnouncement>(
+        "/match-announcements",
+        payload,
+      );
+      setMatches((current) => [...current, response.data]);
+    }
+    setSelectedMatch(null);
   };
 
-  return (
-    <div className="flex flex-col gap-8 p-8 bg-white shadow-2xs w-full rounded-lg">
-      <PlayText.Primary
-        id="my-matches"
-        content="My Matches"
-        className="text-lg text-black font-bold"
-      />
+  const handleDelete = async (id: string) => {
+    try {
+      await api.delete(`/match-announcements/${id}`);
+      setMatches((current) => current.filter((match) => match.id !== id));
+    } catch (error) {
+      console.error("Unable to delete match:", error);
+    }
+  };
 
-      <div>
-        {matches.length === 0 ? (
-          <PlayText.Primary
-            id="no-matches"
-            content="No matches found."
-            className="text-md text-center text-warning"
+  const toForm = (match: MatchAnnouncement): MatchFormData => ({
+    id: match.id,
+    title: match.title,
+    sport_id: match.sport.id,
+    remaining_player_slots: match.remaining_player_slots,
+    start_time: match.start_time.slice(0, 16),
+    end_time: match.end_time.slice(0, 16),
+  });
+
+  let matchContent: React.ReactNode;
+  if (isLoading) {
+    matchContent = (
+      <p className="py-12 text-center text-slate-300">Loading...</p>
+    );
+  } else if (matches.length === 0) {
+    matchContent = (
+      <p className="rounded-3xl border border-dashed border-white/10 p-12 text-center text-amber-400">
+        {t("no-matches")}
+      </p>
+    );
+  } else {
+    matchContent = (
+      <div className="grid grid-cols-1 gap-4">
+        {matches.map((match) => (
+          <Match
+            key={match.id}
+            match={{
+              id: match.id,
+              matchname: match.title,
+              matchType: match.sport.name,
+              playerNbr: match.remaining_player_slots,
+              date: new Date(match.start_time).toLocaleDateString(),
+              startTime: new Date(match.start_time).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              }),
+              endTime: new Date(match.end_time).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              }),
+              status: match.match_status,
+            }}
+            onEdit={() => {
+              setSelectedMatch(toForm(match));
+              setIsModalOpen(true);
+            }}
+            onDelete={handleDelete}
           />
-        ) : (
-          <div className="flex flex-col gap-4">
-            {matches.map((match) => (
-              <Match
-                key={match.id}
-                match={match}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-              />
-            ))}
-          </div>
-        )}
+        ))}
       </div>
+    );
+  }
+
+  return (
+    <div className="flex w-full flex-col gap-6">
+      <div className="flex items-center justify-between border-b border-white/10 pb-4">
+        <div className="flex items-center gap-3">
+          <h2 className="text-xl font-bold text-white">{t("my-matches")}</h2>
+          <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-400">
+            {matches.length} {matches.length === 1 ? t("match") : t("matches")}
+          </span>
+        </div>
+        <PlayButton.Primary
+          title="create-match"
+          onClick={() => {
+            setSelectedMatch(null);
+            setIsModalOpen(true);
+          }}
+          className="rounded-xl px-4 py-2"
+        />
+      </div>
+      {matchContent}
+
+      <MatchModal
+        isOpen={isModalOpen}
+        close={() => {
+          setIsModalOpen(false);
+          setSelectedMatch(null);
+        }}
+        initialData={selectedMatch}
+        onSave={handleSave}
+      />
     </div>
   );
 };
+
+export default MatchesSection;

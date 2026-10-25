@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { PlayText } from "./Text";
 
 function isValidDate(date: string): boolean {
@@ -36,7 +36,7 @@ export const DateTimeRangePicker: React.FC<{
   changeDate: (date: string) => void;
   changeStartTime: (startTime: string) => void;
   changeEndTime: (endTime: string) => void;
-  onError: (error: boolean) => void;
+  onError: (error: string) => void;
 }> = ({
   date,
   startTime,
@@ -61,7 +61,6 @@ export const DateTimeRangePicker: React.FC<{
   const endValid = isValidTime(endTime);
 
   const startIsPast = isToday && startValid && startTime < currentTime;
-
   const endIsPast = isToday && endValid && endTime <= currentTime;
 
   const timeOrderValid = startValid && endValid && startTime < endTime;
@@ -98,20 +97,25 @@ export const DateTimeRangePicker: React.FC<{
   const endError = isEndError();
 
   const inputClass = (invalid: boolean) =>
-    `rounded-md border p-2 outline-none focus:ring-2 ${
+    `w-full rounded-2xl border px-4 py-3 text-sm text-white backdrop-blur-md outline-none transition-all [color-scheme:dark] ${
       invalid
-        ? "border-error focus:ring-error/30"
-        : "border-gray focus:ring-primary/30"
+        ? "border-rose-500/50 bg-rose-500/10 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20"
+        : "border-white/10 bg-white/5 focus:border-white/30 focus:bg-white/10 focus:ring-2 focus:ring-white/20"
     }`;
 
-  React.useEffect(() => {
-    onError(!!dateError || !!startError || !!endError);
-  }, [dateError, startError, endError]);
+  useEffect(() => {
+    if (dateError || startError || endError) {
+      onError("invalid-date-time");
+    }
+  }, [dateError, startError, endError, onError]);
 
   return (
     <div className="flex flex-col gap-4">
       <label className="flex flex-col gap-2">
-        <PlayText.Primary id="choose-date" className="text-sm text-black" />
+        <PlayText.Primary
+          id="choose-date"
+          className="text-xs font-semibold uppercase tracking-wider text-slate-300"
+        />
 
         <input
           type="date"
@@ -123,14 +127,20 @@ export const DateTimeRangePicker: React.FC<{
         />
 
         {dateError && (
-          <PlayText.Primary id={dateError} className="text-sm text-error" />
+          <PlayText.Primary
+            id={dateError}
+            className="text-xs font-medium text-rose-400"
+          />
         )}
       </label>
 
       {showTimeFields && (
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <label className="flex flex-col gap-2">
-            <PlayText.Primary id="start-time" className="text-sm text-black" />
+            <PlayText.Primary
+              id="start-time"
+              className="text-xs font-semibold uppercase tracking-wider text-slate-300"
+            />
 
             <input
               type="time"
@@ -143,13 +153,16 @@ export const DateTimeRangePicker: React.FC<{
             {startError && (
               <PlayText.Primary
                 id={startError}
-                className="text-sm text-error"
+                className="text-xs font-medium text-rose-400"
               />
             )}
           </label>
 
           <label className="flex flex-col gap-2">
-            <PlayText.Primary id="end-time" className="text-sm text-black" />
+            <PlayText.Primary
+              id="end-time"
+              className="text-xs font-semibold uppercase tracking-wider text-slate-300"
+            />
 
             <input
               type="time"
@@ -161,7 +174,10 @@ export const DateTimeRangePicker: React.FC<{
             />
 
             {endError && (
-              <PlayText.Primary id={endError} className="text-sm text-error" />
+              <PlayText.Primary
+                id={endError}
+                className="text-xs font-medium text-rose-400"
+              />
             )}
           </label>
         </div>
