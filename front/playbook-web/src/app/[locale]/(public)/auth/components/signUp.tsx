@@ -4,12 +4,12 @@ import { PlayButton } from "@/components/ui/Button";
 import { PlayInput } from "@/components/ui/Input";
 import { PlayText } from "@/components/ui/Text";
 import { ROUTES } from "@/lib/constants";
-import { signUp } from "@/services/auth";
-import { useNavigation } from "@/hooks/useNavigation";
-import React, { useState } from "react";
 import { isEmailValid } from "@/lib/utils";
+import { useAuthController } from "@/services/auth";
+import React, { useState } from "react";
 
 export const SignUp = () => {
+  const { signUp, isLoading } = useAuthController();
   const [infos, setInfos] = useState({
     firstName: "",
     lastName: "",
@@ -18,15 +18,13 @@ export const SignUp = () => {
     password: "",
     confirmPassword: "",
   });
-  const { goSignIn } = useNavigation();
   const [error, setError] = useState<string | undefined>(undefined);
-  const [isLoading, setIsLoading] = useState(false);
   const [isHidden, setIsHidden] = useState({
     original: true,
     confirm: true,
   });
 
-  const handleSignUp = async (e: React.SubmitEvent) => {
+  const handleSignUp = (e: React.SubmitEvent) => {
     e.preventDefault();
     setError(undefined);
     if (
@@ -48,21 +46,18 @@ export const SignUp = () => {
       setError("passwords-do-not-match");
       return;
     }
-    setIsLoading(true);
-    try {
-      await signUp({
+    void signUp(
+      {
         firstname: infos.firstName,
         lastname: infos.lastName,
         username: infos.username,
         email: infos.email,
         password: infos.password,
-      });
-      goSignIn();
-    } catch {
-      setError("error-creating-account");
-    } finally {
-      setIsLoading(false);
-    }
+      },
+      (msg) => {
+        setError(msg || "error-creating-account");
+      },
+    );
   };
 
   return (

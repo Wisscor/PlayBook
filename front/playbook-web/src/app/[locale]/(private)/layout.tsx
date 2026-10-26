@@ -4,7 +4,6 @@ import { PlayButton } from "@/components/ui/Button";
 import { PlayText } from "@/components/ui/Text";
 import { useNavigation } from "@/hooks/useNavigation";
 import { ROUTES } from "@/lib/constants";
-import { signOut } from "@/services/auth";
 import { useLocale } from "next-intl";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -12,16 +11,18 @@ import React, { useEffect, useRef, useState } from "react";
 import { Link } from "../../../../i18n/navigation";
 import { BurgerMenu } from "./components/burgerMenu";
 import { NotificationPopUp } from "./notificationPopUp";
+import { useAuthController } from "@/services/auth";
 
-const unreadMessages = 3; // Replace with actual logic to get the number of unread messages
+const unreadMessages = 3;
 
 export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
+  const { signOut } = useAuthController();
   const locale = useLocale();
   const pathname = usePathname();
   const [isExpanded, setIsExpanded] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [logoutError, setLogoutError] = useState("");
-  const { goSignIn, goMessages, goSearch } = useNavigation();
+  const { goMessages, goSearch } = useNavigation();
 
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const notificationRef = useRef<HTMLDivElement>(null);
@@ -75,17 +76,18 @@ export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
     },
   ];
 
-  const handleLogout = async () => {
+  const handleLogout = () => {
     setIsLoggingOut(true);
     setLogoutError("");
-    try {
-      await signOut();
-      window.location.reload();
-    } catch (error) {
-      console.error("Unable to log out:", error);
-      setLogoutError("Unable to log out");
-      setIsLoggingOut(false);
-    }
+    void signOut(
+      () => {
+        window.location.reload();
+      },
+      () => {
+        setLogoutError("Unable to log out");
+        setIsLoggingOut(false);
+      },
+    );
   };
 
   const unreadCount = notifications.filter((n) => !n.read).length;

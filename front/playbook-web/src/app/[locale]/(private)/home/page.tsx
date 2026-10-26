@@ -1,14 +1,15 @@
 "use client";
 
 import { useNavigation } from "@/hooks/useNavigation";
-import { api } from "@/services/api";
+import { useMatchController } from "@/services/match";
 import { useState } from "react";
 import { Action } from "./components/action";
+import MatchModal from "./components/matchModal";
 import { PostModal } from "./components/postModal";
-import MatchModal, { MatchFormData } from "./components/matchModal";
 
 export const HomePage = () => {
   const { goProfile, goCommunity } = useNavigation();
+  const { addMatch } = useMatchController();
   const [matchModalOpen, setMatchModalOpen] = useState(false);
   const [postModalOpen, setPostModalOpen] = useState(false);
 
@@ -59,15 +60,10 @@ export const HomePage = () => {
         <MatchModal
           isOpen={matchModalOpen}
           close={() => setMatchModalOpen(false)}
-          onSave={async (form: MatchFormData) => {
-            await api.post("/match-announcements", {
-              title: form.title.trim(),
-              sport_id: form.sport_id,
-              remaining_player_slots: form.remaining_player_slots,
-              start_time: new Date(form.start_time).toISOString(),
-              end_time: new Date(form.end_time).toISOString(),
+          onSave={(form) => {
+            void addMatch(form, () => {
+              setMatchModalOpen(false);
             });
-            setMatchModalOpen(false);
           }}
         />
       )}
