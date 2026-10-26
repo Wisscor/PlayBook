@@ -1,51 +1,39 @@
 "use client";
 
 import { PlayText } from "@/components/ui/Text";
-import { api } from "@/services/api";
-import { Post as PostData } from "@/types/api";
+import { useAuth } from "@/hooks/contexts/authContext";
+import { usePostController } from "@/services/post";
 import { useTranslations } from "next-intl";
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { Post } from "./post";
+import { useProfileController } from "@/services/profile";
 
 export const PostsSection: React.FC = () => {
   const t = useTranslations();
-  const [posts, setPosts] = useState<PostData[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  const loadPosts = async () => {
-    try {
-      const profile = await api.get<{ id: string }>("/users/me");
-      const response = await api.get<PostData[]>("/posts", {
-        params: { user_id: profile.data.id },
-      });
-      setPosts(response.data);
-    } catch (error) {
-      console.error("Unable to load posts:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const { loadPosts, deletePost, posts, pageNumber, pages, total } =
+    usePostController();
+  const { connectedUser, isLoading, setIsLoading } = useAuth();
+  const { fetchUser } = useProfileController();
 
   useEffect(() => {
-    const timer = window.setTimeout(loadPosts, 0);
-    return () => window.clearTimeout(timer);
-  }, []);
+    const timer = window.setTimeout(() => {
+      void fetchUser(() => {
+        setIsLoading(true);
 
-  const handleDelete = async (id: string) => {
-    try {
-      await api.delete(`/posts/${id}`);
-      setPosts((currentPosts) => currentPosts.filter((post) => post.id !== id));
-    } catch (error) {
-      console.error("Unable to delete post:", error);
-    }
-  };
+        if (connectedUser?.id) {
+          void loadPosts(connectedUser.id, pageNumber);
+        }
+      });
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [connectedUser?.id]);
 
   let postsContent: React.ReactNode;
   if (isLoading) {
     postsContent = (
       <p className="py-12 text-center text-slate-300">Loading...</p>
     );
-  } else if (posts.length === 0) {
+  } else if (total === 0) {
     postsContent = (
       <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-white/10 p-12 text-center">
         <PlayText.Primary
@@ -58,7 +46,15 @@ export const PostsSection: React.FC = () => {
     postsContent = (
       <div className="flex flex-col gap-4">
         {posts.map((post) => (
-          <Post key={post.id} post={post} onDelete={handleDelete} />
+          <Post
+            key={post.id}
+            post={post}
+            onDelete={() => {
+              void deletePost(post.id, () => {
+                window.location.reload();
+              });
+            }}
+          />
         ))}
       </div>
     );
@@ -74,12 +70,44 @@ export const PostsSection: React.FC = () => {
         <PlayText.Span
           texts={[
             {
-              content: `${posts.length} ${posts.length === 1 ? t("post") : t("posts")}`,
+              content: `${total} ${total === 1 ? t("post") : t("posts")}`,
               className:
                 "rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-slate-400",
             },
           ]}
         />
+      </div>
+      <div className="flex items-center justify-center my-6 space-x-4">
+        {pageNumber > 1 && (
+          <button
+            onClick={() => {
+              void loadPosts(connectedUser?.id, pageNumber - 1);
+            }}
+            className="cursor-pointer"
+          >
+            <PlayText.Primary
+              id="previous"
+              className="text-sm text-slate-400 hover:text-slate-200 transition-color"
+            />
+          </button>
+        )}
+        <PlayText.Primary
+          content={`${pageNumber.toString()}/${pages}`}
+          className="text-sm text-slate-400 font-bold transition-color"
+        />
+        {pageNumber < pages && (
+          <button
+            onClick={() => {
+              void loadPosts(connectedUser?.id, pageNumber + 1);
+            }}
+            className="cursor-pointer"
+          >
+            <PlayText.Primary
+              id="next"
+              className="text-sm text-slate-400 hover:text-slate-200 transition-color"
+            />
+          </button>
+        )}
       </div>
       {postsContent}
     </div>

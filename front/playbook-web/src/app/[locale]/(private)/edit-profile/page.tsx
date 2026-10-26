@@ -15,8 +15,8 @@ import { Info } from "./components/info";
 
 export const EditProfilePage = () => {
   const t = useTranslations();
-  const { connectedUser, setConnectedUser, isLoading, fetchUser } = useAuth();
-  const { updateProfile } = useProfileController();
+  const { connectedUser, setConnectedUser, isLoading } = useAuth();
+  const { updateProfile, fetchUser } = useProfileController();
 
   const [updatedInfos, setUpdatedInfos] = useState<User>({
     firstname: "",

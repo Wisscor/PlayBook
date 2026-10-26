@@ -3,7 +3,8 @@ import { api } from "./api";
 import { useAuth } from "@/hooks/contexts/authContext";
 
 export const useProfileController = () => {
-  const { setConnectedUser } = useAuth();
+  const { setConnectedUser, setIsLoading } = useAuth();
+
   const updateProfile = async (
     updatedInfos: User,
     onSuccess: (newUser: User) => void,
@@ -39,8 +40,27 @@ export const useProfileController = () => {
         }
       });
   };
+  const fetchUser = async (onSuccess?: () => void) => {
+    setIsLoading(true);
+    await api
+      .get<User>("/users/me")
+      .then((res) => {
+        setConnectedUser(res.data);
+        onSuccess?.();
+      })
+      .catch((error) => {
+        console.error("error loadin user >>>", error);
+
+        setConnectedUser(undefined);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+  };
+
   return {
     updateProfile,
     uploadAvatar,
+    fetchUser,
   };
 };
