@@ -14,10 +14,8 @@ from ..models import Session, User
 from ..database.database import get_db
 from sqlalchemy.exc import IntegrityError
 
-# #####
 from typing import Optional
-from app.core.deps import get_curr_user
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime, timedelta, timezone
 from ..schemas.user import UserCreate, UserLogin, UserProfileResponse
 from ..core.security import hash_password, verify_password
@@ -40,7 +38,6 @@ async def signup(
     db: AsyncSession = Depends(get_db),
 ) -> User:
     """Create a user account."""
-    # Create user instance
     user = User(
         firstname=data.firstname,
         lastname=data.lastname,
@@ -50,8 +47,6 @@ async def signup(
         avatar=data.avatar,
         bio=data.bio,
     )
-    # Add the user to the database and commit the transaction
-    # Handle potential IntegrityError if the username or email already exists
     try:
         db.add(user)
         await db.commit()
@@ -149,13 +144,3 @@ async def logout(
         key=settings.session_cookie_name,
     )
     return {"message": "Logout successful"}
-
-
-@router.get("/me", response_model=UserProfileResponse)
-@limiter.limit("60/minute")
-async def read_current_user(
-    request: Request,
-    current_user: User = Depends(get_curr_user),
-):
-    """Return the authenticated user's profile."""
-    return current_user
