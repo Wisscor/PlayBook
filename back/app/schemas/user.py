@@ -10,7 +10,7 @@ class UserBase(BaseModel):
     username: str = Field(..., min_length=3, max_length=50)
     email: EmailStr
     avatar: Optional[str] = Field(default=None)
-    bio: Optional[str] = Field(default=None, min_length=3, max_length=500)
+    bio: str = Field(default="", max_length=500)
 
 
 class UserCreate(UserBase):
@@ -47,7 +47,7 @@ class UserUpdate(BaseModel):
     lastname: Optional[str] = Field(default=None, min_length=3, max_length=50)
     username: Optional[str] = Field(default=None, min_length=3, max_length=50)
     email: Optional[EmailStr] = None
-    bio: Optional[str] = Field(default=None, min_length=3, max_length=500)
+    bio: str = Field(default="", max_length=500)
 
 
 class UserSummaryResponse(BaseModel):
