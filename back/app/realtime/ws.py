@@ -34,7 +34,10 @@ async def receive_loop(ctx: ConnectionContext) -> None:
             ctx.inbound_frames.hit(now)
             > frames.MAX_INBOUND_FRAMES_PER_WINDOW
         ):
-            await registry.timeout_user(ctx.user.id)
+            await ctx.websocket.close(
+                code=frames.CLOSE_RATE_LIMIT,
+                reason="frame rate limit exceeded",
+            )
             return
 
         if len(raw.encode("utf-8")) > frames.MAX_FRAME_BYTES:
@@ -86,18 +89,6 @@ async def websocket_endpoint(websocket: WebSocket):
     async with session_maker() as db:
         user = await authenticate_socket(websocket, db)
     if user is None:
-        return
-
-    remaining = registry.timeout_remaining(user.id)
-    if remaining > 0:
-        await websocket.send_json(
-            {
-                "type": frames.ERROR,
-                "reason": "timed_out",
-                "retry_after": round(remaining, 1),
-            }
-        )
-        await websocket.close(code=frames.CLOSE_TIMED_OUT)
         return
 
     ctx = ConnectionContext(

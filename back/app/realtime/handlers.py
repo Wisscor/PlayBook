@@ -2,7 +2,7 @@ import time
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 
-from fastapi import WebSocket, WebSocketDisconnect
+from fastapi import WebSocket
 
 from ..database.database import session_maker
 from ..models.user import User
@@ -22,6 +22,15 @@ class ConnectionContext:
 
 
 async def handle_message_send(ctx: ConnectionContext, frame) -> None:
+    remaining = registry.timeout_remaining(ctx.user.id)
+    if remaining > 0:
+        await ctx.websocket.send_json({
+            "type": frames.ERROR,
+            "reason": "timed_out",
+            "retry_after": round(remaining, 1),
+        })
+        return
+
     now = time.monotonic()
     if ctx.sends.hit(now) > 10:
         await ctx.websocket.send_json(
@@ -29,7 +38,6 @@ async def handle_message_send(ctx: ConnectionContext, frame) -> None:
         )
         if ctx.strikes.hit(now) >= 5:
             await registry.timeout_user(ctx.user.id)
-            raise WebSocketDisconnect(code=frames.CLOSE_RATE_LIMIT)
         return
 
     data = MessageSend.model_validate(frame)
