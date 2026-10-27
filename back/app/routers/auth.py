@@ -5,23 +5,25 @@ from fastapi import (
     HTTPException,
     status,
     Response,
+    Request,
 )
 
 import uuid
-from sqlalchemy import select, or_
+from sqlalchemy import select
 from ..models import Session, User
 from ..database.database import get_db
 from sqlalchemy.exc import IntegrityError
 
-# #####
 from typing import Optional
-from app.core.deps import get_curr_user
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+from pydantic import EmailStr
+from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime, timedelta, timezone
-from ..schemas.user import UserCreate, UserLogin, UserResponse
+from ..schemas.user import UserCreate, UserLogin, UserProfileResponse
 from ..core.security import hash_password, verify_password
+from .users import build_user_profile
 from app.core.config import settings
 from app.realtime import registry
+from app.core.limiter import limiter
 
 router = APIRouter(
     prefix="/auth",
@@ -29,24 +31,48 @@ router = APIRouter(
 )
 
 
-@router.post("/signup", response_model=UserResponse)
+async def get_user_by_email(
+    db: AsyncSession, email: EmailStr
+) -> Optional[User]:
+    stmt = select(User).where(User.email == email)
+    return (await db.execute(stmt)).scalar_one_or_none()
+
+
+async def get_user_by_username(
+    db: AsyncSession, username: str
+) -> Optional[User]:
+    stmt = select(User).where(User.username == username)
+    return (await db.execute(stmt)).scalar_one_or_none()
+
+
+@router.post("/signup", response_model=UserProfileResponse)
+@limiter.limit("5/minute")
 async def signup(
     data: UserCreate,
+    request: Request,
     db: AsyncSession = Depends(get_db),
 ) -> User:
-    # Create user instance
+    """Create a user account."""
     user = User(
         firstname=data.firstname,
         lastname=data.lastname,
         username=data.username,
         email=data.email,
         hashed_password=hash_password(data.password),
-        phone=data.phone,
         avatar=data.avatar,
         bio=data.bio,
     )
-    # Add the user to the database and commit the transaction
-    # Handle potential IntegrityError if the username or email already exists
+    
+    if get_user_by_email(db, data.email) is None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="A user with this email already exists.",
+        )
+    if get_user_by_username(db, data.username) is None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="A user with this username already exists.",
+        )
     try:
         db.add(user)
         await db.commit()
@@ -59,21 +85,17 @@ async def signup(
     return user
 
 
-@router.post("/login", response_model=UserResponse)
+@router.post("/login", response_model=UserProfileResponse)
+@limiter.limit("10/minute")
 async def login(
     data: UserLogin,
+    request: Request,
     response: Response,
     db: AsyncSession = Depends(get_db),
 ):
-    # 1. Find user by 'username' or 'email'
-    users = await db.execute(
-        select(User).where(
-            or_(
-                User.username == data.username_or_email,
-                User.email == data.username_or_email,
-            )
-        )
-    )
+    """Authenticate with email and password."""
+    # 1. Find user by email
+    users = await db.execute(select(User).where(User.email == data.email))
     user: Optional[User] = users.scalar_one_or_none()
     if user is None or not verify_password(
         data.password,
@@ -81,7 +103,7 @@ async def login(
     ):
         raise HTTPException(
             status_code=401,
-            detail="Invalid username/email or password",
+            detail="Invalid email or password",
         )
 
     # 2. Create 'session' and Store it
@@ -103,11 +125,13 @@ async def login(
         httponly=settings.session_cookie_http_only,
         samesite=settings.session_cookie_same_site,
     )
-    return user
+    return await build_user_profile(db, user, user)
 
 
 @router.post("/logout")
+@limiter.limit("20/minute")
 async def logout(
+    request: Request,
     response: Response,
     session_id: Optional[str] = Cookie(
         default=None,
@@ -115,6 +139,7 @@ async def logout(
     ),
     db: AsyncSession = Depends(get_db),
 ):
+    """End the current session."""
     if session_id is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -140,14 +165,8 @@ async def logout(
     await db.delete(session)
     await db.commit()
     await registry.close_user(session.user_id)
+    await registry.close_user(session.user_id)
     response.delete_cookie(
         key=settings.session_cookie_name,
     )
     return {"message": "Logout successful"}
-
-
-@router.get("/me", response_model=UserResponse)
-async def read_current_user(
-    current_user: User = Depends(get_curr_user),
-):
-    return current_user

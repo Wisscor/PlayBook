@@ -1,4 +1,4 @@
-import logging
+import asyncio
 import time
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -7,7 +7,11 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import structlog
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from fastapi_pagination import add_pagination
 
+from app.core.limiter import limiter
 from app.database.database import engine, get_db
 from app.database.base import Base
 from app.database.seed import seed_sports
@@ -20,8 +24,6 @@ from app.routers import (
     users,
     post,
     followers,
-    like,
-    comments,
     sport,
     match_announcement,
     play_request,
@@ -48,8 +50,19 @@ async def lifespan(app: FastAPI):
             exc_info=True,
         )
         raise e
+
+    sweep_task = asyncio.create_task(_timeout_sweep_loop())
     yield
+    sweep_task.cancel()
     await engine.dispose()
+
+
+async def _timeout_sweep_loop() -> None:
+    """Single global task that cleans expired timeout entries every 30s."""
+    from .realtime import registry
+    while True:
+        await asyncio.sleep(30)
+        registry.sweep_timeouts()
 
 
 app = FastAPI(
@@ -57,6 +70,9 @@ app = FastAPI(
     title=settings.app_name,
     debug=settings.debug,
 )
+# Stores the limiter in the app's state for global access
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 UPLOAD_DIR = Path("uploads")
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
@@ -122,12 +138,6 @@ app.include_router(
     followers.router,
 )
 app.include_router(
-    like.router,
-)
-app.include_router(
-    comments.router,
-)
-app.include_router(
     sport.router,
 )
 app.include_router(
@@ -136,10 +146,12 @@ app.include_router(
 app.include_router(
     play_request.router,
 )
+add_pagination(app)
 
 
 @app.get("/health", status_code=200)
-async def health_check():
+@limiter.limit("5/minute")
+async def health_check(request: Request):
     """
     Health check endpoint to verify the application's status.
     Returns a 200 OK response if the application is running.

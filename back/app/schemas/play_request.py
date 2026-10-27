@@ -29,8 +29,3 @@ class PlayerRequestFilter(BaseModel):
 
     role: Literal["sent", "received"]
     status: Optional[prsEnum] = None
-
-
-class PlayerRequestPage(BaseModel):
-    items: list[PlayerRequestResponse]
-    next_offset: Optional[int] = None

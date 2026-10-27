@@ -1,10 +1,20 @@
 import uuid
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    HTTPException,
+    Response,
+    status,
+    Request,
+)
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, selectinload
+from fastapi_pagination import Page
+from fastapi_pagination.ext.sqlalchemy import apaginate
 
 from app.core.deps import get_curr_user
 from app.database.database import get_db
@@ -16,11 +26,12 @@ from app.models.user import User
 from app.schemas.match_announcement import (
     MatchAnnouncementCreate,
     MatchAnnouncementFilter,
-    MatchAnnouncementPage,
     MatchAnnouncementResponse,
     MatchAnnouncementUpdate,
 )
 from app.schemas.user import UserSummaryResponse
+from app.core.limiter import limiter
+from app.realtime.notify import emit_notifications
 
 router = APIRouter(prefix="/match-announcements", tags=["Match Announcements"])
 
@@ -28,12 +39,7 @@ router = APIRouter(prefix="/match-announcements", tags=["Match Announcements"])
 async def _get_or_404(
     db: AsyncSession, announcement_id: uuid.UUID
 ) -> MatchAnnouncement:
-    """Load an announcement with its owner and sport.
-
-    populate_existing makes it safe to call after a commit: commit expires
-    every attribute, and async code cannot lazy-load `owner` or `sport`
-    while the response is built.
-    """
+    """Load an announcement with its related data."""
     stmt = (
         select(MatchAnnouncement)
         .options(
@@ -69,16 +75,30 @@ def _require_owner(announcement: MatchAnnouncement, user: User) -> None:
         raise HTTPException(status.HTTP_403_FORBIDDEN, detail="Not the owner")
 
 
+def _notification_recipients(
+    announcement: MatchAnnouncement,
+) -> set[uuid.UUID]:
+    return {
+        play_request.sender_id
+        for play_request in announcement.play_requests
+        if play_request.status
+        in {PlayerRequestStatusEnum.pending, PlayerRequestStatusEnum.accepted}
+    }
+
+
 @router.post(
     "",
     response_model=MatchAnnouncementResponse,
     status_code=status.HTTP_201_CREATED,
 )
+@limiter.limit("30/minute")
 async def create_announcement(
     body: MatchAnnouncementCreate,
+    request: Request,
     db: AsyncSession = Depends(get_db),
     me: User = Depends(get_curr_user),
 ):
+    """Create a match announcement."""
     if await db.get(Sport, body.sport_id) is None:
         raise HTTPException(
             status.HTTP_404_NOT_FOUND, detail="Sport not found"
@@ -91,44 +111,22 @@ async def create_announcement(
     return _to_response(await _get_or_404(db, announcement_id))
 
 
-@router.get("", response_model=MatchAnnouncementPage)
+@router.get("", response_model=Page[MatchAnnouncementResponse])
+@limiter.limit("60/minute")
 async def search_announcements(
+    request: Request,
     filters: MatchAnnouncementFilter = Depends(),
-    limit: int = Query(20, ge=1, le=100),
-    offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
     _: User = Depends(get_curr_user),
 ):
-    """Sorted by start_time (soonest first). Time window: the announcement must
-    fit inside it (start_time >= start_from and end_time <= end_to)."""
+    """Search announcements with sorting and time filters."""
     M = MatchAnnouncement
-    if (
-        filters.min_remaining_player_slots is not None
-        and filters.max_remaining_player_slots is not None
-        and filters.min_remaining_player_slots
-        > filters.max_remaining_player_slots
-    ):
-        raise HTTPException(
-            422,
-            detail="min_remaining_player_slots must be less than or equal to max_remaining_player_slots",
-        )
     stmt = select(M).options(
         joinedload(M.owner),
         joinedload(M.sport),
         selectinload(M.play_requests).joinedload(PlayerRequest.sender),
     )
-    sort_column = {
-        "start_time": M.start_time,
-        "created_at": M.created_at,
-        "remaining_player_slots": M.remaining_player_slots,
-    }[filters.sort_by]
-    sort_expression = (
-        sort_column.asc()
-        if filters.sort_order == "asc"
-        else sort_column.desc()
-    )
-    tie_breaker = M.id.asc() if filters.sort_order == "asc" else M.id.desc()
-    stmt = stmt.order_by(sort_expression, tie_breaker)
+    # Filters
     if filters.sport_id:
         stmt = stmt.where(M.sport_id == filters.sport_id)
     if filters.match_status:
@@ -142,49 +140,55 @@ async def search_announcements(
                 ]
             )
         )
+
     if filters.organizer_id:
         stmt = stmt.where(M.organizer_id == filters.organizer_id)
     if filters.start_from:
         stmt = stmt.where(M.start_time >= filters.start_from)
     if filters.end_to:
         stmt = stmt.where(M.end_time <= filters.end_to)
-    if filters.min_remaining_player_slots is not None:
-        stmt = stmt.where(
-            M.remaining_player_slots >= filters.min_remaining_player_slots
-        )
-    if filters.max_remaining_player_slots is not None:
-        stmt = stmt.where(
-            M.remaining_player_slots <= filters.max_remaining_player_slots
-        )
-    rows = list(
-        (await db.scalars(stmt.offset(offset).limit(limit + 1))).all()
-    )  # one extra row = "has next page"
-    next_offset = None
-    if len(rows) > limit:
-        rows = rows[:limit]
-        next_offset = offset + limit
-    return MatchAnnouncementPage(
-        items=[_to_response(row) for row in rows],
-        next_offset=next_offset,
+
+    # Sorting
+    sort_column = {
+        "start_time": M.start_time,
+        "created_at": M.created_at,
+        "remaining_player_slots": M.remaining_player_slots,
+    }[filters.sort_by]
+
+    ascending = filters.sort_order == "asc"
+    stmt = stmt.order_by(
+        sort_column.asc() if ascending else sort_column.desc(),
+        M.id.asc() if ascending else M.id.desc(),
+    )
+
+    return await apaginate(
+        db, stmt, transformer=lambda rows: [_to_response(r) for r in rows]
     )
 
 
 @router.get("/{id}", response_model=MatchAnnouncementResponse)
+@limiter.limit("60/minute")
 async def get_announcement(
     id: uuid.UUID,
+    request: Request,
     db: AsyncSession = Depends(get_db),
     _: User = Depends(get_curr_user),
 ):
+    """Retrieve a match announcement."""
     return _to_response(await _get_or_404(db, id))
 
 
 @router.patch("/{id}", response_model=MatchAnnouncementResponse)
+@limiter.limit("30/minute")
 async def update_announcement(
     id: uuid.UUID,
     body: MatchAnnouncementUpdate,
+    background_tasks: BackgroundTasks,
+    request: Request,
     db: AsyncSession = Depends(get_db),
     me: User = Depends(get_curr_user),
 ):
+    """Update an announcement owned by the current user."""
     announcement = await _get_or_404(db, id)
     _require_owner(announcement, me)
 
@@ -211,8 +215,7 @@ async def update_announcement(
     if (
         "match_status" in data
         and data["match_status"] != announcement.match_status
-        and announcement.match_status
-        in {MatchAnnouncementStatus.canceled, MatchAnnouncementStatus.finished}
+        and announcement.match_status == MatchAnnouncementStatus.finished
     ):
         raise HTTPException(
             status.HTTP_409_CONFLICT,
@@ -225,31 +228,60 @@ async def update_announcement(
             MatchAnnouncementStatus.upcoming,
             MatchAnnouncementStatus.live,
         }
-        and announcement.match_status
-        in {MatchAnnouncementStatus.canceled, MatchAnnouncementStatus.finished}
+        and announcement.match_status == MatchAnnouncementStatus.finished
     ):
         raise HTTPException(
             status.HTTP_409_CONFLICT,
             detail="Announcement cannot be reopened",
         )
 
+    changed = any(
+        getattr(announcement, field) != value for field, value in data.items()
+    )
+    recipient_ids = (
+        _notification_recipients(announcement) if changed else set()
+    )
     for field, value in data.items():
         setattr(announcement, field, value)
     await db.commit()
+    if recipient_ids:
+        background_tasks.add_task(
+            emit_notifications,
+            event_type="match_updated",
+            actor_id=me.id,
+            target_user_ids=recipient_ids,
+            target_id=announcement.id,
+            match_time=announcement.start_time,
+        )
     return _to_response(
         await _get_or_404(db, id)
     )  # reload: owner and sport after commit
 
 
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
+@limiter.limit("10/minute")
 async def delete_announcement(
     id: uuid.UUID,
+    background_tasks: BackgroundTasks,
+    request: Request,
     db: AsyncSession = Depends(get_db),
     me: User = Depends(get_curr_user),
 ):
+    """Delete an announcement owned by the current user."""
     announcement = await _get_or_404(db, id)
     _require_owner(announcement, me)
+    recipient_ids = _notification_recipients(announcement)
+    match_time = announcement.start_time
     # its play requests are deleted with it
     await db.delete(announcement)  # AsyncSession.delete must be awaited
     await db.commit()
+    if recipient_ids:
+        background_tasks.add_task(
+            emit_notifications,
+            event_type="match_cancelled",
+            actor_id=me.id,
+            target_user_ids=recipient_ids,
+            target_id=announcement.id,
+            match_time=match_time,
+        )
     return Response(status_code=status.HTTP_204_NO_CONTENT)

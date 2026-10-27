@@ -28,7 +28,6 @@ def test_signup_success(mock_db):
         "username": "alice_smith",
         "email": "alice@example.com",
         "password": "password123",
-        "phone": "1234567890",
         "bio": "Triathlete and marathon runner",
     }
     res = client.post("/auth/signup", json=payload)
@@ -45,7 +44,9 @@ def test_signup_success(mock_db):
 
 def test_signup_duplicate_username_or_email(mock_db):
     client = TestClient(app)
-    mock_db.commit.side_effect = IntegrityError("duplicate key", params=None, orig=None)
+    mock_db.commit.side_effect = IntegrityError(
+        "duplicate key", params=None, orig=None
+    )
     app.dependency_overrides[get_db] = lambda: mock_db
 
     payload = {
@@ -86,7 +87,7 @@ def test_login_success(mock_user_1, test_password, mock_db):
     app.dependency_overrides[get_db] = lambda: mock_db
 
     payload = {
-        "username_or_email": mock_user_1.username,
+        "email": mock_user_1.email,
         "password": test_password,
     }
     res = client.post("/auth/login", json=payload)
@@ -101,26 +102,6 @@ def test_login_success(mock_user_1, test_password, mock_db):
     app.dependency_overrides.clear()
 
 
-def test_login_with_email_success(mock_user_1, test_password, mock_db):
-    client = TestClient(app)
-
-    mock_result = MagicMock()
-    mock_result.scalar_one_or_none.return_value = mock_user_1
-    mock_db.execute.return_value = mock_result
-
-    app.dependency_overrides[get_db] = lambda: mock_db
-
-    payload = {
-        "username_or_email": mock_user_1.email,
-        "password": test_password,
-    }
-    res = client.post("/auth/login", json=payload)
-    assert res.status_code == 200
-    assert res.json()["email"] == mock_user_1.email
-
-    app.dependency_overrides.clear()
-
-
 def test_login_invalid_password(mock_user_1, mock_db):
     client = TestClient(app)
 
@@ -131,12 +112,12 @@ def test_login_invalid_password(mock_user_1, mock_db):
     app.dependency_overrides[get_db] = lambda: mock_db
 
     payload = {
-        "username_or_email": mock_user_1.username,
+        "email": mock_user_1.email,
         "password": "wrong_password_123",
     }
     res = client.post("/auth/login", json=payload)
     assert res.status_code == 401
-    assert "invalid username/email or password" in res.json()["detail"].lower()
+    assert "invalid email or password" in res.json()["detail"].lower()
 
     app.dependency_overrides.clear()
 
@@ -151,12 +132,12 @@ def test_login_user_not_found(mock_db):
     app.dependency_overrides[get_db] = lambda: mock_db
 
     payload = {
-        "username_or_email": "nonexistent_user",
+        "email": "nobody@example.com",
         "password": "any_password",
     }
     res = client.post("/auth/login", json=payload)
     assert res.status_code == 401
-    assert "invalid username/email or password" in res.json()["detail"].lower()
+    assert "invalid email or password" in res.json()["detail"].lower()
 
     app.dependency_overrides.clear()
 

@@ -4,18 +4,15 @@ from uuid import UUID
 from typing import Optional
 
 
-# DRY Principle
 class UserBase(BaseModel):
     firstname: str = Field(..., min_length=3, max_length=50)
     lastname: str = Field(..., min_length=3, max_length=50)
     username: str = Field(..., min_length=3, max_length=50)
     email: EmailStr
-    phone: Optional[str] = Field(default=None, min_length=3, max_length=15)
     avatar: Optional[str] = Field(default=None)
-    bio: Optional[str] = Field(default=None, min_length=3, max_length=500)
+    bio: str = Field(default="", max_length=500)
 
 
-# What should the client provide?
 class UserCreate(UserBase):
     password: str = Field(..., min_length=8, max_length=100)
     #
@@ -32,36 +29,25 @@ class UserCreate(UserBase):
     }
 
 
-# What should the client provide for login?
 class UserLogin(BaseModel):
-    username_or_email: str
+    email: EmailStr
     password: str
     model_config = {
         "json_schema_extra": {
             "example": {
-                "username_or_email": "zouazrou",
+                "email": "zakaria@gmail.com",
                 "password": "ziko1234",
             }
         }
     }
 
 
-# What should the client update?
 class UserUpdate(BaseModel):
     firstname: Optional[str] = Field(default=None, min_length=3, max_length=50)
     lastname: Optional[str] = Field(default=None, min_length=3, max_length=50)
     username: Optional[str] = Field(default=None, min_length=3, max_length=50)
     email: Optional[EmailStr] = None
-    phone: Optional[str] = Field(default=None, min_length=3, max_length=15)
-    bio: Optional[str] = Field(default=None, min_length=3, max_length=500)
-
-
-# What should the client see?
-class UserResponse(UserBase):
-    model_config = ConfigDict(from_attributes=True)
-
-    id: UUID
-    created_at: datetime
+    bio: str = Field(default="", max_length=500)
 
 
 class UserSummaryResponse(BaseModel):
@@ -74,7 +60,10 @@ class UserSummaryResponse(BaseModel):
     avatar: Optional[str] = None
 
 
-class UserProfileResponse(UserResponse):
+class UserProfileResponse(UserBase):
+    model_config = ConfigDict(from_attributes=True)
+    id: UUID
+    created_at: datetime
     followers_count: int = 0
     following_count: int = 0
     posts_count: int = 0
