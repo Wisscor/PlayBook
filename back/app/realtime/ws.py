@@ -4,6 +4,7 @@ import time
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from pydantic import ValidationError
+from pydantic import ValidationError
 
 from ..core.config import settings
 from ..database.database import session_maker
@@ -80,6 +81,7 @@ async def websocket_endpoint(websocket: WebSocket):
 
     await websocket.accept()
     last_seen = time.monotonic()
+    last_seen = time.monotonic()
 
     async with session_maker() as db:
         user = await authenticate_socket(websocket, db)
@@ -109,6 +111,7 @@ async def websocket_endpoint(websocket: WebSocket):
     first_socket = not registry.connections_for(user.id)
     registry.register(user.id, websocket)
     contacts = set()
+    contacts = set()
     try:
         await websocket.send_json(
             {
@@ -133,7 +136,24 @@ async def websocket_endpoint(websocket: WebSocket):
                 if not task.done():
                     task.cancel()
             await asyncio.gather(*tasks, return_exceptions=True)
+        contacts = await connection.on_connect(websocket, user, first_socket)
+
+        receive_task = asyncio.create_task(receive_loop(ctx))
+        watchdog_task = asyncio.create_task(_idle_watchdog(ctx))
+        tasks = (receive_task, watchdog_task)
+        try:
+            done, _ = await asyncio.wait(
+                tasks, return_when=asyncio.FIRST_COMPLETED
+            )
+            for task in done:
+                task.result()
+        finally:
+            for task in tasks:
+                if not task.done():
+                    task.cancel()
+            await asyncio.gather(*tasks, return_exceptions=True)
     except WebSocketDisconnect:
         pass
     finally:
+        await connection.on_disconnect(user, websocket, contacts)
         await connection.on_disconnect(user, websocket, contacts)

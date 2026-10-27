@@ -14,13 +14,13 @@ from ..models import Session, User
 from ..database.database import get_db
 from sqlalchemy.exc import IntegrityError
 
-# #####
 from typing import Optional
-from app.core.deps import get_curr_user
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+from pydantic import EmailStr
+from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime, timedelta, timezone
-from ..schemas.user import UserCreate, UserLogin, UserResponse
+from ..schemas.user import UserCreate, UserLogin, UserProfileResponse
 from ..core.security import hash_password, verify_password
+from .users import build_user_profile
 from app.core.config import settings
 from app.realtime import registry
 from app.core.limiter import limiter
@@ -31,7 +31,21 @@ router = APIRouter(
 )
 
 
-@router.post("/signup", response_model=UserResponse)
+async def get_user_by_email(
+    db: AsyncSession, email: EmailStr
+) -> Optional[User]:
+    stmt = select(User).where(User.email == email)
+    return (await db.execute(stmt)).scalar_one_or_none()
+
+
+async def get_user_by_username(
+    db: AsyncSession, username: str
+) -> Optional[User]:
+    stmt = select(User).where(User.username == username)
+    return (await db.execute(stmt)).scalar_one_or_none()
+
+
+@router.post("/signup", response_model=UserProfileResponse)
 @limiter.limit("5/minute")
 async def signup(
     data: UserCreate,
@@ -39,7 +53,6 @@ async def signup(
     db: AsyncSession = Depends(get_db),
 ) -> User:
     """Create a user account."""
-    # Create user instance
     user = User(
         firstname=data.firstname,
         lastname=data.lastname,
@@ -49,8 +62,17 @@ async def signup(
         avatar=data.avatar,
         bio=data.bio,
     )
-    # Add the user to the database and commit the transaction
-    # Handle potential IntegrityError if the username or email already exists
+    
+    if get_user_by_email(db, data.email) is None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="A user with this email already exists.",
+        )
+    if get_user_by_username(db, data.username) is None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="A user with this username already exists.",
+        )
     try:
         db.add(user)
         await db.commit()
@@ -63,7 +85,7 @@ async def signup(
     return user
 
 
-@router.post("/login", response_model=UserResponse)
+@router.post("/login", response_model=UserProfileResponse)
 @limiter.limit("10/minute")
 async def login(
     data: UserLogin,
@@ -103,7 +125,7 @@ async def login(
         httponly=settings.session_cookie_http_only,
         samesite=settings.session_cookie_same_site,
     )
-    return user
+    return await build_user_profile(db, user, user)
 
 
 @router.post("/logout")
@@ -143,17 +165,8 @@ async def logout(
     await db.delete(session)
     await db.commit()
     await registry.close_user(session.user_id)
+    await registry.close_user(session.user_id)
     response.delete_cookie(
         key=settings.session_cookie_name,
     )
     return {"message": "Logout successful"}
-
-
-@router.get("/me", response_model=UserResponse)
-@limiter.limit("60/minute")
-async def read_current_user(
-    request: Request,
-    current_user: User = Depends(get_curr_user),
-):
-    """Return the authenticated user's profile."""
-    return current_user

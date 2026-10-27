@@ -1,7 +1,5 @@
 import { ProfilePageContent } from "./components/profilePage";
 
-export const ProfilePage = async () => {
-  return <ProfilePageContent />;
-};
+export const ProfilePage = () => <ProfilePageContent />;
 
 export default ProfilePage;

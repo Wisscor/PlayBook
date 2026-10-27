@@ -19,6 +19,7 @@ def unregister(user_id: UUID, ws: WebSocket) -> None:
 
 def connections_for(user_id: UUID) -> set[WebSocket]:
     return set(_connections.get(user_id, ()))
+    return set(_connections.get(user_id, ()))
 
 def online_user_ids() -> set[UUID]:
     return set(_connections.keys())

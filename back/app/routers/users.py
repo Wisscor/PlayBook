@@ -28,7 +28,6 @@ from ..models import (
 )
 from ..schemas.user import (
     UserUpdate,
-    UserResponse,
     UserProfileResponse,
     UserSummaryResponse,
 )
@@ -51,6 +50,63 @@ AVATAR_TYPES = {
 MAX_AVATAR_SIZE = 5 * 1024 * 1024
 
 
+async def build_user_profile(
+    db: AsyncSession,
+    target_user: User,
+    curr_user: User,
+) -> UserProfileResponse:
+    """Build a UserProfileResponse from a User model.
+
+    If viewer_id is None (e.g. /me), is_following is set to None.
+    """
+    followers_count = (
+        await db.scalar(
+            select(func.count())
+            .select_from(Follower)
+            .where(Follower.following_id == target_user.id)
+        )
+        or 0
+    )
+
+    following_count = (
+        await db.scalar(
+            select(func.count())
+            .select_from(Follower)
+            .where(Follower.follower_id == target_user.id)
+        )
+        or 0
+    )
+
+    posts_count = (
+        await db.scalar(
+            select(func.count())
+            .select_from(Post)
+            .where(Post.user_id == target_user.id)
+        )
+        or 0
+    )
+
+    # Determine if the viewer (current user) is following the target user
+    is_following: Optional[bool] = None
+    if curr_user.id != target_user.id:
+        is_following_edge = await db.scalar(
+            select(Follower).where(
+                and_(
+                    Follower.follower_id == curr_user.id,
+                    Follower.following_id == target_user.id,
+                )
+            )
+        )
+        is_following = is_following_edge is not None
+
+    profile = UserProfileResponse.model_validate(target_user)
+    profile.followers_count = followers_count
+    profile.following_count = following_count
+    profile.posts_count = posts_count
+    profile.is_following = is_following
+    return profile
+
+
 @router.get(
     path="/me",
     status_code=HTTPStatus.OK,
@@ -63,45 +119,13 @@ async def get_my_profile(
     db: AsyncSession = Depends(get_db),
 ):
     """Return the current user's profile and social counts."""
-    followers_count = (
-        await db.scalar(
-            select(func.count())
-            .select_from(Follower)
-            .where(Follower.following_id == curr_user.id)
-        )
-        or 0
-    )
-
-    following_count = (
-        await db.scalar(
-            select(func.count())
-            .select_from(Follower)
-            .where(Follower.follower_id == curr_user.id)
-        )
-        or 0
-    )
-
-    posts_count = (
-        await db.scalar(
-            select(func.count())
-            .select_from(Post)
-            .where(Post.user_id == curr_user.id)
-        )
-        or 0
-    )
-
-    profile = UserProfileResponse.model_validate(curr_user)
-    profile.followers_count = followers_count
-    profile.following_count = following_count
-    profile.posts_count = posts_count
-    profile.is_following = None
-    return profile
+    return await build_user_profile(db, curr_user, curr_user)
 
 
 @router.patch(
     path="/me",
     status_code=HTTPStatus.OK,
-    response_model=UserResponse,
+    response_model=UserProfileResponse,
 )
 @limiter.limit("30/minute")
 async def update(
@@ -117,13 +141,13 @@ async def update(
 
     await db.commit()
     await db.refresh(curr_user)
-    return curr_user
+    return await build_user_profile(db, curr_user, curr_user)
 
 
 @router.post(
     path="/me/avatar",
     status_code=HTTPStatus.OK,
-    response_model=UserResponse,
+    response_model=UserProfileResponse,
 )
 @limiter.limit("10/minute")
 async def upload_avatar(
@@ -168,7 +192,7 @@ async def upload_avatar(
     if old_avatar and old_avatar.startswith("uploads/"):
         Path(old_avatar).unlink(missing_ok=True)
 
-    return curr_user
+    return await build_user_profile(db, curr_user, curr_user)
 
 
 @router.delete(path="/me", status_code=HTTPStatus.NO_CONTENT)
@@ -194,7 +218,7 @@ async def search_users(
     request: Request,
     search: Optional[str] = Query(default=None, min_length=1),
     db: AsyncSession = Depends(get_db),
-    _: User = Depends(get_curr_user)
+    _: User = Depends(get_curr_user),
 ):
     """Search users by name or username."""
     stmt = select(User)
@@ -210,7 +234,9 @@ async def search_users(
     return await apaginate(
         db,
         stmt,
-        transformer=lambda rows: [UserSummaryResponse.model_validate(r) for r in rows],
+        transformer=lambda rows: [
+            UserSummaryResponse.model_validate(r) for r in rows
+        ],
     )
 
 
@@ -233,40 +259,7 @@ async def get_user(
             status_code=HTTPStatus.NOT_FOUND,
             detail="User not found.",
         )
-
-    followers_count = (
-        await db.scalar(
-            select(func.count())
-            .select_from(Follower)
-            .where(Follower.following_id == user_id)
-        )
-        or 0
-    )
-
-    following_count = (
-        await db.scalar(
-            select(func.count())
-            .select_from(Follower)
-            .where(Follower.follower_id == user_id)
-        )
-        or 0
-    )
-
-    is_following_edge = await db.scalar(
-        select(Follower).where(
-            and_(
-                Follower.follower_id == curr_user.id,
-                Follower.following_id == user_id,
-            )
-        )
-    )
-    is_following = is_following_edge is not None
-
-    profile = UserProfileResponse.model_validate(target_user)
-    profile.followers_count = followers_count
-    profile.following_count = following_count
-    profile.is_following = is_following
-    return profile
+    return await build_user_profile(db, target_user, curr_user)
 
 
 @router.get(
@@ -295,8 +288,8 @@ async def list_user_posts(
         .order_by(Post.created_at.desc(), Post.id.desc())
     )
 
-    # TODO: Check me later
-    async def _transform(rows):
-        return await _enrich_posts(rows, curr_user, db)
-
-    return await apaginate(db, stmt, transformer=_transform)
+    return await apaginate(
+        db,
+        stmt,
+        transformer=lambda rows: _enrich_posts(rows, curr_user, db),
+    )

@@ -1,43 +1,74 @@
+"use client";
+
 import { PlayButton } from "@/components/ui/Button";
 import { PlayInput } from "@/components/ui/Input";
+import { PlayLabel } from "@/components/ui/Label";
 import { PlayModal } from "@/components/ui/Modal";
-import React from "react";
+import { PlayText } from "@/components/ui/Text";
+import { api } from "@/services/api";
+import React, { useState } from "react";
 
 export const PostModal: React.FC<{
   close: () => void;
   isOpen: boolean;
 }> = ({ close, isOpen }) => {
-  const [postText, setPostText] = React.useState<string | undefined>(undefined);
+  const [postText, setPostText] = useState<string>("");
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleCreatePost = async () => {
+    if (!postText.trim()) return;
+    setIsLoading(true);
+    setError("");
+    try {
+      await api.post("/posts", { caption: postText.trim() });
+      setPostText("");
+      close();
+    } catch (requestError) {
+      console.error("Unable to create post:", requestError);
+      setError("Unable to create your post");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
-    <PlayModal.Primary
-      isOpen={isOpen}
-      close={() => {
-        close();
-      }}
-      title="create-post"
-    >
-      <>
-        <div className="flex flex-col gap-4">
-          <PlayInput.Area
-            onChange={(e) => setPostText(e.target.value)}
-            placeholder="your-post"
-            value={postText ?? ""}
-            className="bg-primary/20 py-2 text-sm placeholder:text-gray text-black"
-          />
+    <PlayModal.Primary isOpen={isOpen} close={close} title="create-post">
+      <div className="flex flex-col gap-6 pt-1">
+        <div className="relative flex flex-col gap-2">
+          <PlayLabel.Primary>
+            <PlayInput.Area
+              onChange={(e) => setPostText(e.target.value)}
+              placeholder="your-post"
+              value={postText}
+              className="w-full min-h-35 rounded-2xl border border-white/10 bg-white/5 p-4 text-base text-white placeholder-slate-400 backdrop-blur-md focus:border-white/30 focus:outline-none transition-all resize-none"
+            />
+          </PlayLabel.Primary>
+
+          <div className="flex justify-end">
+            <PlayText.Span
+              texts={[
+                {
+                  content: `${postText.length} characters`,
+                  className: "text-xs text-slate-400",
+                },
+              ]}
+            />
+          </div>
         </div>
 
-        {postText && (
-          <PlayButton.Primary
-            onClick={() => {
-              close();
-            }}
-            title="create-post"
-            className="bg-primary"
-            textClassName="text-white"
-          />
+        {error && <p className="text-sm text-rose-400">{error}</p>}
+
+        {postText.trim().length > 0 && (
+          <div className="pt-2">
+            <PlayButton.Primary
+              onClick={handleCreatePost}
+              title={isLoading ? "creating-post" : "create-post"}
+              className="w-full rounded-2xl bg-white py-3.5 shadow-lg shadow-white/5 hover:bg-slate-100 transition-all font-semibold text-slate-950"
+            />
+          </div>
         )}
-      </>
+      </div>
     </PlayModal.Primary>
   );
 };

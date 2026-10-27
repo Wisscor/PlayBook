@@ -3,46 +3,56 @@
 import { Header } from "@/components/shared/Header";
 import { PlayButton } from "@/components/ui/Button";
 import { PlayText } from "@/components/ui/Text";
-import { useResize } from "@/hooks/contexts/resizeContext";
 import { ROUTES } from "@/lib/constants";
 import { Link } from "../../../i18n/navigation";
 
 export const Home = () => {
-  const { windowWidth } = useResize();
   return (
-    <div className=" lg:bg-[url('/images/bg-app.png')] lg:bg-cover lg:bg-no-repeat lg:bg-center bg-linear-to-b from-secondary via-extra to-primary flex-col flex-1 flex h-screen px-10 lg:px-30 py-11 lg:py-20 ">
-      <main className="flex-1 justify-between flex flex-col  ">
+    <div className="relative flex min-h-screen flex-col overflow-hidden bg-slate-950 px-6 py-8 text-white md:px-12 lg:px-20 lg:py-12">
+      <main className="relative z-10 flex flex-1 flex-col justify-between">
         <Header />
 
-        <div className="flex-1 flex-col justify-center 2xl:px-60   flex ">
-          <div
-            className={`flex flex-col lg:flex-row   justify-between ${windowWidth < 1024 && "flex-1"}    lg:rounded-4xl drop-shadow-2xl lg:bg-white100 overflow-hidden`}
-          >
-            <div className="text-center gap-2.5 flex-col flex  justify-center flex-1 lg:bg-linear-to-b lg:from-secondary lg:via-extra lg:to-primary items-center lg:px-9 ">
+        <div className="my-auto flex flex-1 items-center justify-center py-12">
+          <div className="w-full max-w-4xl overflow-hidden rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl shadow-2xl transition-all duration-300 hover:border-white/20 lg:grid lg:grid-cols-2">
+            <div className="flex flex-col justify-center gap-4 bg-linear-to-b from-secondary/40 via-extra/20 to-primary/40 p-8 text-center lg:p-12">
               <PlayText.Primary
                 id="welcome"
-                className=" text-2xl lg:text-3xl font-bold "
+                className="text-3xl font-extrabold tracking-tight sm:text-4xl lg:text-5xl bg-linear-to-r from-white via-slate-100 to-slate-400 bg-clip-text text-transparent"
               />
-              <PlayText.Primary id="slogan" className="text-lg lg:text-xl" />
+              <PlayText.Primary
+                id="slogan"
+                className="text-base text-slate-300 sm:text-lg font-medium"
+              />
             </div>
 
-            <div className="lg:flex-1 lg:bg-secondary lg:px-9 lg:pt-38 lg:pb-15 ">
-              <PlayButton.Primary title="continue-intra" />
-              <div className="flex items-center gap-2.5 mt-4">
-                <div className="flex-1 h-px bg-white100 " />
-                <PlayText.Primary id="or" className="text-[16px] lg:text-xl " />
-                <div className="flex-1 h-px bg-white100 " />
-              </div>
-              <div className="flex flex-col lg:flex-row gap-4 mt-4">
-                <Link href={ROUTES.SIGNUP} className="w-full">
-                  <PlayButton.Secondary
-                    title="signup"
-                    textClassName="text-white"
+            <div className="flex flex-col justify-center border-t border-white/10 bg-black/20 p-8 lg:border-t-0 lg:border-l lg:p-12">
+              <div className="space-y-4">
+                <PlayButton.Primary
+                  title="continue-intra"
+                  className="w-full shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-shadow"
+                />
+
+                <div className="flex items-center gap-3 my-6">
+                  <div className="h-px flex-1 bg-linear-to-r from-transparent via-white/20 to-transparent" />
+                  <PlayText.Primary
+                    id="or"
+                    className="text-xs uppercase tracking-wider text-slate-400 font-semibold"
                   />
-                </Link>
-                <Link href={ROUTES.SIGNIN} className="w-full">
-                  <PlayButton.Primary title="login" />
-                </Link>
+                  <div className="h-px flex-1 bg-linear-to-r from-transparent via-white/20 to-transparent" />
+                </div>
+
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <Link href={ROUTES.SIGNUP} className="w-full">
+                    <PlayButton.Secondary
+                      title="signup"
+                      textClassName="text-white"
+                      className="w-full border border-white/10 bg-white/5 hover:bg-white/10 transition-colors"
+                    />
+                  </Link>
+                  <Link href={ROUTES.SIGNIN} className="w-full">
+                    <PlayButton.Primary title="login" className="w-full" />
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
