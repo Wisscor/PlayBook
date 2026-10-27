@@ -1,9 +1,8 @@
 import { PlayText } from "@/components/ui/Text";
+import { useAuthController } from "@/services/auth";
 import { usePathname } from "next/navigation";
 import React from "react";
 import { Link } from "../../../../../i18n/navigation";
-import { signOut } from "@/services/auth";
-import { useNavigation } from "@/hooks/useNavigation";
 
 export const BurgerMenu: React.FC<{
   isOpen: boolean;
@@ -13,13 +12,14 @@ export const BurgerMenu: React.FC<{
   }[];
   locale: string;
   close: () => void;
-}> = ({ isOpen, menu, locale, close }) => {
+  more: React.JSX.Element;
+}> = ({ isOpen, menu, locale, close, more }) => {
+  const { signOut } = useAuthController();
   const pathname = usePathname();
-  const { goSignIn } = useNavigation();
 
   return (
     <div
-      className={`absolute z-30 min-w-50 p-2 rounded-2xl border border-white/10 bg-slate-950/95 backdrop-blur-xl shadow-2xl top-full mt-3 transition-all duration-200 ease-out transform ${
+      className={`absolute z-30 min-w-50 space-y-5 p-2 rounded-2xl border border-white/10 bg-slate-950/95 backdrop-blur-xl shadow-2xl top-full mt-3 transition-all duration-200 ease-out transform ${
         locale === "ar" ? "left-0" : "right-0"
       } ${
         isOpen
@@ -54,14 +54,10 @@ export const BurgerMenu: React.FC<{
         })}
         <button
           type="button"
-          onClick={async () => {
-            try {
-              await signOut();
+          onClick={() => {
+            void signOut(() => {
               close();
-              goSignIn();
-            } catch (error) {
-              console.error("Unable to log out:", error);
-            }
+            });
           }}
           className="flex w-full cursor-pointer rounded-xl px-4 py-2.5 text-left text-rose-300 transition-colors hover:bg-rose-500/10"
         >
@@ -71,6 +67,7 @@ export const BurgerMenu: React.FC<{
           />
         </button>
       </div>
+      {more}
     </div>
   );
 };

@@ -14,7 +14,11 @@ export const useNavigation = () => {
     goSearch: () => push(ROUTES.SEARCH),
     goUserProfile: (userId: string) => {
       localStorage.setItem("userId", userId);
-      push(`${ROUTES.USER_PROFILE}`)
-    }
+      push(`${ROUTES.USER_PROFILE}`);
+    },
+    goFollowers: (userId: string) => {
+      localStorage.setItem("userid_of_requested_user_for_followers", userId);
+      push(`${ROUTES.FOLLOWERS}`);
+    },
   };
 };

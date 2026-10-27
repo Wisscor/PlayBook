@@ -1,0 +1,88 @@
+sequenceDiagram
+    participant Sender as Sender (Browser)
+    participant recv as receive_loop (ws.py)
+    participant h as handle_message_send (handlers.py)
+    participant svc as service (service.py)
+    participant dlv as deliver_message (delivery.py)
+    participant reg as registry (registry.py)
+    participant Recipient as Recipient (Browser)
+
+    Sender->>recv: {type: "message.send", conversation_id, body}
+    recv->>recv: last_seen = time.monotonic()
+    recv->>recv: HANDLERS["message.send"] → handle_message_send
+
+    rect rgb(255, 250, 230)
+        Note over h: Rate-limit check
+        h->>h: sends.hit(now) → SlidingWindow(10)
+        alt sends.hit > 10 messages in 10s window
+            h->>Sender: {type: "error", reason: "rate_limited"}
+            alt strikes.hit >= 5 in 60s window
+                h-->>recv: raise CloseConnection(4002)
+                recv->>Sender: close(4002 CLOSE_RATE_LIMIT)
+            end
+            Note over h: return early
+        end
+    end
+
+    h->>h: MessageSend.model_validate(frame) (schemas.py)
+
+    rect rgb(230, 245, 255)
+        Note over h,svc: DB session opens (session_maker)
+        h->>svc: send_message(db, sender_id, conversation_id, body)
+        svc->>svc: has_messages(db, conversation_id) → is_first
+        svc->>svc: create_message(db, sender_id, conversation_id, body)
+        Note over svc: Checks ConversationParticipant membership
+        Note over svc: Raises PermissionError if not a participant
+        svc->>svc: get_participants(db, conversation_id)
+        svc-->>h: return SentMessage(is_first, participants, ...)
+        Note over h,svc: DB session closes
+    end
+
+    h->>dlv: deliver_message(result)
+    Note over dlv: No database access in delivery.py
+
+    alt (a) First message in conversation (result.is_first=True)
+        rect rgb(232, 255, 232)
+            Note over dlv: Send conversation.new to each participant
+            loop For each participant pid
+                dlv->>dlv: other(participants, pid) → peer_id, peer_username
+                dlv->>reg: send_to_user(pid, conversation.new payload)
+                reg->>Sender: {type: "conversation.new", id, peer_id, peer_username}
+                reg->>Recipient: {type: "conversation.new", id, peer_id, peer_username}
+            end
+        end
+
+        Note over dlv: Then send message.new to all participants
+        loop For each participant pid
+            dlv->>reg: send_to_user(pid, message.new payload)
+            reg->>Sender: {type: "message.new", ...}
+            reg->>Recipient: {type: "message.new", ...}
+        end
+        dlv-->>h: return unreached=[]
+
+    else (b) Normal message (recipient online)
+        Note over dlv: is_first=False, skip conversation.new
+        loop For each participant pid
+            dlv->>reg: send_to_user(pid, message.new payload)
+            reg->>Sender: {type: "message.new", ...}
+            reg->>Recipient: {type: "message.new", ...}
+        end
+        dlv-->>h: return unreached=[]
+
+    else (c) Recipient offline (send_to_user returns 0)
+        Note over dlv: is_first=False, skip conversation.new
+        loop For each participant pid
+            dlv->>reg: send_to_user(pid, payload) → 0 for offline user
+        end
+        dlv-->>h: return unreached=[offline_user_id]
+
+        rect rgb(255, 235, 235)
+            Note over h,svc: DB session opens (session_maker)
+            h->>svc: create_pending_messages(db, unreached, message.id)
+            Note over svc: Saves PendingMessage rows for each offline user
+            Note over svc: db.commit()
+            Note over h,svc: DB session closes
+        end
+
+        Note over h: On next connect, _flush_pending_messages delivers them
+    end

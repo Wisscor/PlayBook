@@ -4,8 +4,6 @@
   "arabic": "Arabic",
   "welcome": "Welcome",
   "slogan": "Connect, Post, find you next match",
-  "continue-intra": "Continue with intra",
-  "or": "or",
   "signup": "Signup",
   "login": "Login",
   "logging-in": "Logging in...",
@@ -125,5 +123,16 @@
   "send": "Send",
   "type-message": "Type a message...",
   "search-contacts": "Search contacts...",
-  "back-contacts": "Back to Contacts"
+
+  "back-contacts": "Back to Contacts",
+
+  "followers": "Followers",
+  "following": "Following",
+  "people-following-user": "people following this user",
+  "no-followers": "No followers found.",
+  "follow-back": "Follow back",
+  "previous": "Previous",
+  "next": "Next",
+  "you": "You",
+  "select-match-status": "Select Match Status"
 }

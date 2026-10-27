@@ -2,54 +2,73 @@
 
 import { PlayInput } from "@/components/ui/Input";
 import { PlayText } from "@/components/ui/Text";
-import { api } from "@/services/api";
+import { useAuth } from "@/hooks/contexts/authContext";
+import { useProfileController } from "@/services/profile";
+import { useUserController } from "@/services/user";
 import { UserSummary } from "@/types/user";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import type { ReactNode } from "react";
 import { UserCard } from "./components/userCard";
 
 export const SearchPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [users, setUsers] = useState<UserSummary[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const { loadUsers, userPages, userPageNumber, users } = useUserController();
+  const { fetchUser } = useProfileController();
+  const { isLoading, connectedUser } = useAuth();
 
   useEffect(() => {
-    const loadUsers = async () => {
-      try {
-        const limit = 100;
-        const allUsers: UserSummary[] = [];
-        let offset = 0;
-
-        while (true) {
-          const response = await api.get<UserSummary[]>("/users", {
-            params: { limit, offset },
-          });
-          allUsers.push(...response.data);
-
-          if (response.data.length < limit) {
-            break;
-          }
-          offset += limit;
-        }
-
-        setUsers(allUsers);
-      } catch (requestError) {
-        console.error("Unable to load users:", requestError);
-        setError("Unable to load users");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    void loadUsers();
+    void fetchUser();
   }, []);
 
-  const filteredUsers = users.filter(
-    (u) =>
-      u.firstname.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      u.lastname.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      u.username.toLowerCase().includes(searchQuery.toLowerCase()),
-  );
+  useEffect(() => {
+    void loadUsers(userPageNumber, () => {
+      setError("error-loading-users");
+    });
+  }, [connectedUser?.id]);
+
+  const [filteredUsers, setFilteredUsers] = useState<UserSummary[]>([]);
+
+  useEffect(() => {
+    setFilteredUsers(
+      users.filter(
+        (u) =>
+          u.firstname.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          u.lastname.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          u.username.toLowerCase().includes(searchQuery.toLowerCase()),
+      ),
+    );
+  }, [users, searchQuery]);
+
+  let usersContent: ReactNode;
+  if (isLoading) {
+    usersContent = (
+      <p className="col-span-full py-12 text-center text-slate-300">
+        Loading...
+      </p>
+    );
+  } else if (error) {
+    usersContent = (
+      <p className="col-span-full py-12 text-center text-rose-400">{error}</p>
+    );
+  } else if (filteredUsers.length === 0) {
+    usersContent = (
+      <div className="col-span-full flex flex-col items-center justify-center rounded-3xl border border-dashed border-white/10 bg-white/5 p-12 text-center backdrop-blur-xl">
+        <PlayText.Primary
+          id="no-users-found"
+          className="text-sm font-medium text-amber-400"
+        />
+      </div>
+    );
+  } else {
+    usersContent = filteredUsers.map((user) => {
+      if (user.id === connectedUser?.id) {
+        return null;
+      }
+      return <UserCard key={user.id} user={user} />;
+    });
+  }
+
   return (
     <div className="flex flex-col min-h-[calc(100vh-140px)] bg-slate-950 text-white px-4 py-8 md:px-12 lg:px-20 gap-8">
       <div className="max-w-4xl mx-auto w-full flex flex-col gap-8">
@@ -76,23 +95,47 @@ export const SearchPage = () => {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {isLoading ? (
-            <p className="col-span-full py-12 text-center text-slate-300">
-              Loading...
-            </p>
-          ) : error ? (
-            <p className="col-span-full py-12 text-center text-rose-400">
-              {error}
-            </p>
-          ) : filteredUsers.length === 0 ? (
-            <div className="col-span-full flex flex-col items-center justify-center rounded-3xl border border-dashed border-white/10 bg-white/5 p-12 text-center backdrop-blur-xl">
+          {usersContent}
+        </div>
+
+        <div className="flex items-center justify-center my-6 space-x-4">
+          {userPageNumber > 1 && (
+            <button
+              onClick={() => {
+                void loadUsers(userPageNumber - 1, () => {
+                  setError("error-loading-users");
+                });
+              }}
+              className="cursor-pointer"
+            >
               <PlayText.Primary
-                id="no-users-found"
-                className="text-sm font-medium text-amber-400"
+                id="previous"
+                className="text-sm text-slate-400 hover:text-slate-200 transition-color"
               />
-            </div>
-          ) : (
-            filteredUsers.map((user) => <UserCard key={user.id} user={user} />)
+            </button>
+          )}
+          <PlayText.Primary
+            content={
+              userPages > 0
+                ? `${userPageNumber}/${userPages}`
+                : userPageNumber.toString()
+            }
+            className="text-sm text-slate-400 font-bold transition-color"
+          />
+          {userPageNumber < userPages && (
+            <button
+              onClick={() => {
+                void loadUsers(userPageNumber + 1, () => {
+                  setError("error-loading-users");
+                });
+              }}
+              className="cursor-pointer"
+            >
+              <PlayText.Primary
+                id="next"
+                className="text-sm text-slate-400 hover:text-slate-200 transition-color"
+              />
+            </button>
           )}
         </div>
       </div>

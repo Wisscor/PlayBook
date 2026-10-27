@@ -5,12 +5,15 @@ import { COMING_FROM, ROUTES } from "@/lib/constants";
 import { PlayButton } from "@/components/ui/Button";
 import { User } from "@/types/user";
 import { useTranslations } from "next-intl";
+import Image from "next/image";
+import { useNavigation } from "@/hooks/useNavigation";
 
 export const MainDetails: React.FC<{ user: User; comingFrom: COMING_FROM }> = ({
   user,
   comingFrom,
 }) => {
   const t = useTranslations();
+  const { goMessages } = useNavigation();
   const isFollowing = true; // Replace with actual logic to determine if the current user is following the profile user
 
   return (
@@ -81,15 +84,31 @@ export const MainDetails: React.FC<{ user: User; comingFrom: COMING_FROM }> = ({
             />
           </Link>
         ) : (
-          <PlayButton.Primary
-            onClick={() => {
-              //TODO: here the follow logic
-            }}
-            textClassName="text-sm font-semibold text-white"
-            title={isFollowing ? "unfollow" : "follow"}
-            type="button"
-            className="w-full rounded-xl border border-white/20 bg-white/10 py-2.5 backdrop-blur-md transition-all hover:bg-white/20 active:scale-95 cursor-pointer shadow-md text-center"
-          />
+          <div className="flex items-stretch space-x-4">
+            <PlayButton.Primary
+              onClick={() => {
+                //TODO: here the follow logic
+              }}
+              textClassName="text-sm font-semibold text-white"
+              title={isFollowing ? "unfollow" : "follow"}
+              type="button"
+              className="w-full rounded-xl border border-white/20 bg-white/10 py-2.5 backdrop-blur-md transition-all hover:bg-white/20 active:scale-95 cursor-pointer shadow-md text-center"
+            />
+            <PlayButton.Complexe
+              onClick={() => {
+                goMessages();
+              }}
+              type="button"
+              className="rounded-xl border border-white/20 bg-white/10 py-2.5 backdrop-blur-md transition-all hover:bg-white/20 active:scale-95 cursor-pointer shadow-md text-center"
+            >
+              <Image
+                alt="messaging"
+                src={"/icons/chat.png"}
+                width={40}
+                height={40}
+              />
+            </PlayButton.Complexe>
+          </div>
         )}
       </div>
     </div>

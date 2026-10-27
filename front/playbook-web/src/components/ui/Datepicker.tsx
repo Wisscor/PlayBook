@@ -36,7 +36,7 @@ export const DateTimeRangePicker: React.FC<{
   changeDate: (date: string) => void;
   changeStartTime: (startTime: string) => void;
   changeEndTime: (endTime: string) => void;
-  onError: (error: boolean) => void;
+  onError: (error: string) => void;
 }> = ({
   date,
   startTime,
@@ -104,7 +104,9 @@ export const DateTimeRangePicker: React.FC<{
     }`;
 
   useEffect(() => {
-    onError(!!dateError || !!startError || !!endError);
+    if (dateError || startError || endError) {
+      onError("invalid-date-time");
+    }
   }, [dateError, startError, endError, onError]);
 
   return (

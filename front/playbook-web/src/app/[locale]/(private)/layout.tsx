@@ -4,7 +4,6 @@ import { PlayButton } from "@/components/ui/Button";
 import { PlayText } from "@/components/ui/Text";
 import { useNavigation } from "@/hooks/useNavigation";
 import { ROUTES } from "@/lib/constants";
-import { signOut } from "@/services/auth";
 import { useLocale } from "next-intl";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -12,14 +11,18 @@ import React, { useEffect, useRef, useState } from "react";
 import { Link } from "../../../../i18n/navigation";
 import { BurgerMenu } from "./components/burgerMenu";
 import { NotificationPopUp } from "./notificationPopUp";
+import { useAuthController } from "@/services/auth";
+
+const unreadMessages = 3;
 
 export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
+  const { signOut } = useAuthController();
   const locale = useLocale();
   const pathname = usePathname();
   const [isExpanded, setIsExpanded] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [logoutError, setLogoutError] = useState("");
-  const { goSignIn, goMessages, goSearch } = useNavigation();
+  const { goMessages, goSearch } = useNavigation();
 
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const notificationRef = useRef<HTMLDivElement>(null);
@@ -73,17 +76,18 @@ export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
     },
   ];
 
-  const handleLogout = async () => {
+  const handleLogout = () => {
     setIsLoggingOut(true);
     setLogoutError("");
-    try {
-      await signOut();
-      window.location.reload();
-    } catch (error) {
-      console.error("Unable to log out:", error);
-      setLogoutError("Unable to log out");
-      setIsLoggingOut(false);
-    }
+    void signOut(
+      () => {
+        window.location.reload();
+      },
+      () => {
+        setLogoutError("Unable to log out");
+        setIsLoggingOut(false);
+      },
+    );
   };
 
   const unreadCount = notifications.filter((n) => !n.read).length;
@@ -127,45 +131,40 @@ export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
             })}
           </nav>
 
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => goSearch()}
-              className="rounded-xl border border-white/10 bg-white/5 p-2.5 backdrop-blur-md transition-all hover:bg-white/10 cursor-pointer flex items-center justify-center"
-              aria-label="Search Matches & Community"
-            >
-              <PlayText.Span
-                texts={[{ content: "🔍", className: "text-base" }]}
-              />
-            </button>
+          <div className="items-center flex gap-3">
+            <div className="hidden items-center gap-3 lg:flex">
+              <button
+                type="button"
+                onClick={() => goSearch()}
+                className="rounded-xl border border-white/10 bg-white/5 p-2.5 backdrop-blur-md transition-all hover:bg-white/10 cursor-pointer flex items-center justify-center"
+                aria-label="Search Matches & Community"
+              >
+                <Image
+                  alt="search"
+                  src={"/icons/search.png"}
+                  width={20}
+                  height={20}
+                />
+              </button>
 
-            <button
-              type="button"
-              onClick={() => goMessages()}
-              className="rounded-xl border border-white/10 bg-white/5 p-2.5 backdrop-blur-md transition-all hover:bg-white/10 cursor-pointer flex items-center justify-center"
-              aria-label="Messages"
-            >
-              <PlayText.Span
-                texts={[{ content: "💬", className: "text-base" }]}
-              />
-            </button>
-
-            <div className="relative block" ref={notificationRef}>
               <PlayButton.Complexe
                 type="button"
-                onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
+                onClick={() => goMessages()}
                 className="relative rounded-xl border border-white/10 bg-white/5 p-2.5 backdrop-blur-md transition-all hover:bg-white/10 cursor-pointer flex items-center justify-center"
-                aria-label="Notifications"
+                aria-label="Messages"
               >
+                <Image
+                  alt="chat"
+                  src={"/icons/chat.png"}
+                  width={20}
+                  height={20}
+                />
+
                 <PlayText.Span
                   texts={[
-                    {
-                      content: "🔔",
-                      className: "text-base",
-                    },
-                    unreadCount > 0
+                    unreadMessages > 0
                       ? {
-                          content: unreadCount.toString(),
+                          content: unreadMessages.toString(),
                           className:
                             "absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white shadow-md",
                         }
@@ -174,26 +173,54 @@ export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
                 />
               </PlayButton.Complexe>
 
-              {isNotificationsOpen && (
-                <NotificationPopUp
-                  setNotifications={setNotifications}
-                  notifications={notifications}
-                  unreadCount={unreadCount}
-                />
-              )}
-            </div>
+              <div className="relative block" ref={notificationRef}>
+                <PlayButton.Complexe
+                  type="button"
+                  onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
+                  className="relative rounded-xl border border-white/10 bg-white/5 p-2.5 backdrop-blur-md transition-all hover:bg-white/10 cursor-pointer flex items-center justify-center"
+                  aria-label="Notifications"
+                >
+                  <Image
+                    alt="bell"
+                    src={"/icons/bell.png"}
+                    width={20}
+                    height={20}
+                  />
 
-            <button
-              type="button"
-              onClick={handleLogout}
-              disabled={isLoggingOut}
-              className="hidden rounded-xl border border-rose-500/20 bg-rose-500/10 px-4 py-2 text-sm font-semibold text-rose-300 transition-colors hover:bg-rose-500/20 disabled:cursor-not-allowed cursor-pointer disabled:opacity-60 lg:block"
-            >
-              <PlayText.Primary
-                id={isLoggingOut ? "logging-out" : "logout"}
-                className="text-sm font-semibold text-rose-300"
-              />
-            </button>
+                  <PlayText.Span
+                    texts={[
+                      unreadCount > 0
+                        ? {
+                            content: unreadCount.toString(),
+                            className:
+                              "absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white shadow-md",
+                          }
+                        : {},
+                    ]}
+                  />
+                </PlayButton.Complexe>
+
+                {isNotificationsOpen && (
+                  <NotificationPopUp
+                    setNotifications={setNotifications}
+                    notifications={notifications}
+                    unreadCount={unreadCount}
+                  />
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={handleLogout}
+                disabled={isLoggingOut}
+                className="hidden rounded-xl border border-rose-500/20 bg-rose-500/10 px-4 py-2 text-sm font-semibold text-rose-300 transition-colors hover:bg-rose-500/20 disabled:cursor-not-allowed cursor-pointer disabled:opacity-60 lg:block"
+              >
+                <PlayText.Primary
+                  id={isLoggingOut ? "logging-out" : "logout"}
+                  className="text-sm font-semibold text-rose-300"
+                />
+              </button>
+            </div>
 
             <button
               type="button"
@@ -217,6 +244,97 @@ export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
             menu={menu}
             isOpen={isExpanded}
             locale={locale}
+            more={
+              <div className="grid grid-cols-3 items-center gap-3 ">
+                <button
+                  type="button"
+                  onClick={() => goSearch()}
+                  className="rounded-xl border border-white/10 bg-white/5 p-2.5 backdrop-blur-md transition-all hover:bg-white/10 cursor-pointer flex items-center justify-center"
+                  aria-label="Search Matches & Community"
+                >
+                  <Image
+                    alt="search"
+                    src={"/icons/search.png"}
+                    width={20}
+                    height={20}
+                  />
+                </button>
+
+                <PlayButton.Complexe
+                  type="button"
+                  onClick={() => goMessages()}
+                  className="relative rounded-xl border border-white/10 bg-white/5 p-2.5 backdrop-blur-md transition-all hover:bg-white/10 cursor-pointer flex items-center justify-center"
+                  aria-label="Messages"
+                >
+                  <Image
+                    alt="chat"
+                    src={"/icons/chat.png"}
+                    width={20}
+                    height={20}
+                  />
+
+                  <PlayText.Span
+                    texts={[
+                      unreadMessages > 0
+                        ? {
+                            content: unreadMessages.toString(),
+                            className:
+                              "absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white shadow-md",
+                          }
+                        : {},
+                    ]}
+                  />
+                </PlayButton.Complexe>
+
+                <div className="relative block" ref={notificationRef}>
+                  <PlayButton.Complexe
+                    type="button"
+                    onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
+                    className="relative rounded-xl border border-white/10 bg-white/5 p-2.5 backdrop-blur-md transition-all hover:bg-white/10 cursor-pointer flex items-center justify-center"
+                    aria-label="Notifications"
+                  >
+                    <Image
+                      alt="bell"
+                      src={"/icons/bell.png"}
+                      width={20}
+                      height={20}
+                    />
+
+                    <PlayText.Span
+                      texts={[
+                        unreadCount > 0
+                          ? {
+                              content: unreadCount.toString(),
+                              className:
+                                "absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white shadow-md",
+                            }
+                          : {},
+                      ]}
+                    />
+                  </PlayButton.Complexe>
+
+                  {isNotificationsOpen && (
+                    <NotificationPopUp
+                      setNotifications={setNotifications}
+                      notifications={notifications}
+                      unreadCount={unreadCount}
+                    />
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  disabled={isLoggingOut}
+                  className="hidden rounded-xl border border-rose-500/20 bg-rose-500/10 px-4 py-2 text-sm font-semibold text-rose-300 transition-colors hover:bg-rose-500/20 disabled:cursor-not-allowed cursor-pointer disabled:opacity-60 lg:block"
+                >
+                  <PlayText.Primary
+                    id={isLoggingOut ? "logging-out" : "logout"}
+                    className="text-sm font-semibold text-rose-300"
+                  />
+                </button>
+              </div>
+            }
           />
         </div>
         {logoutError && (

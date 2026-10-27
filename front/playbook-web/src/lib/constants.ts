@@ -32,9 +32,12 @@ export const ROUTES = {
   USER_PROFILE: "/user-profile",
   SEARCH: "/search",
   MESSAGES: "/messages",
+  FOLLOWERS: "/followers",
 } as const;
 
 export enum COMING_FROM {
   ME = "me",
   OTHER = "other",
 }
+
+export const pageSize = 1;
