@@ -18,5 +18,13 @@ export interface UserSummary {
   firstname: string;
   lastname: string;
   username: string;
-  avatar?: string | null;
+  avatar?: string;
+}
+
+export interface UserPaginated {
+  items: UserSummary[];
+  total: number;
+  page: number;
+  size: number;
+  pages: number;
 }

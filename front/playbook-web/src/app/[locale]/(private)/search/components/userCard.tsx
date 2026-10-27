@@ -12,18 +12,20 @@ export const UserCard: React.FC<{ user: UserSummary }> = ({ user }) => {
       className="rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl p-6 shadow-xl flex flex-col justify-between gap-4 hover:bg-white/10 transition-all"
     >
       <div className="flex items-center gap-4">
-        {user.avatar ? (
-          <img
-            src={`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}/${user.avatar}`}
-            alt="Avatar"
-            className="w-full h-full rounded-full object-cover"
-          />
-        ) : (
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-linear-to-tr from-indigo-950 to-indigo-600 font-bold text-base text-white shadow-md">
-            {user.firstname.charAt(0)}
-            {user.lastname.charAt(0)}
-          </div>
-        )}
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-linear-to-tr from-indigo-950 to-indigo-600 font-bold text-base text-white shadow-md">
+          {user.avatar ? (
+            <img
+              src={`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}/${user.avatar}`}
+              alt="Avatar"
+              className="w-full h-full rounded-full object-cover"
+            />
+          ) : (
+            <div>
+              {user.firstname.charAt(0)}
+              {user.lastname.charAt(0)}
+            </div>
+          )}
+        </div>
         <div>
           <PlayText.Primary
             content={`${user.firstname} ${user.lastname}`}
