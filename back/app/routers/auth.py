@@ -165,7 +165,6 @@ async def logout(
     await db.delete(session)
     await db.commit()
     await registry.close_user(session.user_id)
-    await registry.close_user(session.user_id)
     response.delete_cookie(
         key=settings.session_cookie_name,
     )
