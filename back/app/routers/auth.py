@@ -2,8 +2,6 @@ from fastapi import (
     APIRouter,
     Depends,
     Cookie,
-    HTTPException,
-    status,
     Response,
     Request,
 )
@@ -15,34 +13,21 @@ from ..database.database import get_db
 from sqlalchemy.exc import IntegrityError
 
 from typing import Optional
-from pydantic import EmailStr
 from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime, timedelta, timezone
 from ..schemas.user import UserCreate, UserLogin, UserProfileResponse
 from ..core.security import hash_password, verify_password
-from .users import build_user_profile
 from app.core.config import settings
 from app.realtime import registry
 from app.core.limiter import limiter
+from app.services.user_server import build_user_profile, get_user_by_email, get_user_by_username
+from app.core.exceptions import ApiException
+from app.core.error_codes import ErrorCode
 
 router = APIRouter(
     prefix="/auth",
     tags=["Auuthentication"],
 )
-
-
-async def get_user_by_email(
-    db: AsyncSession, email: EmailStr
-) -> Optional[User]:
-    stmt = select(User).where(User.email == email)
-    return (await db.execute(stmt)).scalar_one_or_none()
-
-
-async def get_user_by_username(
-    db: AsyncSession, username: str
-) -> Optional[User]:
-    stmt = select(User).where(User.username == username)
-    return (await db.execute(stmt)).scalar_one_or_none()
 
 
 @router.post("/signup", response_model=UserProfileResponse)
@@ -53,35 +38,34 @@ async def signup(
     db: AsyncSession = Depends(get_db),
 ) -> User:
     """Create a user account."""
+
     user = User(
         firstname=data.firstname,
         lastname=data.lastname,
         username=data.username,
         email=data.email,
         hashed_password=hash_password(data.password),
-        avatar=data.avatar,
-        bio=data.bio,
     )
-    
-    if get_user_by_email(db, data.email) is None:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="A user with this email already exists.",
+
+    if await get_user_by_email(db, data.email):
+        raise ApiException(
+            code=ErrorCode.EMAIL_ALREADY_EXISTS,
+            field="email",
         )
-    if get_user_by_username(db, data.username) is None:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="A user with this username already exists.",
+
+    if await get_user_by_username(db, data.username):
+        raise ApiException(
+            code=ErrorCode.USERNAME_ALREADY_EXISTS,
+            field="username",
         )
     try:
         db.add(user)
         await db.commit()
         await db.refresh(user)
     except IntegrityError:
-        raise HTTPException(
-            status_code=409,
-            detail="A user with this username or email already exists.",
-        )
+        await db.rollback()
+        raise ApiException(code=ErrorCode.RESOURCE_CONFLICT)
+
     return user
 
 
@@ -94,19 +78,22 @@ async def login(
     db: AsyncSession = Depends(get_db),
 ):
     """Authenticate with email and password."""
-    # 1. Find user by email
-    users = await db.execute(select(User).where(User.email == data.email))
-    user: Optional[User] = users.scalar_one_or_none()
-    if user is None or not verify_password(
+    user: Optional[User] = await get_user_by_email(db, data.email)
+    if not user:
+        raise ApiException(
+            code=ErrorCode.USER_NOT_FOUND,
+            field="email",
+        )
+    if not verify_password(
         data.password,
-        str(user.hashed_password),
+        user.hashed_password,
     ):
-        raise HTTPException(
-            status_code=401,
-            detail="Invalid email or password",
+        raise ApiException(
+            code=ErrorCode.INVALID_CREDENTIALS,
+            field="password",
         )
 
-    # 2. Create 'session' and Store it
+    # Create 'session' and Store it
     new_session = Session(
         id=uuid.uuid4(),
         user_id=user.id,
@@ -116,7 +103,7 @@ async def login(
     db.add(new_session)
     await db.commit()
 
-    # 3. Set cookie in the response
+    # Set cookie in the response
     response.set_cookie(
         key=settings.session_cookie_name,
         value=str(new_session.id),
@@ -141,25 +128,26 @@ async def logout(
 ):
     """End the current session."""
     if session_id is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Not authenticated",
+        raise ApiException(
+            code=ErrorCode.AUTHENTICATION_REQUIRED,
+            field="session_id",
         )
+
     try:
         session_uuid = uuid.UUID(session_id)
     except ValueError:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid session ID format",
+        raise ApiException(
+            code=ErrorCode.INVALID_SESSION_ID_FORMAT,
+            field="session_id",
         )
-    sessions = await db.execute(
-        select(Session).where(Session.id == session_uuid)
-    )
-    session: Optional[Session] = sessions.scalar_one_or_none()
+    session: Optional[Session] = (
+        await db.execute(select(Session).where(Session.id == session_uuid))
+    ).scalar_one_or_none()
+
     if session is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid session",
+        raise ApiException(
+            code=ErrorCode.AUTHENTICATION_REQUIRED,
+            field="session_id",
         )
     # Delete the session from the database
     await db.delete(session)

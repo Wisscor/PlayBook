@@ -2,8 +2,6 @@
 from fastapi import (
     Depends,
     Cookie,
-    HTTPException,
-    status,
 )
 import uuid
 from sqlalchemy import select
@@ -15,6 +13,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional
 from ..models import Session
 from ..realtime import registry
+from .exceptions import ApiException
+from .error_codes import ErrorCode
 
 
 async def get_curr_user(
@@ -24,10 +24,7 @@ async def get_curr_user(
     db: AsyncSession = Depends(get_db),
 ) -> User:  # ???
     if not session_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Not authenticated",
-        )
+        raise ApiException(code=ErrorCode.AUTHENTICATION_REQUIRED)
     # Find the session
     sessions = await db.execute(
         select(Session).where(Session.id == session_id)
@@ -35,27 +32,17 @@ async def get_curr_user(
     session: Optional[Session] = sessions.scalar_one_or_none()
 
     if not session:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid session",
-        )
+        raise ApiException(code=ErrorCode.AUTHENTICATION_REQUIRED)
 
     # Check expiration
     if session.expires_at <= datetime.now(timezone.utc):
         await db.delete(session)
         await db.commit()
         await registry.close_user(session.user_id)
-
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Session expired",
-        )
+        raise ApiException(code=ErrorCode.AUTHENTICATION_REQUIRED)
     # Find the user associated with the session
     users = await db.execute(select(User).where(User.id == session.user_id))
     user: Optional[User] = users.scalar_one_or_none()
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found",
-        )
+        raise ApiException(code=ErrorCode.AUTHENTICATION_REQUIRED)
     return user

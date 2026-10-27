@@ -6,7 +6,6 @@ from fastapi import (
     APIRouter,
     BackgroundTasks,
     Depends,
-    HTTPException,
     Response,
     Query,
     status,
@@ -31,6 +30,8 @@ from app.schemas.user import UserSummaryResponse
 from app.core.deps import get_curr_user
 from app.core.limiter import limiter
 from app.realtime.notify import emit_notifications
+from app.core.exceptions import ApiException
+from app.core.error_codes import ErrorCode
 
 router = APIRouter(
     tags=["Posts"],
@@ -117,10 +118,7 @@ async def create_post(
     )
     loaded_post = await db.scalar(stmt)
     if loaded_post is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Post not found.",
-        )
+        raise ApiException(code=ErrorCode.POST_NOT_FOUND)
     enriched = await _enrich_posts([loaded_post], curr_user, db)
     return enriched[0]
 
@@ -199,10 +197,7 @@ async def get_post(
     )
     post = await db.scalar(stmt)
     if not post:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Post not found.",
-        )
+        raise ApiException(code=ErrorCode.POST_NOT_FOUND)
 
     enriched = await _enrich_posts([post], curr_user, db)
     return enriched[0]
@@ -227,16 +222,10 @@ async def update_post(
     )
     post = await db.scalar(stmt)
     if not post:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Post not found.",
-        )
+        raise ApiException(code=ErrorCode.POST_NOT_FOUND)
 
     if post.user_id != curr_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You are not authorized to edit this post.",
-        )
+        raise ApiException(code=ErrorCode.PERMISSION_DENIED)
 
     update_dict = data.model_dump(exclude_unset=True)
     for key, value in update_dict.items():
@@ -263,16 +252,10 @@ async def delete_post(
     """Delete a post owned by the current user."""
     post = await db.scalar(select(Post).where(Post.id == post_id))
     if not post:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Post not found.",
-        )
+        raise ApiException(code=ErrorCode.POST_NOT_FOUND)
 
     if post.user_id != curr_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You are not authorized to delete this post.",
-        )
+        raise ApiException(code=ErrorCode.PERMISSION_DENIED)
 
     await db.delete(post)
     await db.commit()

@@ -5,9 +5,10 @@ from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 
 import pytest
-from fastapi import HTTPException
 
 from app.core.deps import get_curr_user
+from app.core.error_codes import ErrorCode
+from app.core.exceptions import ApiException
 from app.realtime import frames, registry
 
 
@@ -34,10 +35,9 @@ async def test_http_session_expiry_closes_user_sockets_only_when_expired(monkeyp
     registry.register(other_user_id, other_socket)
 
     if expired:
-        with pytest.raises(HTTPException) as error:
+        with pytest.raises(ApiException) as error:
             await get_curr_user(session_id=session_id, db=db)
-        assert error.value.status_code == 401
-        assert error.value.detail == "Session expired"
+        assert error.value.code == ErrorCode.AUTHENTICATION_REQUIRED
         db.delete.assert_awaited_once_with(session)
         db.commit.assert_awaited_once()
         assert db.execute.await_count == 1
