@@ -1,12 +1,26 @@
 from uuid import UUID
 
-from sqlalchemy import exists, func, or_, select
+from sqlalchemy import delete, exists, func, or_, select
 from sqlalchemy.orm import aliased
 
 from ...models import Follower
 from ...models.user import User
 from .. import frames
 from ..models import Conversation, ConversationParticipant, Message
+
+
+async def delete_user_conversations(db, user_id: UUID) -> None:
+    """Delete shared history before removing the user's participant rows.
+
+    The caller commits this together with account deletion. Foreign keys cascade
+    to all participants, messages, and pending deliveries in these conversations.
+    """
+    conversation_ids = select(ConversationParticipant.conversation_id).where(
+        ConversationParticipant.user_id == user_id
+    )
+    await db.execute(
+        delete(Conversation).where(Conversation.id.in_(conversation_ids))
+    )
 
 
 async def find_direct(db, me: UUID, peer: UUID) -> Conversation | None:

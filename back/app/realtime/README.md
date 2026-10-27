@@ -187,3 +187,16 @@ Message objects contain `id`, `conversation_id`, `sender_id`, `body`, and `creat
 - `presence` payload: `{ "type": "presence", "user_id": "<contact_id>", "online": true }`; `online` is `false` when the contact's last socket disconnects.
 - `presence.snapshot` payload: `{ "type": "presence.snapshot", "online": ["<contact_id>", ...] }`; sent after `ready` when a socket connects.
 - Presence is scoped to contacts: users who share a conversation with the connected user. Only the user's first active socket broadcasts `online: true`; `online: false` is broadcast when the last socket is gone.
+
+## Account deletion
+
+`DELETE /users/me` deletes every conversation the user participates in, including
+the other participant's history, messages, and pending deliveries. It also deletes
+notifications received or triggered by that user. The conversation cleanup and
+account deletion commit together; existing user foreign keys also cascade to
+sessions, posts, follows, sport links, match announcements, and play requests.
+The endpoint closes the user's local WebSocket connections and clears the session cookie.
+
+For an existing PostgreSQL database, apply
+`migrations/20261027_realtime_account_deletion.sql` before deploying this version.
+`Base.metadata.create_all()` only applies the new rules when creating new tables.

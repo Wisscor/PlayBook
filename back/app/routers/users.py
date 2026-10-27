@@ -35,6 +35,9 @@ from ..schemas.post import PostResponse
 from .post import _enrich_posts
 from app.core.deps import get_curr_user
 from app.core.limiter import limiter
+from app.core.config import settings
+from app.realtime import registry
+from app.realtime.services.conversations import delete_user_conversations
 
 router = APIRouter(
     prefix="/users",
@@ -203,9 +206,13 @@ async def delete_user(
     db: AsyncSession = Depends(get_db),
 ):
     """Delete the current user's account."""
+    await delete_user_conversations(db, curr_user.id)
     await db.delete(curr_user)
     await db.commit()
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
+    await registry.close_user(curr_user.id)
+    response = Response(status_code=status.HTTP_204_NO_CONTENT)
+    response.delete_cookie(key=settings.session_cookie_name, path="/")
+    return response
 
 
 @router.get(
