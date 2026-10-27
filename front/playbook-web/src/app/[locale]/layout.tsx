@@ -7,6 +7,7 @@ import { ReactNode } from "react";
 import { Locale, locales } from "../../../i18n";
 import { myTTFFont } from "../../../public/fonts";
 import { AuthProvider } from "@/hooks/contexts/authContext";
+import { ChatProvider } from "@/hooks/contexts/chatContext";
 
 type Props = {
   readonly children: ReactNode;
@@ -30,7 +31,9 @@ export default async function LocaleLayout({ children, params }: Props) {
       <body className={`  ${myTTFFont.className} min-h-full flex flex-col`}>
         <NextIntlClientProvider locale={locale} messages={messages}>
           <AuthProvider>
-            <Providers>{children}</Providers>
+            <ChatProvider>
+              <Providers>{children}</Providers>
+            </ChatProvider>
           </AuthProvider>
         </NextIntlClientProvider>
       </body>

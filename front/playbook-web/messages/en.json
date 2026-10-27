@@ -131,6 +131,8 @@
   "people-following-user": "people following this user",
   "no-followers": "No followers found.",
   "follow-back": "Follow back",
+  "mutual-follow-required": "You both need to follow each other before starting a conversation.",
+  "conversation-error": "Unable to start the conversation. Please try again.",
   "previous": "Previous",
   "next": "Next",
   "you": "You",
