@@ -14,6 +14,7 @@ from .config import settings
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional
 from ..models import Session
+from ..realtime import registry
 
 
 async def get_curr_user(
@@ -43,6 +44,7 @@ async def get_curr_user(
     if session.expires_at <= datetime.now(timezone.utc):
         await db.delete(session)
         await db.commit()
+        await registry.close_user(session.user_id)
 
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
