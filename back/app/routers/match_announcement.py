@@ -5,7 +5,6 @@ from fastapi import (
     APIRouter,
     BackgroundTasks,
     Depends,
-    HTTPException,
     Response,
     status,
     Request,
@@ -32,6 +31,8 @@ from app.schemas.match_announcement import (
 from app.schemas.user import UserSummaryResponse
 from app.core.limiter import limiter
 from app.realtime.notify import emit_notifications
+from app.core.exceptions import ApiException
+from app.core.error_codes import ErrorCode
 
 router = APIRouter(prefix="/match-announcements", tags=["Match Announcements"])
 
@@ -54,9 +55,7 @@ async def _get_or_404(
     )
     announcement = await db.scalar(stmt)
     if announcement is None:
-        raise HTTPException(
-            status.HTTP_404_NOT_FOUND, detail="Announcement not found"
-        )
+        raise ApiException(code=ErrorCode.ANNOUNCEMENT_NOT_FOUND)
     return announcement
 
 
@@ -72,7 +71,7 @@ def _to_response(announcement: MatchAnnouncement) -> MatchAnnouncementResponse:
 
 def _require_owner(announcement: MatchAnnouncement, user: User) -> None:
     if announcement.organizer_id != user.id:
-        raise HTTPException(status.HTTP_403_FORBIDDEN, detail="Not the owner")
+        raise ApiException(code=ErrorCode.PERMISSION_DENIED)
 
 
 def _notification_recipients(
@@ -100,9 +99,7 @@ async def create_announcement(
 ):
     """Create a match announcement."""
     if await db.get(Sport, body.sport_id) is None:
-        raise HTTPException(
-            status.HTTP_404_NOT_FOUND, detail="Sport not found"
-        )
+        raise ApiException(code=ErrorCode.SPORT_NOT_FOUND)
     announcement = MatchAnnouncement(organizer_id=me.id, **body.model_dump())
     db.add(announcement)
     await db.flush()  # assigns the id
@@ -194,33 +191,28 @@ async def update_announcement(
 
     data = body.model_dump(exclude_unset=True)
     if any(value is None for value in data.values()):
-        raise HTTPException(422, detail="Fields cannot be null")
+        raise ApiException(code=ErrorCode.VALIDATION_ERROR)
 
     # end_time > start_time must hold on the resulting values, even when
     # only one of the two is sent.
     start = data.get("start_time", announcement.start_time)
     end = data.get("end_time", announcement.end_time)
     if end <= start:
-        raise HTTPException(
-            422,
-            detail="end_time must be after start_time",
-        )
+        raise ApiException(code=ErrorCode.VALIDATION_ERROR, field="end_time")
     if "sport_id" in data and await db.get(Sport, data["sport_id"]) is None:
-        raise HTTPException(
-            status.HTTP_404_NOT_FOUND, detail="Sport not found"
-        )
+        raise ApiException(code=ErrorCode.SPORT_NOT_FOUND)
 
     if "remaining_player_slots" in data and data["remaining_player_slots"] < 0:
-        raise HTTPException(422, detail="Player count cannot be negative")
+        raise ApiException(
+            code=ErrorCode.VALIDATION_ERROR,
+            field="remaining_player_slots",
+        )
     if (
         "match_status" in data
         and data["match_status"] != announcement.match_status
         and announcement.match_status == MatchAnnouncementStatus.finished
     ):
-        raise HTTPException(
-            status.HTTP_409_CONFLICT,
-            detail="Announcement is already closed",
-        )
+        raise ApiException(code=ErrorCode.RESOURCE_CONFLICT)
     if (
         "match_status" in data
         and data["match_status"]
@@ -230,10 +222,7 @@ async def update_announcement(
         }
         and announcement.match_status == MatchAnnouncementStatus.finished
     ):
-        raise HTTPException(
-            status.HTTP_409_CONFLICT,
-            detail="Announcement cannot be reopened",
-        )
+        raise ApiException(code=ErrorCode.RESOURCE_CONFLICT)
 
     changed = any(
         getattr(announcement, field) != value for field, value in data.items()

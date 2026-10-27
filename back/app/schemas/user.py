@@ -5,12 +5,11 @@ from typing import Optional
 
 
 class UserBase(BaseModel):
-    firstname: str = Field(..., min_length=3, max_length=50)
-    lastname: str = Field(..., min_length=3, max_length=50)
-    username: str = Field(..., min_length=3, max_length=50)
+    firstname: str = Field(..., min_length=3, max_length=20)
+    lastname: str = Field(..., min_length=3, max_length=20)
+    username: str = Field(..., min_length=3, max_length=20)
     email: EmailStr
-    avatar: Optional[str] = Field(default=None)
-    bio: str = Field(default="", max_length=500)
+    
 
 
 class UserCreate(UserBase):
@@ -43,9 +42,9 @@ class UserLogin(BaseModel):
 
 
 class UserUpdate(BaseModel):
-    firstname: Optional[str] = Field(default=None, min_length=3, max_length=50)
-    lastname: Optional[str] = Field(default=None, min_length=3, max_length=50)
-    username: Optional[str] = Field(default=None, min_length=3, max_length=50)
+    firstname: Optional[str] = Field(default=None, min_length=3, max_length=20)
+    lastname: Optional[str] = Field(default=None, min_length=3, max_length=20)
+    username: Optional[str] = Field(default=None, min_length=3, max_length=20)
     email: Optional[EmailStr] = None
     bio: str = Field(default="", max_length=500)
 
@@ -63,6 +62,8 @@ class UserSummaryResponse(BaseModel):
 class UserProfileResponse(UserBase):
     model_config = ConfigDict(from_attributes=True)
     id: UUID
+    avatar: Optional[str] = Field(default=None)
+    bio: str = Field(default="", max_length=500)
     created_at: datetime
     followers_count: int = 0
     following_count: int = 0

@@ -7,8 +7,6 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import structlog
-from slowapi import _rate_limit_exceeded_handler
-from slowapi.errors import RateLimitExceeded
 from fastapi_pagination import add_pagination
 
 from app.core.limiter import limiter
@@ -30,6 +28,7 @@ from app.routers import (
 )
 from app.models import User, Session
 from app.logging_conf import setup_logging
+from app.core.exception_handlers import register_exception_handlers
 
 setup_logging()
 logger = structlog.get_logger()
@@ -60,6 +59,7 @@ async def lifespan(app: FastAPI):
 async def _timeout_sweep_loop() -> None:
     """Single global task that cleans expired timeout entries every 30s."""
     from .realtime import registry
+
     while True:
         await asyncio.sleep(30)
         registry.sweep_timeouts()
@@ -70,9 +70,9 @@ app = FastAPI(
     title=settings.app_name,
     debug=settings.debug,
 )
+register_exception_handlers(app)
 # Stores the limiter in the app's state for global access
 app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 UPLOAD_DIR = Path("uploads")
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
@@ -157,33 +157,3 @@ async def health_check(request: Request):
     Returns a 200 OK response if the application is running.
     """
     return {"status": "ok"}
-
-
-@app.get("/check-logging", status_code=200)
-async def check_logging():
-    """
-    Endpoint to verify that logging is working correctly.
-    Logs messages at different levels and returns a 200 OK response.
-    """
-    logger.debug("Check logging endpoint called.")
-    logger.info("Check logging endpoint called.")
-    logger.warning("Check logging endpoint called.")
-    logger.error("Check logging endpoint called.")
-    logger.critical("Check logging endpoint called.")
-    # raise Exception("This is a test exception for logging purposes.")
-    return {"status": "logging checked"}
-
-
-# !!! REMOVE ME AFTER TESTING
-@app.post("/api/games")
-async def create_game():
-    return {"status": "created"}
-
-
-@app.get("/api/fail")
-async def trigger_failure():
-    raise DatabaseError("Connection timeout [FOR TEST]")
-
-
-class DatabaseError(Exception):
-    pass

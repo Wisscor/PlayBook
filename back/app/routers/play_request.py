@@ -5,7 +5,6 @@ from fastapi import (
     APIRouter,
     BackgroundTasks,
     Depends,
-    HTTPException,
     status,
     Request,
 )
@@ -32,6 +31,8 @@ from app.schemas.play_request import (
 )
 from app.realtime.notify import emit_notification
 from app.core.limiter import limiter
+from app.core.exceptions import ApiException
+from app.core.error_codes import ErrorCode
 
 router = APIRouter(tags=["Play Requests"])
 
@@ -60,7 +61,9 @@ async def _paginate(
     return await apaginate(
         db,
         stmt,
-        transformer=lambda rows: [PlayerRequestResponse.model_validate(r) for r in rows],
+        transformer=lambda rows: [
+            PlayerRequestResponse.model_validate(r) for r in rows
+        ],
     )
 
 
@@ -80,27 +83,16 @@ async def send_play_request(
     """Send a play request for an announcement."""
     announcement = await db.get(MatchAnnouncement, id)
     if announcement is None:
-        raise HTTPException(
-            status.HTTP_404_NOT_FOUND, detail="Announcement not found"
-        )
+        raise ApiException(code=ErrorCode.ANNOUNCEMENT_NOT_FOUND)
     if announcement.organizer_id == me.id:
-        raise HTTPException(
-            status.HTTP_403_FORBIDDEN,
-            detail="Cannot request your own announcement",
-        )
+        raise ApiException(code=ErrorCode.PERMISSION_DENIED)
     if announcement.match_status not in {
         MatchAnnouncementStatus.upcoming,
         MatchAnnouncementStatus.live,
     }:
-        raise HTTPException(
-            status.HTTP_409_CONFLICT,
-            detail="Announcement is not accepting requests",
-        )
+        raise ApiException(code=ErrorCode.RESOURCE_CONFLICT)
     if announcement.remaining_player_slots <= 0:
-        raise HTTPException(
-            status.HTTP_409_CONFLICT,
-            detail="Announcement has no open player slots",
-        )
+        raise ApiException(code=ErrorCode.RESOURCE_CONFLICT)
     already_sent = await db.scalar(
         select(PlayerRequest.id).where(
             PlayerRequest.announcement_id == id,
@@ -108,9 +100,7 @@ async def send_play_request(
         )
     )
     if already_sent:
-        raise HTTPException(
-            status.HTTP_409_CONFLICT, detail="Request already sent"
-        )
+        raise ApiException(code=ErrorCode.RESOURCE_CONFLICT)
 
     play_request = PlayerRequest(announcement_id=id, sender_id=me.id)
     db.add(play_request)
@@ -121,9 +111,7 @@ async def send_play_request(
         await db.commit()
     except IntegrityError:  # two parallel requests hit the UNIQUE constraint
         await db.rollback()
-        raise HTTPException(
-            status.HTTP_409_CONFLICT, detail="Request already sent"
-        )
+        raise ApiException(code=ErrorCode.RESOURCE_CONFLICT)
     background_tasks.add_task(
         emit_notification,
         event_type="play_request",
@@ -149,11 +137,9 @@ async def list_announcement_requests(
     """List requests for an owned announcement."""
     announcement = await db.get(MatchAnnouncement, id)
     if announcement is None:
-        raise HTTPException(
-            status.HTTP_404_NOT_FOUND, detail="Announcement not found"
-        )
+        raise ApiException(code=ErrorCode.ANNOUNCEMENT_NOT_FOUND)
     if announcement.organizer_id != me.id:
-        raise HTTPException(status.HTTP_403_FORBIDDEN, detail="Not the owner")
+        raise ApiException(code=ErrorCode.PERMISSION_DENIED)
     stmt = select(PlayerRequest).where(PlayerRequest.announcement_id == id)
     return await _paginate(db, stmt)
 
@@ -201,32 +187,22 @@ async def decide_play_request(
         .where(PlayerRequest.id == id)
     )
     if play_request is None:
-        raise HTTPException(
-            status.HTTP_404_NOT_FOUND, detail="Play request not found"
-        )
+        raise ApiException(code=ErrorCode.PLAY_REQUEST_NOT_FOUND)
     if play_request.announcement.organizer_id != me.id:
-        raise HTTPException(status.HTTP_403_FORBIDDEN, detail="Not the owner")
+        raise ApiException(code=ErrorCode.PERMISSION_DENIED)
     if play_request.status != PlayerRequestStatusEnum.pending:
-        raise HTTPException(
-            status.HTTP_409_CONFLICT, detail="Request already answered"
-        )
+        raise ApiException(code=ErrorCode.RESOURCE_CONFLICT)
     announcement = play_request.announcement
     if announcement.match_status not in {
         MatchAnnouncementStatus.upcoming,
         MatchAnnouncementStatus.live,
     }:
-        raise HTTPException(
-            status.HTTP_409_CONFLICT,
-            detail="Announcement is not accepting decisions",
-        )
+        raise ApiException(code=ErrorCode.RESOURCE_CONFLICT)
     if (
         body.status == PlayerRequestStatusEnum.accepted
         and announcement.remaining_player_slots <= 0
     ):
-        raise HTTPException(
-            status.HTTP_409_CONFLICT,
-            detail="Announcement has no open player slots",
-        )
+        raise ApiException(code=ErrorCode.RESOURCE_CONFLICT)
     play_request.status = PlayerRequestStatusEnum(body.status)
     if play_request.status == PlayerRequestStatusEnum.accepted:
         announcement.remaining_player_slots -= 1
