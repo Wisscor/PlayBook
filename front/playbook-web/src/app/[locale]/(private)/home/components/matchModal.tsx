@@ -58,9 +58,12 @@ export const MatchModal: React.FC<MatchModalProps> = ({
           : new Date().toISOString().split("T")[0],
       );
       setError(undefined);
-      void getSports(() => {
-        setError("Unable to load sports");
-      });
+      void getSports(
+        () => {},
+        () => {
+          setError("Unable to load sports");
+        },
+      );
     }, 0);
     return () => window.clearTimeout(timer);
   }, [initialData, isOpen]);

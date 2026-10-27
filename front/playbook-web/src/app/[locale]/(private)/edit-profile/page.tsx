@@ -101,11 +101,19 @@ export const EditProfilePage = () => {
         <div className="absolute top-0 left-0 right-0 h-24 bg-linear-to-r from-secondary/40 via-extra/30 to-primary/40 backdrop-blur-md" />
 
         <div className="relative z-10 flex flex-col gap-4 items-center pt-8">
-          <div className="flex flex-col items-center justify-center rounded-full border-4 border-slate-950 bg-white/10 p-5 shadow-xl backdrop-blur-md">
-            <PlayText.Primary
-              className="text-2xl font-extrabold text-white"
-              content={`${connectedUser.firstname?.charAt(0).toUpperCase()}${connectedUser.lastname?.charAt(0).toUpperCase()}`}
-            />
+          <div className="flex h-36 w-36 shrink--0 overflow-hidden flex-col items-center justify-center rounded-full border-4 border-slate-950 bg-white/10 p--5 shadow-xl backdrop-blur-md">
+            {connectedUser.avatar ? (
+              <img
+                src={`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}/${connectedUser.avatar}`}
+                alt="Avatar"
+                className="w-full h-full rounded-full object-cover"
+              />
+            ) : (
+              <PlayText.Primary
+                className="text-2xl font-extrabold text-white"
+                content={`${connectedUser.firstname?.charAt(0).toUpperCase()}${connectedUser.lastname?.charAt(0).toUpperCase()}`}
+              />
+            )}
           </div>
 
           <div className="flex items-center justify-center gap-2.5 w-full max-w-xs">

@@ -9,7 +9,7 @@ import { useAuthController } from "@/services/auth";
 import React, { useState } from "react";
 
 export const SignUp = () => {
-  const { signUp, isLoading } = useAuthController();
+  const { signUp, isWaiting } = useAuthController();
   const [infos, setInfos] = useState({
     firstName: "",
     lastName: "",
@@ -150,7 +150,7 @@ export const SignUp = () => {
 
           <div className="pt-2">
             <PlayButton.Primary
-              title={isLoading ? "signing-up" : "signUp"}
+              title={isWaiting ? "signing-up" : "signUp"}
               className="w-full rounded-2xl bg-white py-3.5 shadow-lg shadow-white/5 hover:bg-slate-100 transition-all text-slate-950 font-semibold"
               type="submit"
             />

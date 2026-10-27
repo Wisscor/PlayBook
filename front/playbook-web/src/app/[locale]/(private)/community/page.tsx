@@ -1,8 +1,12 @@
 "use client";
 
-import { api } from "@/services/api";
-import { MatchAnnouncement, PostPage } from "@/types/api";
-import React, { useEffect, useMemo, useState } from "react";
+import { useAuth } from "@/hooks/contexts/authContext";
+import { pageSize } from "@/lib/constants";
+import { useMatchController } from "@/services/match";
+import { usePostController } from "@/services/post";
+import { useProfileController } from "@/services/profile";
+import { Sport } from "@/types/api";
+import React, { useEffect, useState } from "react";
 import { FilterMatchModal } from "./components/filterMatchModal";
 import { LeftSideSection } from "./components/leftSideSection";
 import { MatchFilterSection } from "./components/matchFilterSection";
@@ -20,141 +24,96 @@ interface CommunityMatch {
 }
 
 export const CommunityPageContent: React.FC = () => {
-  const [matchSearchQuery, setMatchSearchQuery] = useState("");
-  const [filterDate, setFilterDate] = useState("");
-  const [filterStartTime, setFilterStartTime] = useState("");
-  const [filterEndTime, setFilterEndTime] = useState("");
+  const { connectedUser, isLoading } = useAuth();
+  const { fetchUser } = useProfileController();
+  const { loadFeeds, feedPageNumber, feeds } = usePostController();
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
-  const [posts, setPosts] = useState<PostPage["items"]>([]);
-  const [availableMatches, setAvailableMatches] = useState<CommunityMatch[]>(
-    [],
+  const [filterDate, setFilterDate] = useState<string>("");
+  const [filterStartTime, setFilterStartTime] = useState<string>("");
+  const [filterEndTime, setFilterEndTime] = useState<string>("");
+  const [selectedSport, setSelectedSport] = useState<Sport | undefined>(
+    undefined,
   );
-  const [user, setUser] = useState({
-    name: "",
-    username: "",
-    avatar: "",
-    bio: "",
-  });
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    const loadCommunity = async () => {
-      try {
-        const [profileResponse, feedResponse, matchesResponse] =
-          await Promise.all([
-            api.get<{
-              firstname: string;
-              lastname: string;
-              username: string;
-              bio?: string;
-            }>("/users/me"),
-            api.get<PostPage>("/feed", {
-              params: { limit: 20, offset: 0 },
-            }),
-            api.get<{ items: MatchAnnouncement[] }>("/match-announcements", {
-              params: { limit: 100, offset: 0 },
-            }),
-          ]);
-
-        const profile = profileResponse.data;
-        setUser({
-          name: `${profile.firstname} ${profile.lastname}`,
-          username: profile.username,
-          avatar: `${profile.firstname.charAt(0)}${profile.lastname.charAt(0)}`,
-          bio: profile.bio ?? "",
-        });
-        setPosts(feedResponse.data.items);
-        setAvailableMatches(
-          matchesResponse.data.items.map((match) => ({
-            id: match.id,
-            name: match.title,
-            type: match.sport.name,
-            players: String(match.remaining_player_slots),
-            date: new Date(match.start_time).toLocaleDateString(),
-            startTime: new Date(match.start_time).toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-            }),
-            endTime: new Date(match.end_time).toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-            }),
-          })),
-        );
-      } catch (requestError) {
-        console.error("Unable to load community:", requestError);
-        setError("Unable to load community");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    const timer = window.setTimeout(loadCommunity, 0);
-    return () => window.clearTimeout(timer);
-  }, []);
-
-  const filteredMatches = useMemo(
-    () =>
-      availableMatches.filter((match) => {
-        const query = matchSearchQuery.toLowerCase();
-        const matchesQuery =
-          match.name.toLowerCase().includes(query) ||
-          match.type.toLowerCase().includes(query);
-        const matchesDate = filterDate
-          ? new Date(match.date).toDateString() ===
-            new Date(filterDate).toDateString()
-          : true;
-        const matchesStartTime = filterStartTime
-          ? match.startTime >= filterStartTime
-          : true;
-        const matchesEndTime = filterEndTime
-          ? match.endTime <= filterEndTime
-          : true;
-        return matchesQuery && matchesDate && matchesStartTime && matchesEndTime;
-      }),
-    [
-      availableMatches,
-      filterDate,
-      filterEndTime,
-      filterStartTime,
-      matchSearchQuery,
-    ],
-  );
+  const [matchStatus, setMatchStatus] = useState<string | undefined>(undefined);
+  const { loadMatches, pageNumber, matches, total, pages } =
+    useMatchController();
 
   const handleClearFilters = () => {
     setFilterDate("");
     setFilterStartTime("");
     setFilterEndTime("");
-    setIsFilterModalOpen(false);
+    setSelectedSport(undefined);
+    setMatchStatus(undefined);
   };
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      void fetchUser(() => {});
+      void loadFeeds(feedPageNumber);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (!isFilterModalOpen) {
+      void loadMatches(undefined, pageNumber, pageSize, () => {}, [
+        {
+          field: "sport_id",
+          value: selectedSport?.id || "",
+        },
+        {
+          field: "start_from",
+          value:
+            filterDate.length > 0
+              ? `${filterDate}T${filterStartTime}:00.000Z`
+              : "",
+        },
+        {
+          field: "end_to",
+          value:
+            filterDate.length > 0
+              ? `${filterDate}T${filterEndTime}:00.000Z`
+              : "",
+        },
+        {
+          field: "match_status",
+          value: matchStatus || "",
+        },
+      ]);
+    }
+  }, [isFilterModalOpen]);
 
   return (
     <div className="min-h-[calc(100vh-80px)] bg-slate-950 px-4 py-6 text-white md:px-8 lg:px-12">
-      <div className="mx-auto grid max-w-7xl grid-cols-1 gap-6 lg:grid-cols-4">
-        <LeftSideSection user={user} />
-        <div className="col-span-1 flex flex-col gap-6 lg:col-span-2">
+      <div className="mx-auto grid max-w-7xl grid-cols-1 gap-6 lg:grid-cols-3">
+        <LeftSideSection user={connectedUser} />
+        <div className="col-span-1 flex flex-col gap-6 lg:col-span-1">
           <MatchFilterSection
             open={() => setIsFilterModalOpen(true)}
             filterEndDate={filterEndTime}
             filterStartDate={filterStartTime}
+            selectedSport={selectedSport}
           />
           {isLoading ? (
             <p className="py-12 text-center text-slate-300">Loading...</p>
-          ) : error ? (
-            <p className="py-12 text-center text-rose-400">{error}</p>
-          ) : posts.length === 0 ? (
+          ) : feeds.length === 0 ? (
             <p className="rounded-3xl border border-dashed border-white/10 p-12 text-center text-slate-400">
-              No posts yet.
+              No feeds yet.
             </p>
           ) : (
-            <PostsFeed posts={posts} />
+            <PostsFeed feeds={feeds} />
           )}
         </div>
         <RightSideSection
-          setMatchSearchQuery={setMatchSearchQuery}
-          filteredMatches={filteredMatches}
-          matchSearchQuery={matchSearchQuery}
+          scroll={(pageNumber) => {
+            void loadMatches(undefined, pageNumber, pageSize, () => {});
+          }}
+          pageNumber={pageNumber}
+          pages={pages}
+          total={total}
+          pageSize={pageSize}
+          matches={matches}
+          userId={connectedUser?.id}
         />
       </div>
       <FilterMatchModal
@@ -167,6 +126,10 @@ export const CommunityPageContent: React.FC = () => {
         handleClearFilters={handleClearFilters}
         isOpen={isFilterModalOpen}
         close={() => setIsFilterModalOpen(false)}
+        setSelectedSport={setSelectedSport}
+        selectedSport={selectedSport}
+        setMatchStatus={setMatchStatus}
+        matchStatus={matchStatus}
       />
     </div>
   );

@@ -132,5 +132,7 @@
   "no-followers": "No followers found.",
   "follow-back": "Follow back",
   "previous": "Previous",
-  "next": "Next"
+  "next": "Next",
+  "you": "You",
+  "select-match-status": "Select Match Status"
 }

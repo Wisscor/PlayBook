@@ -3,14 +3,15 @@ import { useNavigation } from "@/hooks/useNavigation";
 import { ApiError, SignInData, SignUpData } from "@/types/api";
 import { User } from "@/types/user";
 import { api } from "./api";
+import React from "react";
 
 export const useAuthController = () => {
-  const { connectedUser, setConnectedUser, isLoading, setIsLoading } =
-    useAuth();
+  const { connectedUser, setConnectedUser } = useAuth();
   const { goSignIn } = useNavigation();
+  const [isWaiting, setIsWaiting] = React.useState(false);
 
   const signIn = async (data: SignInData, onError: (msg: string) => void) => {
-    setIsLoading(true);
+    setIsWaiting(true);
     await api
       .post("/auth/login", data)
       .then((res) => {
@@ -21,12 +22,12 @@ export const useAuthController = () => {
         onError(error.response?.data?.message || "error-credentials");
       })
       .finally(() => {
-        setIsLoading(false);
+        setIsWaiting(false);
       });
   };
 
   const signUp = async (data: SignUpData, onError: (msg: string) => void) => {
-    setIsLoading(true);
+    setIsWaiting(true);
 
     await api
       .post<User>("/auth/signup", data)
@@ -46,7 +47,7 @@ export const useAuthController = () => {
         onError(apiError.message);
       })
       .finally(() => {
-        setIsLoading(false);
+        setIsWaiting(false);
       });
   };
 
@@ -71,6 +72,6 @@ export const useAuthController = () => {
     connectedUser,
     signUp,
     signOut,
-    isLoading,
+    isWaiting,
   };
 };

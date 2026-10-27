@@ -19,6 +19,29 @@ export interface PostPaginated {
   pages: number;
 }
 
+export interface Feed {
+  id: string;
+  caption: string;
+  user_id: string;
+  author: {
+    id: string;
+    username: string;
+    firstname: string;
+    lastname: string;
+    avatar: string;
+  };
+  created_at: string;
+  updated_at: string;
+}
+
+export interface FeedPaginated {
+  items: Feed[];
+  total: number;
+  page: number;
+  size: number;
+  pages: number;
+}
+
 export interface Message {
   id: number;
   sender: "me" | "them";

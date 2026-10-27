@@ -132,5 +132,7 @@
   "no-followers": "Aucun abonné trouvé.",
   "follow-back": "Suivre en retour",
   "previous": "Précédent",
-  "next": "Suivant"
+  "next": "Suivant",
+  "you": "Vous",
+  "select-match-status": "Sélectionnez le statut du match"
 }

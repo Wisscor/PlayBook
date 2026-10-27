@@ -10,8 +10,14 @@ import { useProfileController } from "@/services/profile";
 
 export const PostsSection: React.FC = () => {
   const t = useTranslations();
-  const { loadPosts, deletePost, posts, pageNumber, pages, total } =
-    usePostController();
+  const {
+    loadPosts,
+    deletePost,
+    posts,
+    postPageNumber,
+    postPages,
+    totalPosts,
+  } = usePostController();
   const { connectedUser, isLoading, setIsLoading } = useAuth();
   const { fetchUser } = useProfileController();
 
@@ -21,7 +27,7 @@ export const PostsSection: React.FC = () => {
         setIsLoading(true);
 
         if (connectedUser?.id) {
-          void loadPosts(connectedUser.id, pageNumber);
+          void loadPosts(connectedUser.id, postPageNumber);
         }
       });
     }, 0);
@@ -33,7 +39,7 @@ export const PostsSection: React.FC = () => {
     postsContent = (
       <p className="py-12 text-center text-slate-300">Loading...</p>
     );
-  } else if (total === 0) {
+  } else if (totalPosts === 0) {
     postsContent = (
       <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-white/10 p-12 text-center">
         <PlayText.Primary
@@ -70,7 +76,7 @@ export const PostsSection: React.FC = () => {
         <PlayText.Span
           texts={[
             {
-              content: `${total} ${total === 1 ? t("post") : t("posts")}`,
+              content: `${totalPosts} ${totalPosts === 1 ? t("post") : t("posts")}`,
               className:
                 "rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-slate-400",
             },
@@ -78,10 +84,10 @@ export const PostsSection: React.FC = () => {
         />
       </div>
       <div className="flex items-center justify-center my-6 space-x-4">
-        {pageNumber > 1 && (
+        {postPageNumber > 1 && (
           <button
             onClick={() => {
-              void loadPosts(connectedUser?.id, pageNumber - 1);
+              void loadPosts(connectedUser?.id, postPageNumber - 1);
             }}
             className="cursor-pointer"
           >
@@ -92,13 +98,17 @@ export const PostsSection: React.FC = () => {
           </button>
         )}
         <PlayText.Primary
-          content={`${pageNumber.toString()}/${pages}`}
+          content={
+            postPages > 0
+              ? `${postPageNumber}/${postPages}`
+              : postPageNumber.toString()
+          }
           className="text-sm text-slate-400 font-bold transition-color"
         />
-        {pageNumber < pages && (
+        {postPageNumber < postPages && (
           <button
             onClick={() => {
-              void loadPosts(connectedUser?.id, pageNumber + 1);
+              void loadPosts(connectedUser?.id, postPageNumber + 1);
             }}
             className="cursor-pointer"
           >

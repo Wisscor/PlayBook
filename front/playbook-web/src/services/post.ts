@@ -1,14 +1,20 @@
 import { useAuth } from "@/hooks/contexts/authContext";
 import { api } from "./api";
-import { PostData, PostPaginated } from "@/types/api";
+import { Feed, FeedPaginated, PostData, PostPaginated } from "@/types/api";
 import React from "react";
+import { pageSize } from "@/lib/constants";
 
 export const usePostController = () => {
   const { setIsLoading } = useAuth();
-  const [pageNumber, setPageNumber] = React.useState(1);
-  const [pages, setPages] = React.useState(1);
-  const [total, setTotal] = React.useState(1);
   const [posts, setPosts] = React.useState<PostData[]>([]);
+  const [postPageNumber, setPostPageNumber] = React.useState(1);
+  const [postPages, setPostPages] = React.useState(1);
+  const [totalPosts, setTotalPosts] = React.useState(1);
+
+  const [feeds, setFeeds] = React.useState<Feed[]>([]);
+  const [feedPageNumber, setFeedPageNumber] = React.useState(1);
+  const [feedPages, setFeedPages] = React.useState(1);
+  const [totalFeeds, setTotalFeeds] = React.useState(1);
 
   const addPost = async (
     post: string,
@@ -38,7 +44,7 @@ export const usePostController = () => {
       console.error("User ID is undefined. Cannot load posts.");
       return;
     }
-    const defaultParams = `page=${pageNumber}&size=1`;
+    const defaultParams = `page=${pageNumber}&size=${pageSize}`;
     setIsLoading(true);
     await api
       .get<PostPaginated>(`/posts?${defaultParams}`, {
@@ -47,13 +53,34 @@ export const usePostController = () => {
       .then((res) => {
         if (res.status == 200) {
           setPosts(res.data.items);
-          setPageNumber(res.data.page);
-          setPages(res.data.pages);
-          setTotal(res.data.total);
+          setPostPageNumber(res.data.page);
+          setPostPages(res.data.pages);
+          setTotalPosts(res.data.total);
         }
       })
       .catch((error) => {
         console.error("Unable to load posts:", error);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+  };
+
+  const loadFeeds = async (pageNumber?: number) => {
+    const defaultParams = `page=${pageNumber}&size=${pageSize}`;
+    setIsLoading(true);
+    await api
+      .get<FeedPaginated>(`/feed?${defaultParams}`)
+      .then((res) => {
+        if (res.status == 200) {
+          setFeeds(res.data.items);
+          setFeedPageNumber(res.data.page);
+          setFeedPages(res.data.pages);
+          setTotalFeeds(res.data.total);
+        }
+      })
+      .catch((error) => {
+        console.error("Unable to load feeds:", error);
       })
       .finally(() => {
         setIsLoading(false);
@@ -77,9 +104,14 @@ export const usePostController = () => {
     addPost,
     loadPosts,
     posts,
-    pageNumber,
-    pages,
+    postPageNumber,
+    postPages,
     deletePost,
-    total,
+    totalPosts,
+    feeds,
+    loadFeeds,
+    feedPageNumber,
+    feedPages,
+    totalFeeds,
   };
 };

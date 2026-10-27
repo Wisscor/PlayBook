@@ -1,23 +1,43 @@
 import { PlayButton } from "@/components/ui/Button";
 import { PlayInput } from "@/components/ui/Input";
 import { PlayText } from "@/components/ui/Text";
+import { MatchAnnouncement } from "@/types/api";
 import { useTranslations } from "next-intl";
-import React from "react";
+import React, { useEffect } from "react";
 
 export const RightSideSection: React.FC<{
-  filteredMatches: {
-    id: string;
-    name: string;
-    type: string;
-    players: string;
-    date: string;
-    startTime: string;
-    endTime: string;
-  }[];
-  matchSearchQuery: string;
-  setMatchSearchQuery: React.Dispatch<React.SetStateAction<string>>;
-}> = ({ filteredMatches, matchSearchQuery, setMatchSearchQuery }) => {
+  userId?: string;
+  matches: MatchAnnouncement[];
+  pageSize: number;
+  total: number;
+  pageNumber: number;
+  pages: number;
+  scroll: (pageNumber: number) => void;
+}> = ({ userId, matches, pageSize, total, pageNumber, pages, scroll }) => {
   const t = useTranslations();
+  const [matchSearchQuery, setMatchSearchQuery] = React.useState<string>("");
+  const [filteredMatches, setFilteredMatches] =
+    React.useState<MatchAnnouncement[]>(matches);
+
+  const filterMatch = () => {
+    setFilteredMatches(
+      matches.filter((match) => {
+        const matchTitle = match.title.toLowerCase();
+        const matchOwner =
+          `${match.owner.firstname} ${match.owner.lastname}`.toLowerCase();
+        const query = matchSearchQuery.toLowerCase();
+        return matchTitle.includes(query) || matchOwner.includes(query);
+      }),
+    );
+  };
+
+  useEffect(() => {
+    filterMatch();
+  }, [matchSearchQuery]);
+
+  useEffect(() => {
+    setFilteredMatches(matches);
+  }, [matches]);
 
   return (
     <div className="col-span-1 lg:col-span-1 flex flex-col gap-6">
@@ -31,7 +51,7 @@ export const RightSideSection: React.FC<{
           <PlayText.Span
             texts={[
               {
-                content: `${filteredMatches.length} ${t("available")}`,
+                content: `${total} ${t("available")}`,
               },
             ]}
             className="text-xs text-slate-400 font-medium"
@@ -60,33 +80,74 @@ export const RightSideSection: React.FC<{
               >
                 <div className="flex justify-between items-start">
                   <PlayText.Primary
-                    content={match.name}
+                    content={`${match.title} (${userId === match.owner.id ? t("you") : match.owner.firstname + " " + match.owner.lastname})`}
                     className="font-bold text-xs text-white"
                   />
                   <PlayText.Span
-                    texts={[{ content: match.type }]}
+                    texts={[{ content: match.sport.name }]}
                     className="text-[10px] font-semibold bg-white/10 px-2 py-0.5 rounded-full text-sky-400"
                   />
                 </div>
                 <PlayText.Primary
-                  content={`${match.date} • ${match.startTime} - ${match.endTime}`}
+                  content={`${new Date(match.start_time).toISOString().split("T")[0]} • ${new Date(match.start_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} - ${new Date(match.end_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`}
                   className="text-[11px] text-slate-400"
                 />
 
                 <div className="flex justify-between items-center pt-2 border-t border-white/5">
                   <PlayText.Span
-                    texts={[{ content: `Slots: ${match.players}` }]}
+                    texts={[
+                      {
+                        content: `Slotss: ${match.remaining_player_slots} ${match.remaining_player_slots} ${match.remaining_player_slots}`,
+                      },
+                    ]}
                     className="text-[11px] font-medium text-slate-300"
                   />
 
-                  <PlayButton.Primary
-                    textClassName="text-xs font-semibold text-white"
-                    title="join-match"
-                    className="rounded-lg bg-white/10 px-3 py-1  hover:bg-white/20 transition-all cursor-pointer"
-                  />
+                  {match.owner.id !== userId && (
+                    <PlayButton.Primary
+                      textClassName="text-xs font-semibold text-white"
+                      title="join-match"
+                      className="rounded-lg bg-white/10 px-3 py-1  hover:bg-white/20 transition-all cursor-pointer"
+                    />
+                  )}
                 </div>
               </div>
             ))
+          )}
+        </div>
+
+        <div className="flex items-center justify-center my-6 space-x-4">
+          {pageNumber > 1 && (
+            <button
+              onClick={() => {
+                scroll(pageNumber - 1);
+              }}
+              className="cursor-pointer"
+            >
+              <PlayText.Primary
+                id="previous"
+                className="text-sm text-slate-400 hover:text-slate-200 transition-color"
+              />
+            </button>
+          )}
+          <PlayText.Primary
+            content={
+              pages > 0 ? `${pageNumber}/${pages}` : pageNumber.toString()
+            }
+            className="text-sm text-slate-400 font-bold transition-color"
+          />
+          {pageNumber < pages && (
+            <button
+              onClick={() => {
+                scroll(pageNumber + 1);
+              }}
+              className="cursor-pointer"
+            >
+              <PlayText.Primary
+                id="next"
+                className="text-sm text-slate-400 hover:text-slate-200 transition-color"
+              />
+            </button>
           )}
         </div>
       </div>

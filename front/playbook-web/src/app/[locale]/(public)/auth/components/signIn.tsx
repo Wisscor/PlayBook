@@ -10,7 +10,7 @@ import { SignInData } from "@/types/api";
 import React, { useState } from "react";
 
 export const SignIn = () => {
-  const { signIn, isLoading } = useAuthController();
+  const { signIn, isWaiting } = useAuthController();
 
   const [infos, setInfos] = useState<SignInData>({
     email: "",
@@ -101,7 +101,7 @@ export const SignIn = () => {
           <div className="pt-2">
             <PlayButton.Primary
               textClassName="text-slate-950 font-semibold"
-              title={isLoading ? "logging-in" : "login"}
+              title={isWaiting ? "logging-in" : "login"}
               className="w-full rounded-2xl bg-white py-3.5 shadow-lg shadow-white/5 hover:bg-slate-100 transition-all"
               type="submit"
             />

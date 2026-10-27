@@ -6,7 +6,7 @@ import { COMING_FROM, ROUTES } from "@/lib/constants";
 import { useProfileController } from "@/services/profile";
 import { User } from "@/types/user";
 import Image from "next/image";
-import React from "react";
+import React, { useEffect } from "react";
 import { Link } from "../../../../../i18n/navigation";
 import { AboutSection } from "./components/aboutSection";
 import { MainDetails } from "./components/mainDetails";
@@ -26,7 +26,7 @@ const mocked: User = {
 
 export const ProfilePage = () => {
   const { connectedUser, isLoading, setIsLoading } = useAuth();
-  const { uploadAvatar } = useProfileController();
+  const { uploadAvatar, fetchUser } = useProfileController();
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -45,17 +45,20 @@ export const ProfilePage = () => {
       setIsLoading(true);
 
       await uploadAvatar(file);
-
-      console.log("Avatar uploaded successfully");
     } catch (error) {
       console.error("Failed to upload avatar:", error);
     } finally {
       setIsLoading(false);
 
-      // Allow selecting the same file again
       event.target.value = "";
     }
   };
+
+  useEffect(() => {
+    void fetchUser(() => {
+      setIsLoading(false);
+    });
+  }, []);
 
   if (isLoading) {
     return <div className="py-12 text-center text-slate-300">Loading...</div>;

@@ -9,8 +9,8 @@ import { useTranslations } from "next-intl";
 import React, { useEffect, useState } from "react";
 import MatchModal from "../../home/components/matchModal";
 import { Match } from "./match";
-
-const pageSize = 5;
+import { useProfileController } from "@/services/profile";
+import { pageSize } from "@/lib/constants";
 
 export const MatchesSection: React.FC = () => {
   const t = useTranslations();
@@ -21,22 +21,28 @@ export const MatchesSection: React.FC = () => {
     deleteMatch,
     addMatch,
     updateMatch,
-    totalPages,
+    pages,
+    total,
   } = useMatchController();
-  const { isLoading } = useAuth();
+  const { isLoading, setIsLoading, connectedUser } = useAuth();
   const [selectedMatch, setSelectedMatch] = useState<
     MatchAnnouncement | undefined
   >(undefined);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const { fetchUser } = useProfileController();
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
-      void loadMatches(pageNumber, pageSize, () => {
-        console.error("Error fetching matches");
+      void fetchUser(() => {
+        setIsLoading(true);
+
+        if (connectedUser?.id) {
+          void loadMatches(connectedUser.id, pageNumber, pageSize, () => {});
+        }
       });
     }, 0);
     return () => window.clearTimeout(timer);
-  }, []);
+  }, [connectedUser?.id]);
 
   const handleSave = (form: MatchAnnouncementRequestData) => {
     const payload = {
@@ -72,7 +78,7 @@ export const MatchesSection: React.FC = () => {
     matchContent = (
       <p className="py-12 text-center text-slate-300">Loading...</p>
     );
-  } else if (matches.length === 0) {
+  } else if (total === 0) {
     matchContent = (
       <p className="rounded-3xl border border-dashed border-white/10 p-12 text-center text-amber-400">
         {t("no-matches")}
@@ -85,7 +91,12 @@ export const MatchesSection: React.FC = () => {
           {pageNumber > 1 && (
             <button
               onClick={() => {
-                void loadMatches(pageNumber - 1, pageSize, () => {});
+                void loadMatches(
+                  connectedUser?.id,
+                  pageNumber - 1,
+                  pageSize,
+                  () => {},
+                );
               }}
               className="cursor-pointer"
             >
@@ -96,13 +107,20 @@ export const MatchesSection: React.FC = () => {
             </button>
           )}
           <PlayText.Primary
-            content={`${pageNumber.toString()}/${totalPages}`}
+            content={
+              pages > 0 ? `${pageNumber}/${pages}` : pageNumber.toString()
+            }
             className="text-sm text-slate-400 font-bold transition-color"
           />
-          {pageNumber < totalPages && (
+          {pageNumber < pages && (
             <button
               onClick={() => {
-                void loadMatches(pageNumber + 1, pageSize, () => {});
+                void loadMatches(
+                  connectedUser?.id,
+                  pageNumber + 1,
+                  pageSize,
+                  () => {},
+                );
               }}
               className="cursor-pointer"
             >
@@ -161,7 +179,7 @@ export const MatchesSection: React.FC = () => {
         <div className="flex items-center gap-3">
           <h2 className="text-xl font-bold text-white">{t("my-matches")}</h2>
           <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-400">
-            {matches.length} {matches.length === 1 ? t("match") : t("matches")}
+            {total} {total === 1 ? t("match") : t("matches")}
           </span>
         </div>
         <PlayButton.Primary
