@@ -5,9 +5,8 @@ import { PlayText } from "@/components/ui/Text";
 import { useAuth } from "@/hooks/contexts/authContext";
 import { useProfileController } from "@/services/profile";
 import { useUserController } from "@/services/user";
-import { UserSummary } from "@/types/user";
-import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
+import { useEffect, useState } from "react";
 import { UserCard } from "./components/userCard";
 
 export const SearchPage = () => {
@@ -27,18 +26,15 @@ export const SearchPage = () => {
     });
   }, [connectedUser?.id]);
 
-  const [filteredUsers, setFilteredUsers] = useState<UserSummary[]>([]);
-
   useEffect(() => {
-    setFilteredUsers(
-      users.filter(
-        (u) =>
-          u.firstname.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          u.lastname.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          u.username.toLowerCase().includes(searchQuery.toLowerCase()),
-      ),
+    void loadUsers(
+      userPageNumber,
+      () => {
+        setError("error-loading-users");
+      },
+      searchQuery,
     );
-  }, [users, searchQuery]);
+  }, [searchQuery]);
 
   let usersContent: ReactNode;
   if (isLoading) {
@@ -51,7 +47,7 @@ export const SearchPage = () => {
     usersContent = (
       <p className="col-span-full py-12 text-center text-rose-400">{error}</p>
     );
-  } else if (filteredUsers.length === 0) {
+  } else if (users.length === 0) {
     usersContent = (
       <div className="col-span-full flex flex-col items-center justify-center rounded-3xl border border-dashed border-white/10 bg-white/5 p-12 text-center backdrop-blur-xl">
         <PlayText.Primary
@@ -61,11 +57,10 @@ export const SearchPage = () => {
       </div>
     );
   } else {
-    usersContent = filteredUsers.map((user) => {
-      if (user.id === connectedUser?.id) {
-        return null;
-      }
-      return <UserCard key={user.id} user={user} />;
+    usersContent = users.map((user) => {
+      return (
+        <UserCard key={user.id} user={user} connectedUser={connectedUser} />
+      );
     });
   }
 

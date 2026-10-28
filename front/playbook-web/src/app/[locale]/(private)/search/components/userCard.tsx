@@ -1,11 +1,14 @@
 import { PlayButton } from "@/components/ui/Button";
 import { PlayText } from "@/components/ui/Text";
 import { useNavigation } from "@/hooks/useNavigation";
-import { UserSummary } from "@/types/user";
+import { User, UserSummary } from "@/types/user";
 import React from "react";
 
-export const UserCard: React.FC<{ user: UserSummary }> = ({ user }) => {
-  const { goUserProfile } = useNavigation();
+export const UserCard: React.FC<{
+  user: UserSummary;
+  connectedUser?: User;
+}> = ({ user, connectedUser }) => {
+  const { goUserProfile, goProfile } = useNavigation();
   return (
     <div
       key={user.id}
@@ -41,6 +44,11 @@ export const UserCard: React.FC<{ user: UserSummary }> = ({ user }) => {
       <div className="pt-2 flex justify-end">
         <PlayButton.Primary
           onClick={() => {
+            console.log("connected is ", connectedUser);
+            if (user.id == connectedUser?.id) {
+              goProfile();
+              return;
+            }
             goUserProfile(user.id);
           }}
           textClassName="text-xs font-semibold text-white"

@@ -11,8 +11,16 @@ export const useUserController = () => {
   const [totalUsers, setTotalUsers] = React.useState(1);
   const [userPages, setUserPages] = React.useState(1);
 
-  const loadUsers = async (pageNumber: number, onError?: () => void) => {
-    const defaultParams = `page=${pageNumber}&size=${pageSize}`;
+  const loadUsers = async (
+    pageNumber: number,
+    onError?: () => void,
+    searchQuery?: string,
+  ) => {
+    let defaultParams = `page=${pageNumber}&size=${pageSize}`;
+    if (searchQuery && searchQuery?.length >= 1) {
+      defaultParams += `&search=${searchQuery}`;
+    }
+
     await api
       .get<UserPaginated>(`/users?${defaultParams}`)
       .then((res) => {

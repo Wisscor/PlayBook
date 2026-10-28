@@ -221,11 +221,7 @@ export const EditProfilePage = () => {
 
         <div className="relative z-10 w-full flex flex-col gap-4 pt-4 border-t border-white/10">
           <Info
-            placeholder="firstname"
             isEditing={editing.firstname}
-            updateValue={(v) =>
-              setUpdatedInfos({ ...updatedInfos, firstname: v })
-            }
             label="firstname-label"
             value={updatedInfos.firstname}
             onClick={() => {
@@ -235,13 +231,22 @@ export const EditProfilePage = () => {
               }
               setEditing({ ...editing, firstname: !editing.firstname });
             }}
+            input={
+              <PlayInput.Primary
+                onChange={(e) =>
+                  setUpdatedInfos({
+                    ...updatedInfos,
+                    firstname: e.target.value,
+                  })
+                }
+                placeholder={"firstname"}
+                value={updatedInfos.firstname ?? ""}
+                className="w-full rounded-xl border border-white/10 bg-white/5 px-3.5 py-2 text-sm text-white placeholder-slate-400 backdrop-blur-md focus:border-white/30 focus:outline-none"
+              />
+            }
           />
           <Info
-            placeholder="lastname"
             isEditing={editing.lastname}
-            updateValue={(v) =>
-              setUpdatedInfos({ ...updatedInfos, lastname: v })
-            }
             label="lastname-label"
             value={updatedInfos.lastname}
             onClick={() => {
@@ -251,14 +256,32 @@ export const EditProfilePage = () => {
               }
               setEditing({ ...editing, lastname: !editing.lastname });
             }}
+            input={
+              <PlayInput.Primary
+                onChange={(e) =>
+                  setUpdatedInfos({ ...updatedInfos, lastname: e.target.value })
+                }
+                placeholder={"lastname"}
+                value={updatedInfos.lastname ?? ""}
+                className="w-full rounded-xl border border-white/10 bg-white/5 px-3.5 py-2 text-sm text-white placeholder-slate-400 backdrop-blur-md focus:border-white/30 focus:outline-none"
+              />
+            }
           />
           <Info
-            placeholder="bio"
             isEditing={editing.bio}
-            updateValue={(v) => setUpdatedInfos({ ...updatedInfos, bio: v })}
             label="bio-label"
             value={updatedInfos.bio}
             onClick={() => setEditing({ ...editing, bio: !editing.bio })}
+            input={
+              <PlayInput.Area
+                onChange={(e) =>
+                  setUpdatedInfos({ ...updatedInfos, bio: e.target.value })
+                }
+                placeholder={"bio"}
+                value={updatedInfos.bio ?? ""}
+                className="w-full rounded-xl border border-white/10 bg-white/5 px-3.5 py-2 text-sm text-white placeholder-slate-400 backdrop-blur-md focus:border-white/30 focus:outline-none"
+              />
+            }
           />
         </div>
       </div>
