@@ -19,12 +19,3 @@ export const toForm = (
     end_time: new Date(match.end_time).toISOString().split("T")[1].slice(0, 5),
   };
 };
-
-export const colorRandomizer = () => {
-  const letters = "0123456789ABCDEF";
-  let color = "#";
-  for (let i = 0; i < 6; i++) {
-    color += letters[Math.floor(Math.random() * 16)];
-  }
-  return color;
-};

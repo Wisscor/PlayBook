@@ -35,8 +35,15 @@ export const CommunityPageContent: React.FC = () => {
     undefined,
   );
   const [matchStatus, setMatchStatus] = useState<string | undefined>(undefined);
-  const { loadMatches, pageNumber, matches, total, pages } =
-    useMatchController();
+  const {
+    loadMatches,
+    pageNumber,
+    matches,
+    total,
+    pages,
+    loadRequests,
+    requests,
+  } = useMatchController();
 
   const handleClearFilters = () => {
     setFilterDate("");
@@ -50,6 +57,7 @@ export const CommunityPageContent: React.FC = () => {
     const timer = window.setTimeout(() => {
       void fetchUser(() => {});
       void loadFeeds(feedPageNumber);
+      void loadRequests();
     }, 0);
     return () => window.clearTimeout(timer);
   }, []);
@@ -83,6 +91,21 @@ export const CommunityPageContent: React.FC = () => {
     }
   }, [isFilterModalOpen]);
 
+  let feedContent: React.ReactNode;
+  if (isLoading) {
+    feedContent = (
+      <p className="py-12 text-center text-slate-300">Loading...</p>
+    );
+  } else if (feeds.length === 0) {
+    feedContent = (
+      <p className="rounded-3xl border border-dashed border-white/10 p-12 text-center text-slate-400">
+        No feeds yet.
+      </p>
+    );
+  } else {
+    feedContent = <PostsFeed feeds={feeds} />;
+  }
+
   return (
     <div className="min-h-[calc(100vh-80px)] bg-slate-950 px-4 py-6 text-white md:px-8 lg:px-12">
       <div className="mx-auto grid max-w-7xl grid-cols-1 gap-6 lg:grid-cols-3">
@@ -94,15 +117,7 @@ export const CommunityPageContent: React.FC = () => {
             filterStartDate={filterStartTime}
             selectedSport={selectedSport}
           />
-          {isLoading ? (
-            <p className="py-12 text-center text-slate-300">Loading...</p>
-          ) : feeds.length === 0 ? (
-            <p className="rounded-3xl border border-dashed border-white/10 p-12 text-center text-slate-400">
-              No feeds yet.
-            </p>
-          ) : (
-            <PostsFeed feeds={feeds} />
-          )}
+          {feedContent}
         </div>
         <RightSideSection
           scroll={(pageNumber) => {
@@ -111,9 +126,9 @@ export const CommunityPageContent: React.FC = () => {
           pageNumber={pageNumber}
           pages={pages}
           total={total}
-          pageSize={pageSize}
           matches={matches}
           userId={connectedUser?.id}
+          requests={requests}
         />
       </div>
       <FilterMatchModal

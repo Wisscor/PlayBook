@@ -4,7 +4,11 @@ import { PlayButton } from "@/components/ui/Button";
 import { PlayText } from "@/components/ui/Text";
 import { useAuth } from "@/hooks/contexts/authContext";
 import { useMatchController } from "@/services/match";
-import { MatchAnnouncement, MatchAnnouncementRequestData } from "@/types/api";
+import {
+  MatchAnnouncement,
+  MatchAnnouncementRequestData,
+  UpdatedMatchRequest,
+} from "@/types/api";
 import { useTranslations } from "next-intl";
 import React, { useEffect, useState } from "react";
 import MatchModal from "../../home/components/matchModal";
@@ -45,19 +49,19 @@ export const MatchesSection: React.FC = () => {
   }, [connectedUser?.id]);
 
   const handleSave = (form: MatchAnnouncementRequestData) => {
-    const payload = {
+    const payload: UpdatedMatchRequest = {
       title: form.title.trim(),
       sport_id: form.sport_id,
       remaining_player_slots: form.remaining_player_slots,
       start_time: new Date(form.start_time).toISOString(),
       end_time: new Date(form.end_time).toISOString(),
+      match_status: selectedMatch?.match_status ?? "upcoming",
     };
 
     if (selectedMatch?.id) {
       void updateMatch(
         selectedMatch.id,
         payload,
-        selectedMatch.match_status,
         () => {
           window.location.reload();
         },
@@ -150,6 +154,7 @@ export const MatchesSection: React.FC = () => {
                   minute: "2-digit",
                 }),
                 status: match.match_status,
+                sport_id: match.sport.id,
               }}
               onEdit={() => {
                 setSelectedMatch(match);

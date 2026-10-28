@@ -1,6 +1,5 @@
 import { PlayText } from "@/components/ui/Text";
 import { useNavigation } from "@/hooks/useNavigation";
-import { colorRandomizer } from "@/lib/utils";
 import { useFollowerController } from "@/services/follower";
 import { UserSummary } from "@/types/user";
 import React from "react";
@@ -18,19 +17,16 @@ export const FollowCard: React.FC<{
   };
 
   const followUser = (id: string) => {
-    follow(id, onSuccess, (error) => {
+    void follow(id, onSuccess, (error) => {
       console.error("Unable to update follow relationship:", error);
     });
   };
 
   const unfollowUser = (id: string) => {
-    unfollow(id, onSuccess, (error) => {
+    void unfollow(id, onSuccess, (error) => {
       console.error("Unable to update follow relationship:", error);
     });
   };
-
-  const fromColor = colorRandomizer();
-  const toColor = colorRandomizer();
 
   return (
     <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-xl flex items-center justify-between shadow-lg hover:bg-white/10 transition-all">
@@ -40,12 +36,7 @@ export const FollowCard: React.FC<{
         }}
         className="flex items-center gap-3"
       >
-        <div
-          style={{
-            backgroundImage: `linear-gradient(to right, ${fromColor}, ${toColor})`,
-          }}
-          className="flex h-12 w-12 items-center justify-center rounded-full bg-linear-to-tr from-indigo-950 to-indigo-600 font-bold text-sm text-white shadow-md"
-        >
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-linear-to-tr from-indigo-950 to-indigo-600 font-bold text-sm text-white shadow-md">
           {follower?.avatar ? (
             <img
               src={`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}/${follower.avatar}`}

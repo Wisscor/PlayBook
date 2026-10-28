@@ -73,7 +73,9 @@ export const MatchModal: React.FC<MatchModalProps> = ({
       !form.title.trim() ||
       !form.sport_id ||
       !form.start_time ||
-      !form.end_time
+      !form.end_time ||
+      form.remaining_player_slots <= 0 ||
+      !date
     ) {
       setError("Please fill in every field");
       return;
@@ -100,7 +102,10 @@ export const MatchModal: React.FC<MatchModalProps> = ({
     }
   };
 
-  const isFormComplete = !Object.values(form).includes("") && !error;
+  const isFormComplete =
+    !Object.values(form).includes("") &&
+    !error &&
+    form.remaining_player_slots > 0;
 
   const isEditing = Boolean(initialData?.id !== undefined);
 

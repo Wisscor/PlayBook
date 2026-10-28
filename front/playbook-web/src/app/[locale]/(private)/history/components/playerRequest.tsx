@@ -1,4 +1,3 @@
-import { PlayButton } from "@/components/ui/Button";
 import { PlayText } from "@/components/ui/Text";
 import { useNavigation } from "@/hooks/useNavigation";
 import { useMatchController } from "@/services/match";
@@ -18,7 +17,7 @@ export const PlayerRequest: React.FC<{
         return "bg-amber-500/10 text-amber-400 border border-amber-500/30";
       case "accepted":
         return "bg-green-500/10 text-green-400 border border-green-500/30";
-      case "rejected":
+      case "declined":
         return "bg-red-500/10 text-red-400 border border-red-500/30";
       default:
         return "bg-slate-800 text-slate-300 border border-white/10";
@@ -29,7 +28,6 @@ export const PlayerRequest: React.FC<{
     <div
       className={`${getColor()} flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 rounded-2xl backdrop-blur-xl p-3.5 sm:p-4 shadow-lg transition-all`}
     >
-      {/* Sender Info Button */}
       <button
         type="button"
         onClick={() => {
@@ -63,13 +61,12 @@ export const PlayerRequest: React.FC<{
         </div>
       </button>
 
-      {/* Action Buttons for Pending Requests */}
       {request.status === "pending" && (
         <div className="flex items-center justify-end gap-2 pt-2 sm:pt-0 border-t sm:border-t-0 border-white/10">
           <button
             type="button"
             onClick={() => {
-              decide(request.id, "rejected");
+              void decide(request.id, "declined");
             }}
             className="flex items-center justify-center rounded-xl border border-red-500/30 bg-red-600/20 px-3.5 py-2 backdrop-blur-md transition-all hover:bg-red-600 hover:text-white shadow-sm cursor-pointer"
             aria-label="Reject request"
@@ -85,7 +82,7 @@ export const PlayerRequest: React.FC<{
           <button
             type="button"
             onClick={() => {
-              decide(request.id, "accepted");
+              void decide(request.id, "accepted");
             }}
             className="flex items-center justify-center rounded-xl border border-green-500/30 bg-green-600/20 px-3.5 py-2 backdrop-blur-md transition-all hover:bg-green-600 hover:text-white shadow-sm cursor-pointer"
             aria-label="Accept request"
