@@ -196,7 +196,7 @@ async def upload_avatar(
 
 
 @router.delete(path="/me", status_code=HTTPStatus.NO_CONTENT)
-@limiter.limit("5/hour")
+@limiter.limit("5/minute")
 async def delete_user(
     request: Request,
     curr_user: User = Depends(get_curr_user),

@@ -5,8 +5,8 @@ import React, { useState } from "react";
 
 export const ContactsList: React.FC<{
   contacts: Contact[];
-  selectedContactId: number;
-  setSelectedContactId: (id: number) => void;
+  selectedContactId: string;
+  setSelectedContactId: (id: string) => void;
 }> = ({ contacts, selectedContactId, setSelectedContactId }) => {
   const [searchQuery, setSearchQuery] = useState("");
 

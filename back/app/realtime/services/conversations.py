@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from sqlalchemy import exists, func, or_, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import aliased
 
 from ...models import Follower
@@ -84,7 +84,6 @@ async def list_conversations(db, me: UUID) -> list[dict]:
         .join(User, User.id == other.user_id)
         .where(
             mine.user_id == me,
-            exists().where(Message.conversation_id == Conversation.id),
         )
         .order_by(Conversation.created_at.desc())
     )

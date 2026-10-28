@@ -43,20 +43,29 @@ export interface FeedPaginated {
 }
 
 export interface Message {
-  id: number;
+  id: string;
   sender: "me" | "them";
   text: string;
   time: string;
 }
 
 export interface Contact {
-  id: number;
+  id: string;
+  conversationId: string;
   name: string;
   username: string;
   avatar: string;
   lastMessage: string;
   online: boolean;
   messages: Message[];
+}
+
+export interface RealtimeMessage {
+  id: string;
+  conversation_id: string;
+  sender_id: string;
+  body: string;
+  created_at: string;
 }
 
 export interface SignInData {
