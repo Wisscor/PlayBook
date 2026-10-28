@@ -7,6 +7,7 @@ import { User } from "@/types/user";
 import { useEffect, useState } from "react";
 import { AboutSection } from "../profile/components/aboutSection";
 import { MainDetails } from "../profile/components/mainDetails";
+import { colorRandomizer } from "@/lib/utils";
 
 export const UserProfilePage = () => {
   const userId = localStorage.getItem("userId");
@@ -49,6 +50,9 @@ export const UserProfilePage = () => {
     );
   }
 
+  const fromColor = colorRandomizer();
+  const toColor = colorRandomizer();
+
   return (
     <div className="flex min-h-[calc(100vh-140px)] flex-col items-center justify-start bg-slate-950 px-4 py-12 text-white sm:px-6 md:px-16 lg:px-24">
       <div className="flex w-full max-w-5xl flex-col gap-8 md:gap-12">
@@ -69,7 +73,12 @@ export const UserProfilePage = () => {
                   className="h-full w-full rounded-full object-cover"
                 />
               ) : (
-                <div className="flex h-full w-full items-center justify-center rounded-full bg-linear-to-tr from-indigo-950 to-indigo-600 text-3xl font-extrabold text-white shadow-inner sm:text-4xl">
+                <div
+                  style={{
+                    backgroundImage: `linear-gradient(to right, ${fromColor}, ${toColor})`,
+                  }}
+                  className={`flex h-full w-full items-center justify-center rounded-full bg-linear-to-tr  text-3xl font-extrabold text-white shadow-inner sm:text-4xl`}
+                >
                   {user.firstname.charAt(0).toUpperCase()}
                   {user.lastname.charAt(0).toUpperCase()}
                 </div>

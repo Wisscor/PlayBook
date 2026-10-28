@@ -1,4 +1,4 @@
-import { UserPaginated, UserSummary } from "@/types/user";
+import { User, UserPaginated, UserSummary } from "@/types/user";
 import { api } from "./api";
 import { pageSize } from "@/lib/constants";
 import React from "react";
@@ -40,11 +40,25 @@ export const useUserController = () => {
       });
   };
 
+  const getUser = async (userId: string) => {
+    try {
+      const res = await api.get<User>(`/users/${userId}`);
+
+      if (res.status == 200) {
+        return res.data;
+      }
+      return null;
+    } catch (error) {
+      console.error("error getting user >>>", error);
+    }
+  };
+
   return {
     loadUsers,
     users,
     userPageNumber,
     totalUsers,
     userPages,
+    getUser,
   };
 };

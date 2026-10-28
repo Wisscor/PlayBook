@@ -1,3 +1,5 @@
+import { UserSummary } from "./user";
+
 export interface PostData {
   id: string;
   caption: string;
@@ -124,6 +126,14 @@ export interface MatchAnnouncement {
 
 export interface MatchAnnouncementPaginated {
   items: MatchAnnouncement[];
+  total: number;
+  page: number;
+  size: number;
+  pages: number;
+}
+
+export interface FollowDataPaginated {
+  items: UserSummary[];
   total: number;
   page: number;
   size: number;

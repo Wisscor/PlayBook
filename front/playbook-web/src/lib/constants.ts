@@ -40,4 +40,4 @@ export enum COMING_FROM {
   OTHER = "other",
 }
 
-export const pageSize = 1;
+export const pageSize = 10;

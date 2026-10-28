@@ -2,12 +2,13 @@
 
 import { PlayText } from "@/components/ui/Text";
 import { useAuth } from "@/hooks/contexts/authContext";
-import { COMING_FROM, ROUTES } from "@/lib/constants";
+import { useNavigation } from "@/hooks/useNavigation";
+import { COMING_FROM } from "@/lib/constants";
+import { colorRandomizer } from "@/lib/utils";
 import { useProfileController } from "@/services/profile";
 import { User } from "@/types/user";
 import Image from "next/image";
 import React, { useEffect } from "react";
-import { Link } from "../../../../../i18n/navigation";
 import { AboutSection } from "./components/aboutSection";
 import { MainDetails } from "./components/mainDetails";
 
@@ -26,6 +27,7 @@ const mocked: User = {
 
 export const ProfilePage = () => {
   const { connectedUser, isLoading, setIsLoading } = useAuth();
+  const { goFollowers } = useNavigation();
   const { uploadAvatar, fetchUser } = useProfileController();
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -75,6 +77,9 @@ export const ProfilePage = () => {
     );
   }
 
+  const fromColor = colorRandomizer();
+  const toColor = colorRandomizer();
+
   return (
     <div className="flex min-h-[calc(100vh-140px)] flex-col items-center justify-start bg-slate-950 px-4 py-12 text-white sm:px-6 md:px-16 lg:px-24">
       <div className="flex w-full max-w-5xl flex-col gap-8 md:gap-12">
@@ -96,7 +101,12 @@ export const ProfilePage = () => {
                   className="h-full w-full rounded-full object-cover"
                 />
               ) : (
-                <div className="flex h-full w-full items-center justify-center rounded-full bg-linear-to-tr from-indigo-950 to-indigo-600 text-3xl font-extrabold text-white shadow-inner sm:text-4xl">
+                <div
+                  style={{
+                    backgroundImage: `linear-gradient(to right, ${fromColor}, ${toColor})`,
+                  }}
+                  className={`flex h-full w-full items-center justify-center rounded-full bg-linear-to-tr  text-3xl font-extrabold text-white shadow-inner sm:text-4xl`}
+                >
                   {connectedUser.firstname.charAt(0).toUpperCase()}
                   {connectedUser.lastname.charAt(0).toUpperCase()}
                 </div>
@@ -126,8 +136,10 @@ export const ProfilePage = () => {
             </div>
 
             <div className="flex items-center space-x-2">
-              <Link
-                href={`${ROUTES.FOLLOWERS}?view=followers`}
+              <button
+                onClick={() => {
+                  goFollowers("followers", connectedUser.id);
+                }}
                 className="group flex items-center gap-1.5 rounded-2xl border border-white/10 bg-white/5 px-4 py-2  backdrop-blur-md transition-all hover:bg-white/10 hover:text-white shadow-md cursor-pointer"
               >
                 <Image
@@ -148,9 +160,11 @@ export const ProfilePage = () => {
                     },
                   ]}
                 />
-              </Link>
-              <Link
-                href={`${ROUTES.FOLLOWERS}?view=following`}
+              </button>
+              <button
+                onClick={() => {
+                  goFollowers("following", connectedUser.id);
+                }}
                 className="group flex items-center gap-1.5 rounded-2xl border border-white/10 bg-white/5 px-4 py-2  backdrop-blur-md transition-all hover:bg-white/10 hover:text-white shadow-md cursor-pointer"
               >
                 <Image
@@ -171,7 +185,7 @@ export const ProfilePage = () => {
                     },
                   ]}
                 />
-              </Link>
+              </button>
             </div>
           </div>
 
