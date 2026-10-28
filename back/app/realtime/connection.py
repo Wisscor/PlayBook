@@ -75,7 +75,13 @@ async def on_connect(
     return contacts
 
 
-async def on_disconnect(user, websocket: WebSocket, contacts: set[UUID]) -> None:
+async def on_disconnect(user, websocket: WebSocket) -> None:
     registry.unregister(user.id, websocket)
+    if registry.connections_for(user.id):
+        return
+
+    async with session_maker() as db:
+        contacts = await service.get_contact_ids(db, user.id)
+
     if not registry.connections_for(user.id):
         await announce_presence(contacts, user.id, False)

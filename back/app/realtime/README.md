@@ -144,8 +144,8 @@ Notification event types currently emitted are `follow`, `post_created`, `play_r
 | `unknown_type` | `type` is missing, invalid, or unsupported. |
 | `invalid_frame` | A supported event had missing or invalid fields. |
 | `conversation_not_found` | The user is not authorized for the conversation or the referenced message is not in it. |
-| `rate_limited` | Message-send rate limit exceeded; slow down. Repeated strikes can close and temporarily time out all the user's sockets. |
-| `timed_out` | This user is temporarily blocked from reconnecting; `retry_after` gives remaining seconds (rounded to one decimal place). |
+| `rate_limited` | Message-send rate limit exceeded; slow down. Repeated strikes block message sending for 30 seconds. |
+| `timed_out` | This user is temporarily blocked from sending chat messages; keep the connection open; `retry_after` gives remaining seconds (rounded to one decimal place). |
 
 The server also closes sockets with these codes:
 
@@ -153,12 +153,11 @@ The server also closes sockets with these codes:
 | --- | --- |
 | `1008` | Origin is not allowed. |
 | `4001` | Session cookie is missing, invalid, expired, or its user no longer exists. |
-| `4002` | Rate limit timeout; all of the user's active sockets are closed. |
+| `4002` | Inbound frame limit exceeded; this connection is closed without a reconnect ban. |
 | `4003` | Session ended; the user's active sockets are closed. |
 | `4004` | No inbound frame for 60 seconds (idle timeout). |
-| `4005` | Reconnect attempted before the temporary timeout expired; an `error` frame is sent first. |
 
-Inbound frames (including malformed or oversized frames) are limited to 60 per 10 seconds per socket; exceeding this closes the user's active sockets with code `4002` and starts the 30-second timeout without first sending an error frame. Message sends are separately limited to 10 per 10-second window; five rate-limit strikes within 60 seconds trigger the same timeout. The application frame limit is 2,048 UTF-8 bytes. The Docker Uvicorn command has a 4,096-byte transport maximum; messages above that can be rejected by the WebSocket server before the application can send an `error` frame. The idle watchdog checks every 15 seconds after the 60-second idle threshold, so actual closure can be delayed by up to one check interval.
+Inbound frames (including malformed or oversized frames) are limited to 60 per 10 seconds per socket; exceeding this closes that connection with code `4002`, without a reconnect ban. Message sends are separately limited to 10 per 10-second window; five rate-limit strikes within 60 seconds mute sending for 30 seconds while keeping the sockets open. Send and strike counters remain per socket; the mute applies to the user and survives reconnecting within the same server process. The application frame limit is 2,048 UTF-8 bytes. The Docker Uvicorn command has a 4,096-byte transport maximum; messages above that can be rejected by the WebSocket server before the application can send an `error` frame. The idle watchdog checks every 15 seconds after the 60-second idle threshold, so actual closure can be delayed by up to one check interval.
 
 ### Realtime HTTP responses
 
@@ -188,3 +187,16 @@ Message objects contain `id`, `conversation_id`, `sender_id`, `body`, and `creat
 - `presence` payload: `{ "type": "presence", "user_id": "<contact_id>", "online": true }`; `online` is `false` when the contact's last socket disconnects.
 - `presence.snapshot` payload: `{ "type": "presence.snapshot", "online": ["<contact_id>", ...] }`; sent after `ready` when a socket connects.
 - Presence is scoped to contacts: users who share a conversation with the connected user. Only the user's first active socket broadcasts `online: true`; `online: false` is broadcast when the last socket is gone.
+
+## Account deletion
+
+`DELETE /users/me` deletes every conversation the user participates in, including
+the other participant's history, messages, and pending deliveries. It also deletes
+notifications received or triggered by that user. The conversation cleanup and
+account deletion commit together; existing user foreign keys also cascade to
+sessions, posts, follows, sport links, match announcements, and play requests.
+The endpoint closes the user's local WebSocket connections and clears the session cookie.
+
+For an existing PostgreSQL database, apply
+`migrations/20261027_realtime_account_deletion.sql` before deploying this version.
+`Base.metadata.create_all()` only applies the new rules when creating new tables.

@@ -53,17 +53,12 @@ async def send_to_user(user_id: UUID, payload: dict) -> int:
 
 
 async def timeout_user(user_id: UUID) -> None:
-    for ws in connections_for(user_id):
-        try:
-            await ws.close(
-                code=frames.CLOSE_RATE_LIMIT,
-                reason="rate limited – you are timed out",
-            )
-        except Exception:
-            pass
-        finally:
-            unregister(user_id, ws)
     _timeouts[user_id] = time.monotonic() + frames.RATE_LIMIT_TIMEOUT_SECONDS
+    await send_to_user(user_id, {
+        "type": frames.ERROR,
+        "reason": "timed_out",
+        "retry_after": frames.RATE_LIMIT_TIMEOUT_SECONDS,
+    })
 
 
 def is_timed_out(user_id: UUID) -> bool:

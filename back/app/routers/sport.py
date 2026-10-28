@@ -5,7 +5,6 @@ import uuid
 from fastapi import (
     APIRouter,
     Depends,
-    HTTPException,
     Response,
     status,
     Request,
@@ -21,6 +20,8 @@ from app.models.user import User
 from app.models.user_sport import UserSport
 from app.schemas.sport import SportCreate, SportResponse
 from app.core.limiter import limiter
+from app.core.exceptions import ApiException
+from app.core.error_codes import ErrorCode
 
 router = APIRouter(tags=["Sports"])
 
@@ -46,7 +47,7 @@ async def list_user_sports(
 ):
     """List sports linked to a user."""
     if await db.get(User, id) is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="User not found")
+        raise ApiException(code=ErrorCode.USER_NOT_FOUND)
     stmt = (
         select(Sport)
         .join(UserSport, UserSport.sport_id == Sport.id)
@@ -68,9 +69,7 @@ async def add_my_sport(
 ):
     """Add a sport to the current user's profile."""
     if await db.get(Sport, sport_id) is None:
-        raise HTTPException(
-            status.HTTP_404_NOT_FOUND, detail="Sport not found"
-        )
+        raise ApiException(code=ErrorCode.SPORT_NOT_FOUND)
     if await db.get(UserSport, (curr_user.id, sport_id)) is None:
         db.add(UserSport(user_id=curr_user.id, sport_id=sport_id))
         try:
@@ -92,9 +91,7 @@ async def remove_my_sport(
 ):
     """Remove a sport from the current user's profile."""
     if await db.get(Sport, sport_id) is None:
-        raise HTTPException(
-            status.HTTP_404_NOT_FOUND, detail="Sport not found"
-        )
+        raise ApiException(code=ErrorCode.SPORT_NOT_FOUND)
     link = await db.get(UserSport, (curr_user.id, sport_id))
     if link is not None:
         await db.delete(link)

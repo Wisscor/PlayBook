@@ -33,7 +33,10 @@ async def receive_loop(ctx: ConnectionContext) -> None:
             ctx.inbound_frames.hit(now)
             > frames.MAX_INBOUND_FRAMES_PER_WINDOW
         ):
-            await registry.timeout_user(ctx.user.id)
+            await ctx.websocket.close(
+                code=frames.CLOSE_RATE_LIMIT,
+                reason="frame rate limit exceeded",
+            )
             return
 
         if len(raw.encode("utf-8")) > frames.MAX_FRAME_BYTES:
@@ -86,18 +89,6 @@ async def websocket_endpoint(websocket: WebSocket):
     if user is None:
         return
 
-    remaining = registry.timeout_remaining(user.id)
-    if remaining > 0:
-        await websocket.send_json(
-            {
-                "type": frames.ERROR,
-                "reason": "timed_out",
-                "retry_after": round(remaining, 1),
-            }
-        )
-        await websocket.close(code=frames.CLOSE_TIMED_OUT)
-        return
-
     ctx = ConnectionContext(
         websocket=websocket,
         user=user,
@@ -108,7 +99,6 @@ async def websocket_endpoint(websocket: WebSocket):
     )
     first_socket = not registry.connections_for(user.id)
     registry.register(user.id, websocket)
-    contacts = set()
     try:
         await websocket.send_json(
             {
@@ -117,6 +107,8 @@ async def websocket_endpoint(websocket: WebSocket):
                 "username": user.username,
             }
         )
+        await connection.on_connect(websocket, user, first_socket)
+
         receive_task = asyncio.create_task(receive_loop(ctx))
         watchdog_task = asyncio.create_task(_idle_watchdog(ctx))
         tasks = (receive_task, watchdog_task)
@@ -134,4 +126,4 @@ async def websocket_endpoint(websocket: WebSocket):
     except WebSocketDisconnect:
         pass
     finally:
-        await connection.on_disconnect(user, websocket, contacts)
+        await connection.on_disconnect(user, websocket)

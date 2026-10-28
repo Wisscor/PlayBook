@@ -8,6 +8,7 @@ from fastapi.testclient import TestClient
 from app.main import app
 from app.database.database import get_db
 from app.core.deps import get_curr_user
+from app.core.config import settings
 from app.models import Follower
 
 
@@ -104,8 +105,10 @@ def test_upload_avatar_rejects_large_file(mock_user_1, mock_db):
     app.dependency_overrides.clear()
 
 
-def test_delete_my_profile(mock_user_1, mock_db):
+def test_delete_my_profile(mock_user_1, mock_db, monkeypatch):
     client = TestClient(app)
+    close_user = AsyncMock()
+    monkeypatch.setattr("app.routers.users.registry.close_user", close_user)
 
     app.dependency_overrides[get_curr_user] = lambda: mock_user_1
     app.dependency_overrides[get_db] = lambda: mock_db
@@ -113,7 +116,11 @@ def test_delete_my_profile(mock_user_1, mock_db):
     res = client.delete("/users/me")
     assert res.status_code == 204
     mock_db.delete.assert_called_once_with(mock_user_1)
+    mock_db.execute.assert_awaited_once()
     mock_db.commit.assert_called_once()
+    close_user.assert_awaited_once_with(mock_user_1.id)
+    assert f'{settings.session_cookie_name}=""' in res.headers["set-cookie"]
+    assert "Max-Age=0" in res.headers["set-cookie"]
 
     app.dependency_overrides.clear()
 

@@ -4,7 +4,6 @@ from typing import Optional, List
 from fastapi import (
     APIRouter,
     Depends,
-    HTTPException,
     Response,
     Query,
     status,
@@ -12,7 +11,7 @@ from fastapi import (
     UploadFile,
     Request,
 )
-from sqlalchemy import select, func, or_, and_
+from sqlalchemy import select, or_
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 from http import HTTPStatus
@@ -35,6 +34,12 @@ from ..schemas.post import PostResponse
 from .post import _enrich_posts
 from app.core.deps import get_curr_user
 from app.core.limiter import limiter
+from app.core.config import settings
+from app.realtime import registry
+from app.realtime.services.conversations import delete_user_conversations
+from app.core.exceptions import ApiException
+from app.core.error_codes import ErrorCode
+from ..services.user_server import build_user_profile, get_user_by_id
 
 router = APIRouter(
     prefix="/users",
@@ -48,63 +53,6 @@ AVATAR_TYPES = {
     "image/webp": ".webp",
 }
 MAX_AVATAR_SIZE = 5 * 1024 * 1024
-
-
-async def build_user_profile(
-    db: AsyncSession,
-    target_user: User,
-    curr_user: User,
-) -> UserProfileResponse:
-    """Build a UserProfileResponse from a User model.
-
-    If viewer_id is None (e.g. /me), is_following is set to None.
-    """
-    followers_count = (
-        await db.scalar(
-            select(func.count())
-            .select_from(Follower)
-            .where(Follower.following_id == target_user.id)
-        )
-        or 0
-    )
-
-    following_count = (
-        await db.scalar(
-            select(func.count())
-            .select_from(Follower)
-            .where(Follower.follower_id == target_user.id)
-        )
-        or 0
-    )
-
-    posts_count = (
-        await db.scalar(
-            select(func.count())
-            .select_from(Post)
-            .where(Post.user_id == target_user.id)
-        )
-        or 0
-    )
-
-    # Determine if the viewer (current user) is following the target user
-    is_following: Optional[bool] = None
-    if curr_user.id != target_user.id:
-        is_following_edge = await db.scalar(
-            select(Follower).where(
-                and_(
-                    Follower.follower_id == curr_user.id,
-                    Follower.following_id == target_user.id,
-                )
-            )
-        )
-        is_following = is_following_edge is not None
-
-    profile = UserProfileResponse.model_validate(target_user)
-    profile.followers_count = followers_count
-    profile.following_count = following_count
-    profile.posts_count = posts_count
-    profile.is_following = is_following
-    return profile
 
 
 @router.get(
@@ -160,9 +108,9 @@ async def upload_avatar(
     content_type = (file.content_type or "").lower()
     extension = AVATAR_TYPES.get(content_type)
     if extension is None:
-        raise HTTPException(
-            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
-            detail="Avatar must be a JPEG, PNG, or WebP image",
+        raise ApiException(
+            code=ErrorCode.UNSUPPORTED_MEDIA_TYPE,
+            field="avatar",
         )
 
     UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
@@ -176,9 +124,9 @@ async def upload_avatar(
             while chunk := await file.read(1024 * 64):
                 size += len(chunk)
                 if size > MAX_AVATAR_SIZE:
-                    raise HTTPException(
-                        status_code=status.HTTP_413_CONTENT_TOO_LARGE,
-                        detail="Avatar file too large; maximum size is 5 MB",
+                    raise ApiException(
+                        code=ErrorCode.PAYLOAD_TOO_LARGE,
+                        field="avatar",
                     )
                 destination.write(chunk)
 
@@ -203,9 +151,13 @@ async def delete_user(
     db: AsyncSession = Depends(get_db),
 ):
     """Delete the current user's account."""
+    await delete_user_conversations(db, curr_user.id)
     await db.delete(curr_user)
     await db.commit()
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
+    await registry.close_user(curr_user.id)
+    response = Response(status_code=status.HTTP_204_NO_CONTENT)
+    response.delete_cookie(key=settings.session_cookie_name, path="/")
+    return response
 
 
 @router.get(
@@ -253,12 +205,9 @@ async def get_user(
     db: AsyncSession = Depends(get_db),
 ):
     """Return a user's public profile and social counts."""
-    target_user = await db.scalar(select(User).where(User.id == user_id))
+    target_user: Optional[User] = await get_user_by_id(db, user_id)
     if not target_user:
-        raise HTTPException(
-            status_code=HTTPStatus.NOT_FOUND,
-            detail="User not found.",
-        )
+        raise ApiException(code=ErrorCode.USER_NOT_FOUND)
     return await build_user_profile(db, target_user, curr_user)
 
 
@@ -275,11 +224,8 @@ async def list_user_posts(
     db: AsyncSession = Depends(get_db),
 ):
     """List a user's posts with offset pagination."""
-    if await db.get(User, user_id) is None:
-        raise HTTPException(
-            status_code=HTTPStatus.NOT_FOUND,
-            detail="User not found.",
-        )
+    if not await get_user_by_id(db, user_id):
+        raise ApiException(code=ErrorCode.USER_NOT_FOUND)
 
     stmt = (
         select(Post)

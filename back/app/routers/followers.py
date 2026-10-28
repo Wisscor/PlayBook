@@ -4,7 +4,6 @@ from fastapi import (
     APIRouter,
     BackgroundTasks,
     Depends,
-    HTTPException,
     status,
     Response,
     Request,
@@ -22,6 +21,8 @@ from ..schemas.user import UserSummaryResponse
 from ..core.deps import get_curr_user
 from ..realtime.notify import emit_notification
 from app.core.limiter import limiter
+from app.core.exceptions import ApiException
+from app.core.error_codes import ErrorCode
 
 router = APIRouter(
     prefix="/users",
@@ -44,18 +45,12 @@ async def follow_user(
 ):
     """Follow another user."""
     if curr_user.id == user_id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="You cannot follow yourself.",
-        )
+        raise ApiException(code=ErrorCode.BAD_REQUEST, field="user_id")
 
     # Check if target user exists
     target_user = await db.scalar(select(User).where(User.id == user_id))
     if not target_user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found.",
-        )
+        raise ApiException(code=ErrorCode.USER_NOT_FOUND)
 
     # Check if already following
     existing = await db.scalar(
@@ -65,10 +60,7 @@ async def follow_user(
         )
     )
     if existing:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="You are already following this user.",
-        )
+        raise ApiException(code=ErrorCode.RESOURCE_CONFLICT)
 
     new_follower = Follower(
         follower_id=curr_user.id,
@@ -105,10 +97,7 @@ async def unfollow_user(
 ):
     """Unfollow another user."""
     if curr_user.id == user_id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="You cannot unfollow yourself.",
-        )
+        raise ApiException(code=ErrorCode.BAD_REQUEST, field="user_id")
 
     follower_edge = await db.scalar(
         select(Follower).where(
@@ -117,10 +106,7 @@ async def unfollow_user(
         )
     )
     if not follower_edge:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="You are not following this user.",
-        )
+        raise ApiException(code=ErrorCode.FOLLOW_NOT_FOUND)
 
     await db.delete(follower_edge)
     await db.commit()
@@ -143,10 +129,7 @@ async def get_user_followers(
     """List a user's followers."""
     target_user = await db.scalar(select(User).where(User.id == user_id))
     if not target_user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found.",
-        )
+        raise ApiException(code=ErrorCode.USER_NOT_FOUND)
 
     stmt = (
         select(User)
@@ -178,10 +161,7 @@ async def get_user_following(
     """List users followed by a user."""
     target_user = await db.scalar(select(User).where(User.id == user_id))
     if not target_user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found.",
-        )
+        raise ApiException(code=ErrorCode.USER_NOT_FOUND)
 
     stmt = (
         select(User)
