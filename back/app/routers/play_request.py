@@ -179,31 +179,41 @@ async def decide_play_request(
     """Accept or reject a pending play request."""
     play_request = await db.scalar(
         select(PlayerRequest)
-        .options(
-            joinedload(PlayerRequest.sender),
-            joinedload(PlayerRequest.announcement),
-        )
-        .with_for_update()
         .where(PlayerRequest.id == id)
+        .with_for_update()  # lock the row to avoid race conditions
     )
+
     if play_request is None:
         raise ApiException(code=ErrorCode.PLAY_REQUEST_NOT_FOUND)
-    if play_request.announcement.organizer_id != me.id:
+
+    # Load and lock the announcement separately
+    announcement = await db.scalar(
+        select(MatchAnnouncement)
+        .where(MatchAnnouncement.id == play_request.announcement_id)
+        .with_for_update()
+    )
+    if announcement is None:
+        raise ApiException(code=ErrorCode.ANNOUNCEMENT_NOT_FOUND)
+
+    if announcement.organizer_id != me.id:
         raise ApiException(code=ErrorCode.PERMISSION_DENIED)
+
     if play_request.status != PlayerRequestStatusEnum.pending:
         raise ApiException(code=ErrorCode.RESOURCE_CONFLICT)
-    announcement = play_request.announcement
+
     if announcement.match_status not in {
         MatchAnnouncementStatus.upcoming,
         MatchAnnouncementStatus.live,
     }:
         raise ApiException(code=ErrorCode.RESOURCE_CONFLICT)
+
     if (
         body.status == PlayerRequestStatusEnum.accepted
         and announcement.remaining_player_slots <= 0
     ):
         raise ApiException(code=ErrorCode.RESOURCE_CONFLICT)
-    play_request.status = PlayerRequestStatusEnum(body.status)
+
+    play_request.status = body.status
     if play_request.status == PlayerRequestStatusEnum.accepted:
         announcement.remaining_player_slots -= 1
     await db.commit()
