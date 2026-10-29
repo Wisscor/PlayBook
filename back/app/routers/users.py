@@ -11,19 +11,17 @@ from fastapi import (
     UploadFile,
     Request,
 )
-from sqlalchemy import and_, func, or_, select
+from sqlalchemy import or_, select
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 from http import HTTPStatus
 
 from fastapi_pagination import Page
 from fastapi_pagination.ext.sqlalchemy import apaginate
-from pydantic import EmailStr
 
 from ..database.database import get_db
 from ..models import (
     User,
-    Follower,
     Post,
 )
 from ..schemas.user import (
@@ -36,10 +34,14 @@ from .post import _enrich_posts
 from app.core.deps import get_curr_user
 from app.core.limiter import limiter
 from app.core.config import settings
-from app.realtime import registry
-from app.realtime.services.conversations import delete_user_conversations
 from app.core.exceptions import ApiException
 from app.core.error_codes import ErrorCode
+from app.services.avatar_service import remove_avatar, store_avatar
+from app.services.user_service import (
+    delete_user_account,
+    get_user_by_id,
+    load_user_profile,
+)
 
 router = APIRouter(
     prefix="/users",
@@ -47,90 +49,6 @@ router = APIRouter(
 )
 
 UPLOAD_DIR = Path("uploads")
-AVATAR_TYPES = {
-    "image/jpeg": ".jpg",
-    "image/png": ".png",
-    "image/webp": ".webp",
-}
-MAX_AVATAR_SIZE = 5 * 1024 * 1024
-
-
-async def get_user_by_email(
-    db: AsyncSession,
-    email: EmailStr,
-) -> Optional[User]:
-    stmt = select(User).where(User.email == email)
-    return (await db.execute(stmt)).scalar_one_or_none()
-
-
-async def get_user_by_username(
-    db: AsyncSession,
-    username: str,
-) -> Optional[User]:
-    stmt = select(User).where(User.username == username)
-    return (await db.execute(stmt)).scalar_one_or_none()
-
-
-async def get_user_by_id(
-    db: AsyncSession,
-    user_id: uuid.UUID,
-) -> Optional[User]:
-    stmt = select(User).where(User.id == user_id)
-    return (await db.execute(stmt)).scalar_one_or_none()
-
-
-async def build_user_profile(
-    db: AsyncSession,
-    target_user: User,
-    curr_user: User,
-) -> UserProfileResponse:
-    """Build a UserProfileResponse from a User model.
-
-    If viewer_id is None (e.g. /me), is_following is set to None.
-    """
-    followers_count = (
-        await db.scalar(
-            select(func.count())
-            .select_from(Follower)
-            .where(Follower.following_id == target_user.id)
-        )
-        or 0
-    )
-    following_count = (
-        await db.scalar(
-            select(func.count())
-            .select_from(Follower)
-            .where(Follower.follower_id == target_user.id)
-        )
-        or 0
-    )
-    posts_count = (
-        await db.scalar(
-            select(func.count())
-            .select_from(Post)
-            .where(Post.user_id == target_user.id)
-        )
-        or 0
-    )
-    # Check the curr user doesn't see their own profile
-    # If they do, we set is_following to None
-    is_following: Optional[bool] = None
-    if curr_user.id != target_user.id:
-        is_following_edge = await db.scalar(
-            select(Follower).where(
-                and_(
-                    Follower.follower_id == curr_user.id,
-                    Follower.following_id == target_user.id,
-                )
-            )
-        )
-        is_following = is_following_edge is not None
-    profile = UserProfileResponse.model_validate(target_user)
-    profile.followers_count = followers_count
-    profile.following_count = following_count
-    profile.posts_count = posts_count
-    profile.is_following = is_following
-    return profile
 
 
 @router.get(
@@ -145,7 +63,7 @@ async def get_my_profile(
     db: AsyncSession = Depends(get_db),
 ):
     """Return the current user's profile and social counts."""
-    return await build_user_profile(db, curr_user, curr_user)
+    return await load_user_profile(db, curr_user, curr_user)
 
 
 @router.patch(
@@ -168,7 +86,7 @@ async def update(
 
     await db.commit()
     await db.refresh(curr_user)
-    return await build_user_profile(db, curr_user, curr_user)
+    return await load_user_profile(db, curr_user, curr_user)
 
 
 @router.post(
@@ -184,42 +102,24 @@ async def upload_avatar(
     db: AsyncSession = Depends(get_db),
 ):
     """Replace the current user's avatar."""
-    content_type = (file.content_type or "").lower()
-    extension = AVATAR_TYPES.get(content_type)
-    if extension is None:
-        raise ApiException(
-            code=ErrorCode.UNSUPPORTED_MEDIA_TYPE,
-            field="avatar",
-        )
-
-    UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
-    filename = f"{uuid.uuid4().hex}{extension}"
-    filepath = UPLOAD_DIR / filename
-    size = 0
     old_avatar = curr_user.avatar
+    filepath = None
 
+    # Store the file before committing its path to the user record.
     try:
-        with filepath.open("wb") as destination:
-            while chunk := await file.read(1024 * 64):
-                size += len(chunk)
-                if size > MAX_AVATAR_SIZE:
-                    raise ApiException(
-                        code=ErrorCode.PAYLOAD_TOO_LARGE,
-                        field="avatar",
-                    )
-                destination.write(chunk)
-
-        curr_user.avatar = f"uploads/{filename}"
+        new_avatar, filepath = await store_avatar(file, UPLOAD_DIR)
+        curr_user.avatar = new_avatar
         await db.commit()
         await db.refresh(curr_user)
     except Exception:
-        filepath.unlink(missing_ok=True)
+        remove_avatar(filepath)
         raise
 
+    # Delete only files inside `uploads` directory.
     if old_avatar and old_avatar.startswith("uploads/"):
-        Path(old_avatar).unlink(missing_ok=True)
+        remove_avatar(old_avatar)
 
-    return await build_user_profile(db, curr_user, curr_user)
+    return await load_user_profile(db, curr_user, curr_user)
 
 
 @router.delete(path="/me", status_code=HTTPStatus.NO_CONTENT)
@@ -230,10 +130,7 @@ async def delete_user(
     db: AsyncSession = Depends(get_db),
 ):
     """Delete the current user's account."""
-    await delete_user_conversations(db, curr_user.id)
-    await db.delete(curr_user)
-    await db.commit()
-    await registry.close_user(curr_user.id)
+    await delete_user_account(db, curr_user)
     response = Response(status_code=status.HTTP_204_NO_CONTENT)
     response.delete_cookie(key=settings.session_cookie_name, path="/")
     return response
@@ -287,7 +184,7 @@ async def get_user(
     target_user: Optional[User] = await get_user_by_id(db, user_id)
     if not target_user:
         raise ApiException(code=ErrorCode.USER_NOT_FOUND)
-    return await build_user_profile(db, target_user, curr_user)
+    return await load_user_profile(db, target_user, curr_user)
 
 
 @router.get(

@@ -23,7 +23,7 @@ from ..realtime.notify import emit_notification
 from app.core.limiter import limiter
 from app.core.exceptions import ApiException
 from app.core.error_codes import ErrorCode
-from ..routers.users import get_user_by_id
+from app.services.user_service import get_user_by_id
 
 router = APIRouter(
     prefix="/users",

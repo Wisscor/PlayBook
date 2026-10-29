@@ -20,10 +20,10 @@ from ..core.security import hash_password, verify_password
 from app.core.config import settings
 from app.realtime import registry
 from app.core.limiter import limiter
-from ..routers.users import (
-    build_user_profile,
+from app.services.user_service import (
     get_user_by_email,
     get_user_by_username,
+    load_user_profile,
 )
 
 from app.core.exceptions import ApiException
@@ -119,7 +119,7 @@ async def login(
         httponly=settings.session_cookie_http_only,
         samesite=settings.session_cookie_same_site,
     )
-    return await build_user_profile(db, user, user)
+    return await load_user_profile(db, user, user)
 
 
 @router.post("/logout")
