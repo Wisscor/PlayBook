@@ -137,5 +137,60 @@
   "next": "Suivant",
   "you": "Vous",
   "select-match-status": "Sélectionnez le statut du match",
-  "all-requests": "Toutes les demandes"
+  "all-requests": "Toutes les demandes",
+  "my-requests": "Mes demandes",
+
+  "play-requests": "Demandes de jeu",
+  "all": "Tous",
+  "pending": "En attente",
+  "accepted": "Accepté",
+
+  "no-play-requests": "Aucune demande de jeu trouvée.",
+  "requested-to-join": "A demandé à rejoindre la salle de match",
+  "scheduled": "Prévu",
+  "already-joined": "Déjà rejoint",
+  "privacy-policy": "Politique de confidentialité",
+  "terms-of-service": "Conditions d'utilisation",
+
+  "last-updated": "Dernière mise à jour : {date}",
+  "introduction": "{mark}. Introduction",
+  "welcome-to": "Bienvenue à",
+  "we-respect-your-privacy": ".Nous respectons votre vie privée et nous engageons à protéger vos données personnelles. Cette politique de confidentialité vous informera sur la manière dont nous prenons soin de vos données personnelles lorsque vous visitez notre application et vous direz ce que sont vos droits de confidentialité et comment la loi vous protège.",
+  "data-we-collect": "{mark}. Données que nous collectons",
+  "data-we-collect-description": "Nous pouvons collecter, utiliser, stocker et transférer différents types de données personnelles vous concernant que nous avons regroupées comme suit :",
+  "how-we-use-your-data": "{mark}. Comment nous utilisons vos données",
+  "how-we-use-your-data-description": "Nous n'utiliserons vos données personnelles que lorsque la loi nous le permet. Le plus souvent, nous utiliserons vos données personnelles dans les circonstances suivantes :",
+  "contact-us": "{mark}. Contactez-nous",
+  "contact-us-description": "Si vous avez des questions sur cette politique de confidentialité ou nos pratiques de confidentialité, veuillez nous contacter à :",
+
+  "identity-data": "Données d'identité :",
+  "contact-data": "Données de contact :",
+  "profile-data": "Données de profil :",
+  "technical-data": "Données techniques :",
+
+  "identity-data-description": "Comprend le prénom, le nom de famille, le nom d'utilisateur ou un identifiant similaire.",
+  "contact-data-description": "Comprend l'adresse e-mail et les préférences de communication .",
+  "profile-data-description": "Comprend votre bio, les matchs créés, les publications et les connexions d'utilisateurs.",
+  "technical-data-description": "Comprend l'adresse IP, le type et la version du navigateur, le paramètre de fuseau horaire et les informations sur l'appareil.",
+
+  "to-register-and-manage-your-account": "Pour vous enregistrer en tant que nouvel utilisateur et gérer votre compte.",
+  "to-facilitate-match-rooms": "Pour faciliter les salles de match, les publications communautaires et les services de messagerie.",
+  "to-manage-our-relationship-with-you": "Pour gérer notre relation avec vous y compris vous informer des modifications de nos conditions ou de notre politique de confidentialité.",
+
+  "agreement-to-terms": "Accord sur les conditions",
+  "by-accessing-or-using": "En accédant ou en utilisant",
+  "you-agree-to-be-bound": ", vous acceptez d'être lié par ces Conditions d'utilisation et par toutes les lois et réglementations applicables.",
+  "user-accounts": "{mark}. Comptes d'utilisateur",
+  "user-accounts-description-1": "Lorsque vous créez un compte avec nous, vous devez fournir des informations qui sont exactes, complètes et à jour à tout moment.",
+  "user-accounts-description-2": "Vous êtes responsable de la protection du mot de passe que vous utilisez pour accéder au service et pour toute activité ou action sous votre compte.",
+  "user-conduct": "{mark}. Conduite des utilisateurs & Règles de la communauté",
+  "user-conduct-description": "En participant aux salles de match, aux publications communautaires ou aux messages, vous acceptez de ne pas :",
+  "user-conduct-rule-1": "Publier du contenu qui est illégal, diffamatoire, harcelant ou abusif.",
+  "user-conduct-rule-2": "Usurper l'identité d'une personne ou d'une entité ou mal représenter votre affiliation.",
+  "user-conduct-rule-3": "Interférer avec ou perturber le service ou la sécurité du réseau.",
+  "changes-to-terms": "{mark}. Modifications des conditions",
+  "changes-to-terms-description": "Nous nous réservons le droit, à notre seule discrétion, de modifier ou de remplacer ces Conditions à tout moment.",
+  "terms-contact-description": "Si vous avez des questions sur ces Conditions, veuillez nous contacter à :",
+
+  "legal-pages": "Pages légales"
 }

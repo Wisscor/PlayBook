@@ -22,7 +22,7 @@ export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [logoutError, setLogoutError] = useState("");
-  const { goMessages, goSearch } = useNavigation();
+  const { goMessages, goSearch, goSignIn } = useNavigation();
 
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const notificationRef = useRef<HTMLDivElement>(null);
@@ -74,6 +74,10 @@ export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
       name: "my-profile",
       route: ROUTES.PROFILE,
     },
+    {
+      name: "my-requests",
+      route: ROUTES.PLAY_REQUESTS,
+    },
   ];
 
   const handleLogout = () => {
@@ -81,7 +85,7 @@ export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
     setLogoutError("");
     void signOut(
       () => {
-        window.location.reload();
+        goSignIn();
       },
       () => {
         setLogoutError("Unable to log out");
@@ -98,10 +102,11 @@ export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 md:px-12 lg:px-20">
           <Link href={ROUTES.HOME} className="relative h-8 w-32">
             <Image
-              loading="eager"
               alt="app-logo"
               src="/logos/app-logo.png"
               fill
+              priority
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               className="object-contain"
             />
           </Link>

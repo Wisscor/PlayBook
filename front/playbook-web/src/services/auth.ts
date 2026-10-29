@@ -1,9 +1,9 @@
 import { useAuth } from "@/hooks/contexts/authContext";
 import { useNavigation } from "@/hooks/useNavigation";
-import { ApiError, SignInData, SignUpData } from "@/types/api";
+import { SignInData, SignUpData } from "@/types/api";
 import { User } from "@/types/user";
-import { api } from "./api";
 import React from "react";
+import { api } from "./api";
 
 export const useAuthController = () => {
   const { connectedUser, setConnectedUser } = useAuth();
@@ -42,9 +42,7 @@ export const useAuthController = () => {
         }
       })
       .catch((error) => {
-        const apiError = error as ApiError;
-
-        onError(apiError.message);
+        onError(error.errorCode);
       })
       .finally(() => {
         setIsWaiting(false);

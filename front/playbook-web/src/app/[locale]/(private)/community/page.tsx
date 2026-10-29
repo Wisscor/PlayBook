@@ -12,6 +12,7 @@ import { LeftSideSection } from "./components/leftSideSection";
 import { MatchFilterSection } from "./components/matchFilterSection";
 import { PostsFeed } from "./components/postsFeed";
 import { RightSideSection } from "./components/rightSideSection";
+import { usePlayRequestsController } from "@/services/playRequest";
 
 interface CommunityMatch {
   id: string;
@@ -35,15 +36,9 @@ export const CommunityPageContent: React.FC = () => {
     undefined,
   );
   const [matchStatus, setMatchStatus] = useState<string | undefined>(undefined);
-  const {
-    loadMatches,
-    pageNumber,
-    matches,
-    total,
-    pages,
-    loadRequests,
-    requests,
-  } = useMatchController();
+  const { loadMatches, pageNumber, matches, total, pages } =
+    useMatchController();
+  const { loadRequests, requests } = usePlayRequestsController();
 
   const handleClearFilters = () => {
     setFilterDate("");
@@ -57,7 +52,7 @@ export const CommunityPageContent: React.FC = () => {
     const timer = window.setTimeout(() => {
       void fetchUser(() => {});
       void loadFeeds(feedPageNumber);
-      void loadRequests();
+      void loadRequests("sent");
     }, 0);
     return () => window.clearTimeout(timer);
   }, []);

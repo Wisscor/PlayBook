@@ -58,9 +58,19 @@ export const useProfileController = () => {
       });
   };
 
+  const deleteUser = async () => {
+    await api.delete("/users/me").then((res) => {
+      if (res.status === 204) {
+        setConnectedUser(undefined);
+        window.location.reload();
+      }
+    });
+  };
+
   return {
     updateProfile,
     uploadAvatar,
     fetchUser,
+    deleteUser,
   };
 };

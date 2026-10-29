@@ -1,16 +1,13 @@
+import { useAuth } from "@/hooks/contexts/authContext";
 import {
-  MatchAnnouncementRequestData,
   MatchAnnouncement,
   MatchAnnouncementPaginated,
+  MatchAnnouncementRequestData,
   Sport,
-  PlayRequestPaginated,
-  PlayRequest,
   UpdatedMatchRequest,
 } from "@/types/api";
-import { api } from "./api";
 import React from "react";
-import { useAuth } from "@/hooks/contexts/authContext";
-import { pageSize } from "@/lib/constants";
+import { api } from "./api";
 
 export const useMatchController = () => {
   const [sports, setSports] = React.useState<Sport[]>([]);
@@ -19,11 +16,6 @@ export const useMatchController = () => {
   const [pageNumber, setPageNumber] = React.useState<number>(1);
   const [matches, setMatches] = React.useState<MatchAnnouncement[]>([]);
   const { setIsLoading } = useAuth();
-  const [isJoining, setIsJoining] = React.useState<boolean>(false);
-  const [requests, setRequests] = React.useState<PlayRequest[]>([]);
-  const [requestsTotal, setRequestsTotal] = React.useState<number>(0);
-  const [requestsPages, setRequestsPages] = React.useState<number>(0);
-  const [requestsPageNumber, setRequestsPageNumber] = React.useState<number>(1);
 
   const addMatch = async (
     form: MatchAnnouncementRequestData,
@@ -116,14 +108,30 @@ export const useMatchController = () => {
       });
   };
 
+  const getMatch = async (
+    id: string,
+    onSuccess: (match: MatchAnnouncement) => void,
+    onError: () => void,
+  ) => {
+    await api
+      .get<MatchAnnouncement>(`/match-announcements/${id}`)
+      .then((res) => {
+        if (res.status === 200) {
+          onSuccess(res.data);
+        }
+      })
+      .catch((error) => {
+        console.error("Error fetching  match >>>>", error);
+        onError();
+      });
+  };
+
   const updateMatch = async (
     id: string,
     payload: UpdatedMatchRequest,
     onSuccess: () => void,
     onError: () => void,
   ) => {
-    console.log("payload is >>>", payload);
-
     await api
       .patch<MatchAnnouncement>(`/match-announcements/${id}`, payload)
       .then((res) => {
@@ -134,55 +142,6 @@ export const useMatchController = () => {
       .catch((error) => {
         console.error("Error updating match");
         onError();
-      });
-  };
-
-  const joinMatch = async (matchId: string, onSuccess: () => void) => {
-    setIsJoining(true);
-    await api
-      .post(`/match-announcements/${matchId}/play-requests`)
-      .then((res) => {
-        if (res.status == 201) {
-          onSuccess();
-        }
-      })
-      .catch((error) => {
-        console.error("Error joining match >>>>", error);
-      })
-      .finally(() => {
-        setIsJoining(false);
-      });
-  };
-
-  const loadRequests = async () => {
-    const defaultParams = `&role=sent`;
-    await api
-      .get<PlayRequestPaginated>("/play-requests?" + defaultParams)
-      .then((res) => {
-        if (res.status == 200) {
-          setRequests(res.data.items);
-          setRequestsTotal(res.data.total);
-          setRequestsPageNumber(res.data.page);
-          setRequestsPages(res.data.pages);
-        }
-      })
-      .catch((error) => {
-        console.error("Error fetching requests >>>>", error);
-      });
-  };
-
-  const loadAnnouncementRequests = async (announcementId: string) => {
-    await api
-      .get<PlayRequestPaginated>(
-        `/match-announcements/${announcementId}/play-requests`,
-      )
-      .then((res) => {
-        if (res.status == 200) {
-          setRequests(res.data.items);
-        }
-      })
-      .catch((error) => {
-        console.error("Error fetching announcement requests >>>>", error);
       });
   };
 
@@ -209,14 +168,8 @@ export const useMatchController = () => {
     updateMatch,
     pages,
     total,
-    joinMatch,
-    isJoining,
-    loadRequests,
-    requests,
-    requestsTotal,
-    requestsPages,
-    requestsPageNumber,
-    loadAnnouncementRequests,
+
     decide,
+    getMatch,
   };
 };

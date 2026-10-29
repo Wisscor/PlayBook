@@ -10,6 +10,7 @@ import { useNavigation } from "@/hooks/useNavigation";
 import { api } from "@/services/api";
 import { useChat } from "@/hooks/contexts/chatContext";
 import { ApiError } from "@/types/api";
+import { useProfileController } from "@/services/profile";
 
 export const MainDetails: React.FC<{ user: User; comingFrom: COMING_FROM }> = ({
   user,
@@ -18,6 +19,7 @@ export const MainDetails: React.FC<{ user: User; comingFrom: COMING_FROM }> = ({
   const t = useTranslations();
   const { goMessages } = useNavigation();
   const { createConversation } = useChat();
+  const { deleteUser } = useProfileController();
   const [isFollowing, setIsFollowing] = React.useState(
     user.is_following ?? false,
   );
@@ -100,14 +102,29 @@ export const MainDetails: React.FC<{ user: User; comingFrom: COMING_FROM }> = ({
 
       <div className="pt-2">
         {comingFrom == COMING_FROM.ME ? (
-          <Link href={ROUTES.EDIT_PROFILE}>
-            <PlayButton.Primary
-              textClassName="text-sm font-semibold text-white"
-              title="edit-profile"
-              type="button"
-              className="w-full rounded-xl border border-white/20 bg-white/10 py-2.5 backdrop-blur-md transition-all hover:bg-white/20 active:scale-95 cursor-pointer shadow-md text-center"
-            />
-          </Link>
+          <div className="flex items-stretch space-x-4">
+            <Link href={ROUTES.EDIT_PROFILE} className="w-full">
+              <PlayButton.Primary
+                textClassName="text-sm font-semibold text-white"
+                title="edit-profile"
+                type="button"
+                className="w-full rounded-xl border border-white/20 bg-white/10 py-2.5 backdrop-blur-md transition-all hover:bg-white/20 active:scale-95 cursor-pointer shadow-md text-center"
+              />
+            </Link>
+            <button
+              onClick={() => {
+                void deleteUser();
+              }}
+              className=" rounded-xl border border-white/20 bg-white/10 p-2.5 backdrop-blur-md transition-all hover:bg-white/20 active:scale-95 cursor-pointer shadow-md text-center"
+            >
+              <Image
+                alt="delete"
+                src={"/icons/trash-can.png"}
+                width={20}
+                height={20}
+              />
+            </button>
+          </div>
         ) : (
           <div className="flex items-stretch space-x-4">
             <PlayButton.Primary

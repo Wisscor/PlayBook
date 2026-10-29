@@ -46,11 +46,13 @@ export const LanguageSwitcher: React.FC<{
               }`}
             >
               <Image
+                style={{ width: 24, height: 16 }}
                 alt={lang.name}
                 src={lang.flag}
-                width={22}
-                height={15}
+                width={24}
+                height={16}
                 className="rounded object-cover shadow-sm"
+                loading="eager"
               />
               <PlayText.Primary
                 id={lang.name}

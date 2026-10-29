@@ -16,8 +16,15 @@ const PROTECTED_ROUTES = [
   ROUTES.SEARCH,
   ROUTES.MESSAGES,
   ROUTES.FOLLOWERS,
+  ROUTES.PLAY_REQUESTS,
 ];
-const AUTH_ROUTES = ["/auth"];
+const AUTH_ROUTES = [
+  "/auth",
+  ROUTES.SIGNIN,
+  ROUTES.SIGNUP,
+  ROUTES.PRIVACY_POLICY,
+  ROUTES.TERMS_OF_SERVICE,
+];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;

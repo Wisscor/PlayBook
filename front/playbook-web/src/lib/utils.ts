@@ -19,3 +19,19 @@ export const toForm = (
     end_time: new Date(match.end_time).toISOString().split("T")[1].slice(0, 5),
   };
 };
+
+export const getDateDifference = (dateString: string) => {
+  const now = new Date();
+  const date = new Date(dateString);
+  const diffInMs = now.getTime() - date.getTime();
+  const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+  const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+  const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+
+  if (diffInMinutes < 60) {
+    return `${diffInMinutes}m`;
+  } else if (diffInHours < 24) {
+    return `${diffInHours}h`;
+  }
+  return `${diffInDays}d`;
+};

@@ -83,12 +83,6 @@ export interface SignUpData {
   password: string;
 }
 
-export interface ApiError {
-  message: string;
-  status: number | null;
-  details?: unknown;
-}
-
 export interface MatchAnnouncementRequestData {
   title: string;
   sport_id: string;
@@ -175,3 +169,11 @@ export interface UpdatedMatchRequest {
   start_time: string;
   end_time: string;
 }
+
+export type ApiError = {
+  status?: number;
+  errorCode?: string;
+  message?: string;
+  detail?: unknown;
+  data?: unknown;
+};

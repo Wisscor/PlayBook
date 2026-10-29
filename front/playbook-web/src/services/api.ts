@@ -1,5 +1,5 @@
 import { ApiError } from "@/types/api";
-import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
+import axios, { AxiosError } from "axios";
 
 export const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000",
@@ -9,32 +9,31 @@ export const api = axios.create({
   },
 });
 
-api.interceptors.request.use(
-  (config: InternalAxiosRequestConfig) => {
-    return config;
-  },
-  (error: AxiosError) => Promise.reject(error),
-);
-
 api.interceptors.response.use(
   (response) => response,
-
-  (error: AxiosError<{ detail?: string; message?: string }>) => {
+  (
+    error: AxiosError<{
+      message?: string;
+      detail?: unknown;
+      error?: { code?: string };
+    }>,
+  ) => {
     const status = error.response?.status;
     const data = error.response?.data;
+    const url = error.config?.url ?? "";
 
-    let message = "Something went wrong. Please try again.";
+    const isLoginRequest = url.includes("/auth");
 
-    if (!error.response) {
-      message = "Unable to connect to the server.";
-    } else {
-      message = data?.detail ?? data?.message ?? error.message ?? message;
+    if (status === 401 && !isLoginRequest) {
+      window.location.href = "/en/login";
     }
 
     const apiError: ApiError = {
-      message,
-      status: status ?? null,
-      details: data?.detail,
+      status,
+      errorCode: data?.error?.code,
+      message: data?.message ?? error.message,
+      detail: data?.detail,
+      data,
     };
 
     return Promise.reject(apiError);

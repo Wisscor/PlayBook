@@ -6,6 +6,7 @@ import { MatchOverview, UpdatedMatchRequest } from "@/types/api";
 import Image from "next/image";
 import React from "react";
 import { PlayerRequest } from "./playerRequest";
+import { usePlayRequestsController } from "@/services/playRequest";
 
 export interface MatchProps {
   match: MatchOverview & { sport_id: string };
@@ -14,8 +15,8 @@ export interface MatchProps {
 }
 
 export const Match: React.FC<MatchProps> = ({ match, onEdit, onDelete }) => {
-  const { loadAnnouncementRequests, requests, updateMatch } =
-    useMatchController();
+  const { updateMatch } = useMatchController();
+  const { loadAnnouncementRequests, requests } = usePlayRequestsController();
 
   const getStatusBadgeColor = (status: string) => {
     switch (status.toLowerCase()) {
