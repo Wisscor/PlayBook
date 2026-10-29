@@ -12,8 +12,7 @@ import { Link } from "../../../../i18n/navigation";
 import { BurgerMenu } from "./components/burgerMenu";
 import { NotificationPopUp } from "./notificationPopUp";
 import { useAuthController } from "@/services/auth";
-
-const unreadMessages = 3;
+import { useChat } from "@/hooks/contexts/chatContext";
 
 export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
   const { signOut } = useAuthController();
@@ -23,6 +22,7 @@ export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [logoutError, setLogoutError] = useState("");
   const { goMessages, goSearch } = useNavigation();
+  const { unreadMessages } = useChat();
 
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const notificationRef = useRef<HTMLDivElement>(null);
@@ -166,7 +166,7 @@ export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
                       ? {
                           content: unreadMessages.toString(),
                           className:
-                            "absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white shadow-md",
+                          "absolute -top-1 -right-1 flex min-h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white shadow-md",
                         }
                       : {},
                   ]}
@@ -262,7 +262,10 @@ export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
 
                 <PlayButton.Complexe
                   type="button"
-                  onClick={() => goMessages()}
+                  onClick={() => {
+                    setIsExpanded(false);
+                    goMessages();
+                  }}
                   className="relative rounded-xl border border-white/10 bg-white/5 p-2.5 backdrop-blur-md transition-all hover:bg-white/10 cursor-pointer flex items-center justify-center"
                   aria-label="Messages"
                 >
@@ -279,7 +282,7 @@ export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
                         ? {
                             content: unreadMessages.toString(),
                             className:
-                              "absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white shadow-md",
+                              "absolute -top-1 -right-1 flex min-h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white shadow-md",
                           }
                         : {},
                     ]}

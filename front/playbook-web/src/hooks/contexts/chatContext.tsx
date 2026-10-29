@@ -15,6 +15,7 @@ export interface ChatConversation {
 
 type ChatContextValue = {
   conversations: ChatConversation[];
+  unreadMessages: number;
   messages: Record<string, RealtimeMessage[]>;
   onlineUserIds: string[];
   connected: boolean;
@@ -52,6 +53,7 @@ export function ChatProvider({
   const socketRef = useRef<WebSocket | null>(null);
   const reconnectRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const attemptRef = useRef(0);
+  const receivedMessageIdsRef = useRef(new Set<string>());
 
   const loadConversations = useCallback(async () => {
     const response = await api.get<ChatConversation[]>("/realtime/conversations");
@@ -132,6 +134,8 @@ export function ChatProvider({
           frame.created_at
         ) {
           const message = frame as RealtimeMessage;
+          if (receivedMessageIdsRef.current.has(message.id)) return;
+          receivedMessageIdsRef.current.add(message.id);
           setMessages((current) => {
             const existing = current[message.conversation_id] ?? [];
             if (existing.some((item) => item.id === message.id)) return current;
@@ -140,6 +144,21 @@ export function ChatProvider({
               [message.conversation_id]: sortMessages([...existing, message]),
             };
           });
+          if (
+            connectedUser?.id &&
+            String(message.sender_id) !== String(connectedUser.id)
+          ) {
+            setConversations((current) =>
+              current.map((conversation) =>
+                conversation.id === message.conversation_id
+                  ? {
+                      ...conversation,
+                      unread_count: conversation.unread_count + 1,
+                    }
+                  : conversation,
+              ),
+            );
+          }
         } else if (
           frame.type === "read" &&
           frame.conversation_id &&
@@ -244,12 +263,25 @@ export function ChatProvider({
         message_id: messageId,
       }),
     );
+    setConversations((current) =>
+      current.map((conversation) =>
+        conversation.id === conversationId
+          ? { ...conversation, unread_count: 0 }
+          : conversation,
+      ),
+    );
     return true;
   }, []);
+
+  const unreadMessages = conversations.reduce(
+    (total, conversation) => total + conversation.unread_count,
+    0,
+  );
 
   const value = useMemo(
     () => ({
       conversations,
+      unreadMessages,
       messages,
       onlineUserIds,
       connected,
@@ -260,6 +292,7 @@ export function ChatProvider({
     }),
     [
       conversations,
+      unreadMessages,
       messages,
       onlineUserIds,
       connected,

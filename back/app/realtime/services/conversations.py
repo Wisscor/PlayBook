@@ -67,13 +67,14 @@ async def list_conversations(db, me: UUID) -> list[dict]:
         select(func.count(Message.id))
         .where(
             Message.conversation_id == Conversation.id,
+            Message.sender_id == other.user_id,
             or_(
                 mine.last_read_message_id.is_(None),
                 read_marker.created_at.is_(None),
                 Message.created_at > read_marker.created_at,
             ),
         )
-        .correlate(Conversation, mine, read_marker)
+        .correlate(Conversation, mine, other, read_marker)
         .scalar_subquery()
     )
     # We need to join the read_marker to get the last_read_message_id for the current user (mine).
