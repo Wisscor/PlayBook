@@ -1,7 +1,11 @@
 import { PlayModal } from "@/components/ui/Modal";
 import { DateTimeRangePicker } from "@/components/ui/Datepicker";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { PlayButton } from "@/components/ui/Button";
+import { PlayList } from "@/components/ui/List";
+import { useMatchController } from "@/services/match";
+import { Sport } from "@/types/api";
+import { useTranslations } from "next-intl";
 
 export const FilterMatchModal: React.FC<{
   isOpen: boolean;
@@ -13,6 +17,10 @@ export const FilterMatchModal: React.FC<{
   filterEndTime: string;
   setFilterEndTime: React.Dispatch<React.SetStateAction<string>>;
   handleClearFilters: () => void;
+  setSelectedSport: React.Dispatch<React.SetStateAction<Sport | undefined>>;
+  selectedSport: Sport | undefined;
+  setMatchStatus: React.Dispatch<React.SetStateAction<string | undefined>>;
+  matchStatus: string | undefined;
 }> = ({
   close,
   isOpen,
@@ -23,8 +31,31 @@ export const FilterMatchModal: React.FC<{
   filterEndTime,
   setFilterEndTime,
   handleClearFilters,
+  setSelectedSport,
+  selectedSport,
+  setMatchStatus,
+  matchStatus,
 }) => {
+  const { sports, getSports } = useMatchController();
+  const t = useTranslations();
+
   const [hasError, setHasError] = useState(false);
+  const [matchTypeOpen, setMatchTypeOpen] = useState(false);
+  const [matchStatusOpen, setMatchStatusOpen] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const timer = window.setTimeout(() => {
+      setHasError(false);
+      void getSports(
+        () => {},
+        () => {
+          setHasError(true);
+        },
+      );
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [isOpen]);
 
   return (
     <PlayModal.Primary
@@ -36,14 +67,50 @@ export const FilterMatchModal: React.FC<{
     >
       <div className="w-full rounded-3xl border border-white/10 bg-slate-950 p-6 sm:p-8 shadow-2xl flex flex-col self-center gap-6">
         <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-md">
+          <PlayList.Primary
+            value="name"
+            toggle={() => setMatchStatusOpen(!matchStatusOpen)}
+            isOpen={matchStatusOpen}
+            items={["upcoming", "live", "finished"]}
+            text={matchStatus ?? t("select-match-status")}
+            choseItem={(item) => {
+              setMatchStatus(item);
+              setMatchStatusOpen(false);
+            }}
+          />
+        </div>
+        <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-md">
+          <PlayList.Primary
+            value="name"
+            toggle={() => setMatchTypeOpen(!matchTypeOpen)}
+            isOpen={matchTypeOpen}
+            items={sports}
+            text={
+              selectedSport
+                ? (selectedSport?.name ?? t("select-match-type"))
+                : t("select-match-type")
+            }
+            choseItem={(item) => {
+              setSelectedSport(item);
+              setMatchTypeOpen(false);
+            }}
+          />
+        </div>
+        <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-md">
           <DateTimeRangePicker
             onError={(err) => setHasError(err !== undefined)}
             date={filterDate}
             startTime={filterStartTime}
             endTime={filterEndTime}
             changeDate={(date) => setFilterDate(date)}
-            changeStartTime={(startTime) => setFilterStartTime(startTime)}
-            changeEndTime={(endTime) => setFilterEndTime(endTime)}
+            changeStartTime={(startTime) => {
+              setHasError(false);
+              setFilterStartTime(startTime);
+            }}
+            changeEndTime={(endTime) => {
+              setHasError(false);
+              setFilterEndTime(endTime);
+            }}
           />
         </div>
 

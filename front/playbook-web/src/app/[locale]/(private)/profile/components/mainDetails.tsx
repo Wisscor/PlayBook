@@ -7,6 +7,9 @@ import { User } from "@/types/user";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
 import { useNavigation } from "@/hooks/useNavigation";
+import { api } from "@/services/api";
+import { useChat } from "@/hooks/contexts/chatContext";
+import { ApiError } from "@/types/api";
 
 export const MainDetails: React.FC<{ user: User; comingFrom: COMING_FROM }> = ({
   user,
@@ -14,7 +17,29 @@ export const MainDetails: React.FC<{ user: User; comingFrom: COMING_FROM }> = ({
 }) => {
   const t = useTranslations();
   const { goMessages } = useNavigation();
-  const isFollowing = true; // Replace with actual logic to determine if the current user is following the profile user
+  const { createConversation } = useChat();
+  const [isFollowing, setIsFollowing] = React.useState(
+    user.is_following ?? false,
+  );
+  const [isFollowPending, setIsFollowPending] = React.useState(false);
+  const [conversationError, setConversationError] = React.useState("");
+
+  const toggleFollow = async () => {
+    if (!user.id || isFollowPending) return;
+    setIsFollowPending(true);
+    try {
+      if (isFollowing) {
+        await api.delete(`/users/${user.id}/follow`);
+      } else {
+        await api.post(`/users/${user.id}/follow`);
+      }
+      setIsFollowing(!isFollowing);
+    } catch (error) {
+      console.error("Unable to update follow relationship:", error);
+    } finally {
+      setIsFollowPending(false);
+    }
+  };
 
   return (
     <div className="order-3 rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl p-6 sm:p-8 shadow-xl flex flex-col justify-between h-full gap-6">
@@ -86,9 +111,8 @@ export const MainDetails: React.FC<{ user: User; comingFrom: COMING_FROM }> = ({
         ) : (
           <div className="flex items-stretch space-x-4">
             <PlayButton.Primary
-              onClick={() => {
-                //TODO: here the follow logic
-              }}
+              onClick={() => void toggleFollow()}
+              disabled={isFollowPending}
               textClassName="text-sm font-semibold text-white"
               title={isFollowing ? "unfollow" : "follow"}
               type="button"
@@ -96,7 +120,19 @@ export const MainDetails: React.FC<{ user: User; comingFrom: COMING_FROM }> = ({
             />
             <PlayButton.Complexe
               onClick={() => {
-                goMessages();
+                if (!user.id) return;
+                setConversationError("");
+                void createConversation(user.id)
+                  .then((conversationId) => goMessages(conversationId))
+                  .catch((error) => {
+                    console.error("Unable to start conversation:", error);
+                    const apiError = error as ApiError;
+                    setConversationError(
+                      apiError.status === 403
+                        ? t("mutual-follow-required")
+                        : t("conversation-error"),
+                    );
+                  });
               }}
               type="button"
               className="rounded-xl border border-white/20 bg-white/10 py-2.5 backdrop-blur-md transition-all hover:bg-white/20 active:scale-95 cursor-pointer shadow-md text-center"
@@ -109,6 +145,12 @@ export const MainDetails: React.FC<{ user: User; comingFrom: COMING_FROM }> = ({
               />
             </PlayButton.Complexe>
           </div>
+        )}
+        {conversationError && (
+          <PlayText.Primary
+            content={conversationError}
+            className="mt-3 text-xs text-rose-400"
+          />
         )}
       </div>
     </div>

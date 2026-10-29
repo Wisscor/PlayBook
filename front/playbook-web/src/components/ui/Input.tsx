@@ -39,6 +39,7 @@ const Primary: React.FC<InputProps> = ({
 
   return (
     <input
+      maxLength={20}
       onClick={onInputClick}
       onBlur={onBlur}
       value={value}
@@ -65,6 +66,7 @@ const Area: React.FC<AreaProps> = ({
 
   return (
     <textarea
+      maxLength={500}
       value={value}
       onChange={onChange}
       placeholder={placeholder ? t(placeholder) : undefined}

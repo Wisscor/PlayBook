@@ -26,33 +26,17 @@ export const Home = () => {
             </div>
 
             <div className="flex flex-col justify-center border-t border-white/10 bg-black/20 p-8 lg:border-t-0 lg:border-l lg:p-12">
-              <div className="space-y-4">
-                <PlayButton.Primary
-                  title="continue-intra"
-                  className="w-full shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-shadow"
-                />
-
-                <div className="flex items-center gap-3 my-6">
-                  <div className="h-px flex-1 bg-linear-to-r from-transparent via-white/20 to-transparent" />
-                  <PlayText.Primary
-                    id="or"
-                    className="text-xs uppercase tracking-wider text-slate-400 font-semibold"
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <Link href={ROUTES.SIGNUP} className="w-full">
+                  <PlayButton.Secondary
+                    title="signup"
+                    textClassName="text-white"
+                    className="w-full border border-white/10 bg-white/5 hover:bg-white/10 transition-colors"
                   />
-                  <div className="h-px flex-1 bg-linear-to-r from-transparent via-white/20 to-transparent" />
-                </div>
-
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <Link href={ROUTES.SIGNUP} className="w-full">
-                    <PlayButton.Secondary
-                      title="signup"
-                      textClassName="text-white"
-                      className="w-full border border-white/10 bg-white/5 hover:bg-white/10 transition-colors"
-                    />
-                  </Link>
-                  <Link href={ROUTES.SIGNIN} className="w-full">
-                    <PlayButton.Primary title="login" className="w-full" />
-                  </Link>
-                </div>
+                </Link>
+                <Link href={ROUTES.SIGNIN} className="w-full">
+                  <PlayButton.Primary title="login" className="w-full" />
+                </Link>
               </div>
             </div>
           </div>

@@ -1,13 +1,12 @@
 "use client";
 
-import { api } from "@/services/api";
 import { PlayText } from "@/components/ui/Text";
+import { COMING_FROM } from "@/lib/constants";
+import { api } from "@/services/api";
 import { User } from "@/types/user";
-import { useSearchParams } from "next/navigation";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { AboutSection } from "../profile/components/aboutSection";
 import { MainDetails } from "../profile/components/mainDetails";
-import { COMING_FROM } from "@/lib/constants";
 
 export const UserProfilePage = () => {
   const userId = localStorage.getItem("userId");
@@ -63,10 +62,20 @@ export const UserProfilePage = () => {
           <AboutSection comingFrom={COMING_FROM.OTHER} bio={user.bio} />
           <div className="order-1 flex flex-col items-center justify-center py-4 md:order-2 md:py-0">
             <div className="relative flex h-40 w-40 items-center justify-center overflow-hidden rounded-full border-4 border-white/10 bg-white/5 p-2 shadow-2xl backdrop-blur-xl sm:h-48 sm:w-48 md:h-56 md:w-56">
-              <div className="flex h-full w-full items-center justify-center rounded-full bg-linear-to-tr from-indigo-950 to-indigo-600 text-3xl font-extrabold text-white shadow-inner sm:text-4xl">
-                {user.firstname.charAt(0).toUpperCase()}
-                {user.lastname.charAt(0).toUpperCase()}
-              </div>
+              {user.avatar ? (
+                <img
+                  src={`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}/${user.avatar}`}
+                  alt="Avatar"
+                  className="h-full w-full rounded-full object-cover"
+                />
+              ) : (
+                <div
+                  className={`flex h-full w-full items-center justify-center rounded-full bg-linear-to-tr from-indigo-950 to-indigo-600 text-3xl font-extrabold text-white shadow-inner sm:text-4xl`}
+                >
+                  {user.firstname.charAt(0).toUpperCase()}
+                  {user.lastname.charAt(0).toUpperCase()}
+                </div>
+              )}
             </div>
           </div>
           <MainDetails comingFrom={COMING_FROM.OTHER} user={user} />

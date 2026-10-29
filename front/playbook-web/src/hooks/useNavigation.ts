@@ -10,15 +10,22 @@ export const useNavigation = () => {
     goEdit: () => push(ROUTES.EDIT_PROFILE),
     goProfile: () => push(ROUTES.PROFILE),
     goCommunity: () => push(ROUTES.COMMUNITY),
-    goMessages: () => push(ROUTES.MESSAGES),
+    goMessages: (conversationId?: string) =>
+      push(
+        conversationId
+          ? `${ROUTES.MESSAGES}?conversation=${conversationId}`
+          : ROUTES.MESSAGES,
+      ),
     goSearch: () => push(ROUTES.SEARCH),
     goUserProfile: (userId: string) => {
       localStorage.setItem("userId", userId);
       push(`${ROUTES.USER_PROFILE}`);
     },
-    goFollowers: (userId: string) => {
-      localStorage.setItem("userid_of_requested_user_for_followers", userId);
-      push(`${ROUTES.FOLLOWERS}`);
+    goFollowers: (view: "followers" | "following", userId?: string) => {
+      if (userId) {
+        localStorage.setItem("userid_of_requested_user_for_followers", userId);
+      }
+      push(`${ROUTES.FOLLOWERS}?view=${view}`);
     },
   };
 };
