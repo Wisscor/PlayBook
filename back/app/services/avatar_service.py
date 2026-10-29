@@ -15,6 +15,7 @@ MAX_AVATAR_SIZE = 5 * 1024 * 1024
 
 
 def remove_avatar(path: str | Path | None) -> None:
+    """Remove a stored avatar file when it exists."""
     if path:
         Path(path).unlink(missing_ok=True)
 
@@ -23,6 +24,7 @@ async def store_avatar(
     file: UploadFile,
     upload_dir: Path,
 ) -> tuple[str, Path]:
+    """Validate and store an uploaded avatar, returning its paths."""
     content_type = (file.content_type or "").lower()
     extension = AVATAR_TYPES.get(content_type)
     if extension is None:

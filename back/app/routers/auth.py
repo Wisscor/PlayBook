@@ -100,7 +100,6 @@ async def login(
             message="Incorrect password.",
         )
 
-    # Create 'session' and Store it
     new_session = Session(
         id=uuid.uuid4(),
         user_id=user.id,
@@ -110,7 +109,6 @@ async def login(
     db.add(new_session)
     await db.commit()
 
-    # Set cookie in the response
     response.set_cookie(
         key=settings.session_cookie_name,
         value=str(new_session.id),

@@ -48,17 +48,15 @@ async def follow_user(
     if curr_user.id == user_id:
         raise ApiException(code=ErrorCode.CANNOT_FOLLOW_SELF, field="user_id")
 
-    # Check if target user exists
     target_user = await get_user_by_id(db, user_id)
     if not target_user:
         raise ApiException(code=ErrorCode.USER_NOT_FOUND)
 
-    # Check if already following
     existing = await db.scalar(
         select(Follower).where(
             Follower.follower_id == curr_user.id,
             Follower.following_id == user_id,
-        )
+            )
     )
     if existing:
         raise ApiException(code=ErrorCode.ALREADY_FOLLOWING)

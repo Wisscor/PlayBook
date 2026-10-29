@@ -39,6 +39,7 @@ async def get_announcement_or_raise(
 def announcement_to_response(
     announcement: MatchAnnouncement,
 ) -> MatchAnnouncementResponse:
+    """Convert an announcement model into its response schema."""
     response = MatchAnnouncementResponse.model_validate(announcement)
     response.accepted_players = [
         UserSummaryResponse.model_validate(request.sender)
@@ -52,6 +53,7 @@ def require_announcement_owner(
     announcement: MatchAnnouncement,
     user: User,
 ) -> None:
+    """Raise an error when the user does not own the announcement."""
     if announcement.organizer_id != user.id:
         raise ApiException(code=ErrorCode.PERMISSION_DENIED)
 
@@ -59,6 +61,7 @@ def require_announcement_owner(
 def get_notification_recipients(
     announcement: MatchAnnouncement,
 ) -> set[uuid.UUID]:
+    """Return users with pending or accepted requests."""
     return {
         play_request.sender_id
         for play_request in announcement.play_requests

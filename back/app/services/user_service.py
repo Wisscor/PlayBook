@@ -41,6 +41,7 @@ async def load_user_profile(
     target_user: User,
     current_user: User,
 ) -> UserProfileResponse:
+    """Load a profile with social counts and viewer follow state."""
     followers_count = (
         await db.scalar(
             select(func.count())
@@ -87,6 +88,7 @@ async def load_user_profile(
 
 
 async def delete_user_account(db: AsyncSession, user: User) -> None:
+    """Delete the user's data, connections, and local avatar."""
     avatar_path = user.avatar
     await delete_user_conversations(db, user.id)
     await db.delete(user)

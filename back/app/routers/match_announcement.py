@@ -148,6 +148,7 @@ async def update_announcement(
 ):
     """Update an announcement owned by the current user."""
     announcement = await get_announcement_or_raise(db, id)
+    # Authorization is kept separate from announcement loading.
     require_announcement_owner(announcement, me)
 
     data = body.model_dump(exclude_unset=True)
@@ -160,6 +161,7 @@ async def update_announcement(
     end = data.get("end_time", announcement.end_time)
     if end <= start:
         raise ApiException(code=ErrorCode.VALIDATION_ERROR, field="end_time")
+
     if "sport_id" in data and await db.get(Sport, data["sport_id"]) is None:
         raise ApiException(code=ErrorCode.SPORT_NOT_FOUND)
 
@@ -168,6 +170,7 @@ async def update_announcement(
             code=ErrorCode.VALIDATION_ERROR,
             field="remaining_player_slots",
         )
+
     if (
         "match_status" in data
         and data["match_status"] != announcement.match_status
@@ -188,6 +191,7 @@ async def update_announcement(
     changed = any(
         getattr(announcement, field) != value for field, value in data.items()
     )
+    # Capture recipients before the update changes the announcement state.
     recipient_ids = (
         get_notification_recipients(announcement) if changed else set()
     )
@@ -203,9 +207,8 @@ async def update_announcement(
             target_id=announcement.id,
             match_time=announcement.start_time,
         )
-    return announcement_to_response(
-        await get_announcement_or_raise(db, id)
-    )  # reload: owner and sport after commit
+    # Reload relationships after committing the update.
+    return announcement_to_response(await get_announcement_or_raise(db, id))
 
 
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -220,10 +223,11 @@ async def delete_announcement(
     """Delete an announcement owned by the current user."""
     announcement = await get_announcement_or_raise(db, id)
     require_announcement_owner(announcement, me)
+    # Capture recipients before cascading deletion removes the request rows.
     recipient_ids = get_notification_recipients(announcement)
     match_time = announcement.start_time
-    # its play requests are deleted with it
-    await db.delete(announcement)  # AsyncSession.delete must be awaited
+    # Cascade deletion removes the associated play requests.
+    await db.delete(announcement)
     await db.commit()
     if recipient_ids:
         background_tasks.add_task(

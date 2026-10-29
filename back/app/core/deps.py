@@ -25,7 +25,6 @@ async def get_curr_user(
 ) -> User:
     if not session_id:
         raise ApiException(code=ErrorCode.AUTHENTICATION_REQUIRED)
-    # Find the session
     sessions = await db.execute(
         select(Session).where(Session.id == session_id)
     )
@@ -34,13 +33,11 @@ async def get_curr_user(
     if not session:
         raise ApiException(code=ErrorCode.AUTHENTICATION_REQUIRED)
 
-    # Check expiration
     if session.expires_at <= datetime.now(timezone.utc):
         await db.delete(session)
         await db.commit()
         await registry.close_user(session.user_id)
         raise ApiException(code=ErrorCode.AUTHENTICATION_REQUIRED)
-    # Find the user associated with the session
     users = await db.execute(select(User).where(User.id == session.user_id))
     user: Optional[User] = users.scalar_one_or_none()
     if not user:
