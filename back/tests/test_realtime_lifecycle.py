@@ -116,3 +116,31 @@ def test_disconnect_refreshes_contacts_and_checks_if_still_offline(monkeypatch, 
     else:
         contact_socket.send_json.assert_not_awaited()
         assert registry.connections_for(user.id) == {replacement}
+
+
+@pytest.mark.parametrize("elapsed", [5.0, 20.0, 31.0])
+def test_reconnect_reports_remaining_timeout_without_closing(monkeypatch, elapsed):
+    clock = [100.0]
+    monkeypatch.setattr(registry, "time", SimpleNamespace(monotonic=lambda: clock[0]))
+    monkeypatch.setattr(registry, "_connections", defaultdict(set))
+    monkeypatch.setattr(registry, "_timeouts", {})
+    monkeypatch.setattr(ws, "_origin_is_allowed", lambda origin: True)
+    monkeypatch.setattr(ws, "session_maker", lambda: AsyncMock())
+    user = SimpleNamespace(id=uuid4(), username="alice")
+    monkeypatch.setattr(ws, "authenticate_socket", AsyncMock(return_value=user))
+    monkeypatch.setattr(connection, "on_connect", AsyncMock())
+    monkeypatch.setattr(connection, "on_disconnect", AsyncMock())
+
+    async def exercise():
+        await registry.timeout_user(user.id)
+        clock[0] += elapsed
+        socket = AsyncMock()
+        socket.headers = {"origin": "http://localhost:3000"}
+        socket.receive_text.side_effect = WebSocketDisconnect()
+        await asyncio.wait_for(ws.websocket_endpoint(socket), timeout=1)
+        ready = socket.send_json.await_args_list[0].args[0]
+        assert ready["type"] == frames.READY
+        assert ready["retry_after"] == max(0, 30 - elapsed)
+        socket.close.assert_not_awaited()
+
+    asyncio.run(exercise())

@@ -1,6 +1,8 @@
 import { PlayButton } from "@/components/ui/Button";
 import { PlayInput } from "@/components/ui/Input";
 import { PlayText } from "@/components/ui/Text";
+import { useChat } from "@/hooks/contexts/chatContext";
+import { useTranslations } from "next-intl";
 import { Contact } from "@/types/api";
 import React from "react";
 
@@ -10,6 +12,9 @@ export const Conversation: React.FC<{
   messageInput: string;
   setMessageInput: React.Dispatch<React.SetStateAction<string>>;
 }> = ({ activeContact, handleSendMessage, messageInput, setMessageInput }) => {
+  const { timeoutRemaining, connected } = useChat();
+  const t = useTranslations();
+
   return (
     <div className="h-full min-h-0 rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl p-4 sm:p-6 shadow-xl flex flex-col justify-between col-span-1 md:col-span-2 overflow-hidden">
       <div className="flex shrink-0 items-center gap-3 border-b border-white/10 pb-4">
@@ -68,23 +73,34 @@ export const Conversation: React.FC<{
         })}
       </div>
 
+      {timeoutRemaining > 0 ? (
+        <p role="status" className="shrink-0 pb-3 text-sm text-amber-300">
+          {t("chat-timeout-countdown", { seconds: timeoutRemaining })}
+        </p>
+      ) : null}
       <form
         onSubmit={handleSendMessage}
-        className="flex shrink-0 items-center gap-3 border-t border-white/10 pt-4"
+        className="shrink-0 border-t border-white/10 pt-4"
       >
-        <PlayInput.Primary
-          type="text"
-          value={messageInput}
-          onChange={(e) => setMessageInput(e.target.value)}
-          placeholder="type-message"
-          className="flex-1 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-slate-400 focus:border-white/30 focus:outline-none backdrop-blur-md"
-        />
-        <PlayButton.Primary
-          textClassName="text-sm font-semibold text-slate-950"
-          type="submit"
-          title="send"
-          className="rounded-2xl bg-white px-6 py-3 hover:bg-slate-100 transition-all cursor-pointer shadow-lg whitespace-nowrap"
-        />
+        <fieldset
+          disabled={!connected || timeoutRemaining > 0}
+          aria-label={t("type-message")}
+          className="flex min-w-0 items-center gap-3 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <PlayInput.Primary
+            type="text"
+            value={messageInput}
+            onChange={(e) => setMessageInput(e.target.value)}
+            placeholder="type-message"
+            className="flex-1 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-slate-400 focus:border-white/30 focus:outline-none backdrop-blur-md"
+          />
+          <PlayButton.Primary
+            textClassName="text-sm font-semibold text-slate-950"
+            type="submit"
+            title="send"
+            className="rounded-2xl bg-white px-6 py-3 hover:bg-slate-100 transition-all cursor-pointer shadow-lg whitespace-nowrap"
+          />
+        </fieldset>
       </form>
     </div>
   );

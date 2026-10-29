@@ -105,6 +105,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 "type": frames.READY,
                 "user_id": str(user.id),
                 "username": user.username,
+                "retry_after": registry.timeout_remaining(user.id), #if user timedout ttsift lik ch7al b9al lih bach ysali timeout already handled fi blasa a5ra
             }
         )
         await connection.on_connect(websocket, user, first_socket)

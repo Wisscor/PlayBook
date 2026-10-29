@@ -19,6 +19,7 @@ type ChatContextValue = {
   messages: Record<string, RealtimeMessage[]>;
   onlineUserIds: string[];
   connected: boolean;
+  timeoutRemaining: number;
   createConversation: (peerId: string) => Promise<string>;
   loadMessages: (conversationId: string) => Promise<void>;
   sendMessage: (conversationId: string, body: string) => boolean;
@@ -50,7 +51,10 @@ export function ChatProvider({
   );
   const [onlineUserIds, setOnlineUserIds] = useState<string[]>([]);
   const [connected, setConnected] = useState(false);
+  const [timeoutRemaining, setTimeoutRemaining] = useState(0);
+  const timeoutDeadlineRef = useRef(0);
   const socketRef = useRef<WebSocket | null>(null);
+  const readyRef = useRef(false);
   const reconnectRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const attemptRef = useRef(0);
   const receivedMessageIdsRef = useRef(new Set<string>());
@@ -93,18 +97,30 @@ export function ChatProvider({
     if (isLoading || !connectedUser?.id) return;
 
     let disposed = false;
+    let timeoutTimer: ReturnType<typeof setInterval> | null = null;
+    const updateTimeout = () => {
+      const seconds = Math.max(
+        0,
+        Math.ceil((timeoutDeadlineRef.current - performance.now()) / 1000),
+      );
+      setTimeoutRemaining(seconds);
+      if (seconds === 0 && timeoutTimer !== null) {
+        clearInterval(timeoutTimer);
+        timeoutTimer = null;
+      }
+    };
     const connect = () => {
       if (disposed) return;
       const socket = new WebSocket(getWebSocketUrl());
       socketRef.current = socket;
+      readyRef.current = false;
 
-      socket.onopen = () => {
-        attemptRef.current = 0;
-        setConnected(true);
-      };
       socket.onmessage = (event) => {
+        if (disposed) return;
         let frame: {
           type?: string;
+          reason?: string;
+          retry_after?: number;
           id?: string;
           conversation_id?: string;
           sender_id?: string;
@@ -122,6 +138,26 @@ export function ChatProvider({
           frame = JSON.parse(event.data) as typeof frame;
         } catch {
           console.error("Received invalid chat WebSocket frame");
+          return;
+        }
+
+        if (
+          (frame.type === "ready" ||
+            (frame.type === "error" && frame.reason === "timed_out")) &&
+          typeof frame.retry_after === "number" &&
+          Number.isFinite(frame.retry_after) &&
+          frame.retry_after >= 0
+        ) {
+          if (frame.type === "ready") {
+            attemptRef.current = 0;
+            readyRef.current = true;
+            setConnected(true);
+          }
+          timeoutDeadlineRef.current = performance.now() + frame.retry_after * 1000;
+          updateTimeout();
+          if (frame.retry_after > 0 && timeoutTimer === null) {
+            timeoutTimer = setInterval(updateTimeout, 250);
+          }
           return;
         }
 
@@ -234,6 +270,10 @@ export function ChatProvider({
       disposed = true;
       clearTimeout(loadTimer);
       if (reconnectRef.current) clearTimeout(reconnectRef.current);
+      if (timeoutTimer !== null) clearInterval(timeoutTimer);
+      readyRef.current = false;
+      timeoutDeadlineRef.current = 0;
+      setTimeoutRemaining(0);
       socketRef.current?.close();
       socketRef.current = null;
       setConnected(false);
@@ -241,6 +281,7 @@ export function ChatProvider({
   }, [connectedUser?.id, isLoading, loadConversations]);
 
   const sendMessage = useCallback((conversationId: string, body: string) => {
+    if (!readyRef.current || performance.now() < timeoutDeadlineRef.current) return false;
     const socket = socketRef.current;
     if (!socket || socket.readyState !== WebSocket.OPEN) return false;
     socket.send(
@@ -285,6 +326,7 @@ export function ChatProvider({
       messages,
       onlineUserIds,
       connected,
+      timeoutRemaining,
       createConversation,
       loadMessages,
       sendMessage,
@@ -296,6 +338,7 @@ export function ChatProvider({
       messages,
       onlineUserIds,
       connected,
+      timeoutRemaining,
       createConversation,
       loadMessages,
       sendMessage,

@@ -1,4 +1,5 @@
 {
+  "chat-timeout-countdown": "Discussion suspendue. Vous pourrez envoyer des messages dans {seconds} secondes.",
   "english": "Anglais",
   "french": "Français",
   "arabic": "Arabe",

@@ -1,4 +1,5 @@
 {
+  "chat-timeout-countdown": "Chat paused. You can send messages again in {seconds} seconds.",
   "english": "English",
   "french": "French",
   "arabic": "Arabic",
