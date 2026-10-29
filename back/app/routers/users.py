@@ -11,13 +11,14 @@ from fastapi import (
     UploadFile,
     Request,
 )
-from sqlalchemy import select, or_
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 from http import HTTPStatus
 
 from fastapi_pagination import Page
 from fastapi_pagination.ext.sqlalchemy import apaginate
+from pydantic import EmailStr
 
 from ..database.database import get_db
 from ..models import (
@@ -39,7 +40,6 @@ from app.realtime import registry
 from app.realtime.services.conversations import delete_user_conversations
 from app.core.exceptions import ApiException
 from app.core.error_codes import ErrorCode
-from ..services.user_server import build_user_profile, get_user_by_id
 
 router = APIRouter(
     prefix="/users",
@@ -53,6 +53,84 @@ AVATAR_TYPES = {
     "image/webp": ".webp",
 }
 MAX_AVATAR_SIZE = 5 * 1024 * 1024
+
+
+async def get_user_by_email(
+    db: AsyncSession,
+    email: EmailStr,
+) -> Optional[User]:
+    stmt = select(User).where(User.email == email)
+    return (await db.execute(stmt)).scalar_one_or_none()
+
+
+async def get_user_by_username(
+    db: AsyncSession,
+    username: str,
+) -> Optional[User]:
+    stmt = select(User).where(User.username == username)
+    return (await db.execute(stmt)).scalar_one_or_none()
+
+
+async def get_user_by_id(
+    db: AsyncSession,
+    user_id: uuid.UUID,
+) -> Optional[User]:
+    stmt = select(User).where(User.id == user_id)
+    return (await db.execute(stmt)).scalar_one_or_none()
+
+
+async def build_user_profile(
+    db: AsyncSession,
+    target_user: User,
+    curr_user: User,
+) -> UserProfileResponse:
+    """Build a UserProfileResponse from a User model.
+
+    If viewer_id is None (e.g. /me), is_following is set to None.
+    """
+    followers_count = (
+        await db.scalar(
+            select(func.count())
+            .select_from(Follower)
+            .where(Follower.following_id == target_user.id)
+        )
+        or 0
+    )
+    following_count = (
+        await db.scalar(
+            select(func.count())
+            .select_from(Follower)
+            .where(Follower.follower_id == target_user.id)
+        )
+        or 0
+    )
+    posts_count = (
+        await db.scalar(
+            select(func.count())
+            .select_from(Post)
+            .where(Post.user_id == target_user.id)
+        )
+        or 0
+    )
+    # Check the curr user doesn't see their own profile
+    # If they do, we set is_following to None
+    is_following: Optional[bool] = None
+    if curr_user.id != target_user.id:
+        is_following_edge = await db.scalar(
+            select(Follower).where(
+                and_(
+                    Follower.follower_id == curr_user.id,
+                    Follower.following_id == target_user.id,
+                )
+            )
+        )
+        is_following = is_following_edge is not None
+    profile = UserProfileResponse.model_validate(target_user)
+    profile.followers_count = followers_count
+    profile.following_count = following_count
+    profile.posts_count = posts_count
+    profile.is_following = is_following
+    return profile
 
 
 @router.get(
@@ -85,7 +163,8 @@ async def update(
     """Update the current user's profile."""
     update_data = data.model_dump(exclude_unset=True)
     for key, value in update_data.items():
-        setattr(curr_user, key, value)
+        if value is not None:
+            setattr(curr_user, key, value)
 
     await db.commit()
     await db.refresh(curr_user)

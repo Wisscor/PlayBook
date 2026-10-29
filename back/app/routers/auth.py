@@ -20,7 +20,12 @@ from ..core.security import hash_password, verify_password
 from app.core.config import settings
 from app.realtime import registry
 from app.core.limiter import limiter
-from app.services.user_server import build_user_profile, get_user_by_email, get_user_by_username
+from ..routers.users import (
+    build_user_profile,
+    get_user_by_email,
+    get_user_by_username,
+)
+
 from app.core.exceptions import ApiException
 from app.core.error_codes import ErrorCode
 
@@ -81,8 +86,9 @@ async def login(
     user: Optional[User] = await get_user_by_email(db, data.email)
     if not user:
         raise ApiException(
-            code=ErrorCode.USER_NOT_FOUND,
+            code=ErrorCode.INVALID_CREDENTIALS,
             field="email",
+            message="Email not found.",
         )
     if not verify_password(
         data.password,
@@ -91,6 +97,7 @@ async def login(
         raise ApiException(
             code=ErrorCode.INVALID_CREDENTIALS,
             field="password",
+            message="Incorrect password.",
         )
 
     # Create 'session' and Store it

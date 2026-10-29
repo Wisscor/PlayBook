@@ -22,7 +22,7 @@ async def get_curr_user(
         default=None, alias=settings.session_cookie_name
     ),
     db: AsyncSession = Depends(get_db),
-) -> User:  # ???
+) -> User:
     if not session_id:
         raise ApiException(code=ErrorCode.AUTHENTICATION_REQUIRED)
     # Find the session

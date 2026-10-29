@@ -23,6 +23,7 @@ from ..realtime.notify import emit_notification
 from app.core.limiter import limiter
 from app.core.exceptions import ApiException
 from app.core.error_codes import ErrorCode
+from ..routers.users import get_user_by_id
 
 router = APIRouter(
     prefix="/users",
@@ -48,7 +49,7 @@ async def follow_user(
         raise ApiException(code=ErrorCode.BAD_REQUEST, field="user_id")
 
     # Check if target user exists
-    target_user = await db.scalar(select(User).where(User.id == user_id))
+    target_user = await get_user_by_id(db, user_id)
     if not target_user:
         raise ApiException(code=ErrorCode.USER_NOT_FOUND)
 
@@ -74,13 +75,6 @@ async def follow_user(
         actor_id=curr_user.id,
         target_user_id=user_id,
     )
-    background_tasks.add_task(
-        emit_notification,
-        event_type="follow",
-        actor_id=curr_user.id,
-        target_user_id=user_id,
-    )
-
     return FollowToggleResponse(following=True, user_id=user_id)
 
 
@@ -127,7 +121,7 @@ async def get_user_followers(
     _: User = Depends(get_curr_user),
 ):
     """List a user's followers."""
-    target_user = await db.scalar(select(User).where(User.id == user_id))
+    target_user = await get_user_by_id(db, user_id)
     if not target_user:
         raise ApiException(code=ErrorCode.USER_NOT_FOUND)
 
@@ -159,7 +153,7 @@ async def get_user_following(
     _: User = Depends(get_curr_user),
 ):
     """List users followed by a user."""
-    target_user = await db.scalar(select(User).where(User.id == user_id))
+    target_user = await get_user_by_id(db, user_id)
     if not target_user:
         raise ApiException(code=ErrorCode.USER_NOT_FOUND)
 
