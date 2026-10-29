@@ -47,6 +47,7 @@ export interface Message {
   sender: "me" | "them";
   text: string;
   time: string;
+  seen?: boolean;
 }
 
 export interface Contact {

@@ -10,6 +10,7 @@ export interface ChatConversation {
   peer_id: string;
   peer_username: string;
   unread_count: number;
+  peer_last_read_message_id: string | null;
 }
 
 type ChatContextValue = {
@@ -28,6 +29,14 @@ const ChatContext = createContext<ChatContextValue | undefined>(undefined);
 function getWebSocketUrl() {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
   return `${apiUrl.replace(/^http/, "ws")}/ws`;
+}
+
+function sortMessages(messages: RealtimeMessage[]) {
+  return [...messages].sort((a, b) => {
+    const timeDifference =
+      new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+    return timeDifference || a.id.localeCompare(b.id);
+  });
 }
 
 export function ChatProvider({
@@ -68,7 +77,13 @@ export function ChatProvider({
     }>(`/realtime/conversations/${conversationId}/messages`);
     setMessages((current) => ({
       ...current,
-      [conversationId]: response.data.items.reverse(),
+      [conversationId]: sortMessages([
+        ...(current[conversationId] ?? []),
+        ...response.data.items,
+      ].filter(
+        (message, index, all) =>
+          all.findIndex((item) => item.id === message.id) === index,
+      )),
     }));
   }, []);
 
@@ -97,6 +112,8 @@ export function ChatProvider({
           peer_username?: string;
           user_id?: string;
           unread_count?: number;
+          peer_last_read_message_id?: string | null;
+          message_id?: string;
           online?: boolean | string[];
         };
         try {
@@ -120,9 +137,24 @@ export function ChatProvider({
             if (existing.some((item) => item.id === message.id)) return current;
             return {
               ...current,
-              [message.conversation_id]: [...existing, message],
+              [message.conversation_id]: sortMessages([...existing, message]),
             };
           });
+        } else if (
+          frame.type === "read" &&
+          frame.conversation_id &&
+          frame.message_id
+        ) {
+          setConversations((current) =>
+            current.map((conversation) =>
+              conversation.id === frame.conversation_id
+                ? {
+                    ...conversation,
+                    peer_last_read_message_id: frame.message_id!,
+                  }
+                : conversation,
+            ),
+          );
         } else if (
           frame.type === "conversation.new" &&
           frame.id &&
@@ -138,6 +170,7 @@ export function ChatProvider({
                     peer_id: frame.peer_id!,
                     peer_username: frame.peer_username!,
                     unread_count: 0,
+                    peer_last_read_message_id: null,
                   },
                   ...current,
                 ],

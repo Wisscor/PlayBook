@@ -76,8 +76,11 @@ async def list_conversations(db, me: UUID) -> list[dict]:
         .correlate(Conversation, mine, read_marker)
         .scalar_subquery()
     )
+    # We need to join the read_marker to get the last_read_message_id for the current user (mine).
+    # This is necessary to determine the unread_count for each conversation.
+    # The read_marker is an alias for the Message table, and we join it on the last_read_message_id of the current user's ConversationParticipant entry (mine).
     rows = await db.execute(
-        select(Conversation.id, other.user_id, User.username, unread_count)
+        select(Conversation.id, other.user_id, User.username, unread_count, other.last_read_message_id, )
         .join(mine, mine.conversation_id == Conversation.id)
         .join(other, (other.conversation_id == Conversation.id) & (other.user_id != me))
         .outerjoin(read_marker, read_marker.id == mine.last_read_message_id)
@@ -87,9 +90,12 @@ async def list_conversations(db, me: UUID) -> list[dict]:
         )
         .order_by(Conversation.created_at.desc())
     )
+    # The result is a list of tuples: (conversation_id, peer_id, peer_username, unread_count, peer_last_read_message_id)
+    # We convert it to a list of dictionaries for easier consumption by the frontend.
+    # Each dictionary represents a conversation with its associated peer information.
     return [
-        {"id": c, "peer_id": p, "peer_username": u, "unread_count": count}
-        for c, p, u, count in rows.all()
+        {"id": c,"peer_id": p, "peer_username": u, "unread_count": count, "peer_last_read_message_id": last_read_message_id,}
+        for c, p, u, count, last_read_message_id in rows.all()
     ]
 
 

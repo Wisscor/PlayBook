@@ -17,7 +17,7 @@ export const ContactsList: React.FC<{
   );
 
   return (
-    <div className="rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl p-4 sm:p-5 shadow-xl flex flex-col gap-4 overflow-hidden h-full">
+    <div className="h-full min-h-0 rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl p-4 sm:p-5 shadow-xl flex flex-col gap-4 overflow-hidden">
       <div className="flex flex-col gap-3 border-b border-white/10 pb-4">
         <PlayText.Primary
           id="messages"
@@ -32,8 +32,7 @@ export const ContactsList: React.FC<{
           className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-slate-400 focus:border-white/30 focus:outline-none backdrop-blur-md"
         />
       </div>
-
-      <div className="flex flex-col gap-2 overflow-y-auto pr-1 flex-1">
+      <div className="min-h-0 flex flex-1 flex-col gap-2 overflow-y-auto pr-1">
         {filteredContacts.length === 0 ? (
           <PlayText.Primary
             id="no-contacts"
