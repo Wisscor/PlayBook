@@ -90,9 +90,9 @@ async def send_play_request(
         MatchAnnouncementStatus.upcoming,
         MatchAnnouncementStatus.live,
     }:
-        raise ApiException(code=ErrorCode.RESOURCE_CONFLICT)
+        raise ApiException(code=ErrorCode.ANNOUNCEMENT_NOT_ACCEPTING_REQUESTS)
     if announcement.remaining_player_slots <= 0:
-        raise ApiException(code=ErrorCode.RESOURCE_CONFLICT)
+        raise ApiException(code=ErrorCode.ANNOUNCEMENT_FULL)
     already_sent = await db.scalar(
         select(PlayerRequest.id).where(
             PlayerRequest.announcement_id == id,
@@ -100,7 +100,7 @@ async def send_play_request(
         )
     )
     if already_sent:
-        raise ApiException(code=ErrorCode.RESOURCE_CONFLICT)
+        raise ApiException(code=ErrorCode.REQUEST_ALREADY_SENT)
 
     play_request = PlayerRequest(announcement_id=id, sender_id=me.id)
     db.add(play_request)
@@ -111,7 +111,7 @@ async def send_play_request(
         await db.commit()
     except IntegrityError:  # two parallel requests hit the UNIQUE constraint
         await db.rollback()
-        raise ApiException(code=ErrorCode.RESOURCE_CONFLICT)
+        raise ApiException(code=ErrorCode.REQUEST_ALREADY_SENT)
     background_tasks.add_task(
         emit_notification,
         event_type="play_request",
@@ -199,19 +199,19 @@ async def decide_play_request(
         raise ApiException(code=ErrorCode.PERMISSION_DENIED)
 
     if play_request.status != PlayerRequestStatusEnum.pending:
-        raise ApiException(code=ErrorCode.RESOURCE_CONFLICT)
+        raise ApiException(code=ErrorCode.REQUEST_ALREADY_DECIDED)
 
     if announcement.match_status not in {
         MatchAnnouncementStatus.upcoming,
         MatchAnnouncementStatus.live,
     }:
-        raise ApiException(code=ErrorCode.RESOURCE_CONFLICT)
+        raise ApiException(code=ErrorCode.ANNOUNCEMENT_NOT_ACCEPTING_REQUESTS)
 
     if (
         body.status == PlayerRequestStatusEnum.accepted
         and announcement.remaining_player_slots <= 0
     ):
-        raise ApiException(code=ErrorCode.RESOURCE_CONFLICT)
+        raise ApiException(code=ErrorCode.ANNOUNCEMENT_FULL)
 
     play_request.status = body.status
     if play_request.status == PlayerRequestStatusEnum.accepted:

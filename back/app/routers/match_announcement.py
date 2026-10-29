@@ -212,7 +212,7 @@ async def update_announcement(
         and data["match_status"] != announcement.match_status
         and announcement.match_status == MatchAnnouncementStatus.finished
     ):
-        raise ApiException(code=ErrorCode.RESOURCE_CONFLICT)
+        raise ApiException(code=ErrorCode.ANNOUNCEMENT_ALREADY_FINISHED)
     if (
         "match_status" in data
         and data["match_status"]

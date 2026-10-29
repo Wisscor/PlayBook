@@ -27,6 +27,8 @@ def test_error_codes_have_http_statuses():
     assert ERROR_STATUS[ErrorCode.PERMISSION_DENIED] == 403
     assert ERROR_STATUS[ErrorCode.USER_NOT_FOUND] == 404
     assert ERROR_STATUS[ErrorCode.RESOURCE_CONFLICT] == 409
+    assert ERROR_STATUS[ErrorCode.REQUEST_ALREADY_DECIDED] == 409
+    assert ERROR_STATUS[ErrorCode.ANNOUNCEMENT_FULL] == 409
 
 
 def test_api_exception_handler_returns_public_error_envelope():
