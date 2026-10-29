@@ -4,8 +4,6 @@
   "arabic": "Arabe",
   "welcome": "Bienvenue",
   "slogan": "Connectez-vous, publiez, trouvez votre prochain partenaire",
-  "continue-intra": "Continuer avec Intra",
-  "or": "ou",
   "signup": "S'inscrire",
   "login": "Se connecter",
   "logging-in": "Connexion...",
@@ -119,6 +117,7 @@
   "no-users-found": "Aucun utilisateur trouvé",
   "search-name-username": "Rechercher par nom ou nom d'utilisateur...",
   "messages": "Messages",
+  "seen": "Vu",
   "no-contacts": "Aucun contact trouvé.",
   "active-now": "Actif maintenant",
   "offline": "Hors ligne",
@@ -132,5 +131,11 @@
   "following": "Abonnements",
   "people-following-user": "personnes suivent cet utilisateur",
   "no-followers": "Aucun abonné trouvé.",
-  "follow-back": "Suivre en retour"
+  "follow-back": "Suivre en retour",
+  "mutual-follow-required": "Vous devez vous suivre mutuellement avant de démarrer une conversation.",
+  "conversation-error": "Impossible de démarrer la conversation. Veuillez réessayer.",
+  "previous": "Précédent",
+  "next": "Suivant",
+  "you": "Vous",
+  "select-match-status": "Sélectionnez le statut du match"
 }

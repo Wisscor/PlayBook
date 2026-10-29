@@ -11,8 +11,8 @@ export const Conversation: React.FC<{
   setMessageInput: React.Dispatch<React.SetStateAction<string>>;
 }> = ({ activeContact, handleSendMessage, messageInput, setMessageInput }) => {
   return (
-    <div className="rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl p-4 sm:p-6 shadow-xl flex flex-col justify-between col-span-1 md:col-span-2 overflow-hidden">
-      <div className="flex items-center gap-3 border-b border-white/10 pb-4">
+    <div className="h-full min-h-0 rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl p-4 sm:p-6 shadow-xl flex flex-col justify-between col-span-1 md:col-span-2 overflow-hidden">
+      <div className="flex shrink-0 items-center gap-3 border-b border-white/10 pb-4">
         <div className="relative shrink-0">
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-linear-to-tr from-indigo-950 to-indigo-600 font-bold text-sm text-white shadow-md">
             {activeContact.avatar}
@@ -33,7 +33,7 @@ export const Conversation: React.FC<{
         </div>
       </div>
 
-      <div className="flex flex-col gap-4 overflow-y-auto py-4 px-2 flex-1">
+      <div className="min-h-0 flex flex-1 flex-col gap-4 overflow-y-auto py-4 px-2">
         {activeContact.messages.map((msg) => {
           const isMe = msg.sender === "me";
           return (
@@ -56,6 +56,13 @@ export const Conversation: React.FC<{
                 texts={[{ content: msg.time }]}
                 className="text-[10px] text-slate-400 mt-1 px-1"
               />
+              {/* Display the "seen" status only if the message is sent by the current user and has been seen by the recipient. */}
+              {isMe && msg.seen && (
+                <PlayText.Primary
+                  id="seen"
+                  className="text-[10px] text-slate-400 px-1"
+                />
+              )}
             </div>
           );
         })}
@@ -63,7 +70,7 @@ export const Conversation: React.FC<{
 
       <form
         onSubmit={handleSendMessage}
-        className="flex items-center gap-3 border-t border-white/10 pt-4"
+        className="flex shrink-0 items-center gap-3 border-t border-white/10 pt-4"
       >
         <PlayInput.Primary
           type="text"

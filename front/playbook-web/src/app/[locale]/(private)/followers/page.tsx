@@ -3,76 +3,108 @@
 import { PlayText } from "@/components/ui/Text";
 import { useTranslations } from "next-intl";
 import React from "react";
+import { useSearchParams } from "next/navigation";
+import { api } from "@/services/api";
+import { useAuth } from "@/hooks/contexts/authContext";
+import { UserSummary } from "@/types/user";
 
 export const FollowersPage = () => {
   const t = useTranslations();
-  const [userId, setUserId] = React.useState<string | null>(null);
-
-  const [followers, setFollowers] = React.useState([
-    {
-      id: 1,
-      name: "Wissam Azadou",
-      username: "wazadou",
-      avatar: "WA",
-      isFollowing: true,
-    },
-    {
-      id: 2,
-      name: "Sarah Connor",
-      username: "sconnor",
-      avatar: "SC",
-      isFollowing: false,
-    },
-    {
-      id: 3,
-      name: "Michael Smith",
-      username: "msmith",
-      avatar: "MS",
-      isFollowing: true,
-    },
-  ]);
-
-  const toggleFollow = (id: number) => {
-    setFollowers((prev) =>
-      prev.map((f) =>
-        f.id === id ? { ...f, isFollowing: !f.isFollowing } : f,
-      ),
-    );
-  };
+  const searchParams = useSearchParams();
+  const { connectedUser } = useAuth();
+  const [savedUserId] = React.useState<string | null>(() =>
+    typeof window === "undefined"
+      ? null
+      : localStorage.getItem("userid_of_requested_user_for_followers"),
+  );
+  const userId = savedUserId ?? connectedUser?.id;
+  const [followers, setFollowers] = React.useState<
+    (UserSummary & { isFollowing: boolean })[]
+  >([]);
+  const [isLoading, setIsLoading] = React.useState(Boolean(userId));
+  const [error, setError] = React.useState("");
+  const isFollowingView = searchParams.get("view") === "following";
 
   React.useEffect(() => {
-    const savedData = localStorage.getItem(
-      "userid_of_requested_user_for_followers",
-    );
-
-    console.log("saved is >>>>", savedData);
-
-    if (savedData) {
-      setUserId(savedData);
+    if (!userId) {
+      return;
     }
-    console.log("User is >>>>", userId);
-  }, []);
+
+    const loadUsers = async () => {
+      try {
+        const path = isFollowingView ? "following" : "followers";
+        const response = await api.get<{
+          items: UserSummary[];
+        }>(`/users/${userId}/${path}?page=1&size=100`);
+        const users = await Promise.all(
+          response.data.items.map(async (user) => {
+            const profile = await api.get<{ is_following?: boolean }>(
+              `/users/${user.id}`,
+            );
+            return {
+              ...user,
+              isFollowing: profile.data.is_following ?? false,
+            };
+          }),
+        );
+        setFollowers(users);
+      } catch (requestError) {
+        console.error("Unable to load follow relationships:", requestError);
+        setError("Unable to load follow relationships");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    void loadUsers();
+  }, [isFollowingView, userId]);
+
+  const toggleFollow = async (id: string, isFollowing: boolean) => {
+    try {
+      if (isFollowing) {
+        await api.delete(`/users/${id}/follow`);
+      } else {
+        await api.post(`/users/${id}/follow`);
+      }
+      setFollowers((current) =>
+        current.map((follower) =>
+          follower.id === id
+            ? { ...follower, isFollowing: !isFollowing }
+            : follower,
+        ),
+      );
+    } catch (requestError) {
+      console.error("Unable to update follow relationship:", requestError);
+    }
+  };
 
   return (
     <div className="flex flex-col min-h-[calc(100vh-140px)] bg-slate-950 text-white px-4 py-8 md:px-12 lg:px-20 gap-8">
       <div className="max-w-2xl mx-auto w-full flex flex-col gap-6">
         <div className="flex flex-col gap-2 border-b border-white/10 pb-4">
           <PlayText.Primary
-            id={`followers`}
+            id={isFollowingView ? "following" : "followers"}
             className="text-2xl font-extrabold tracking-tight text-white"
           />
 
           <PlayText.Primary
-            content={`${followers.length} ${t("people-following-user")}`}
+            content={`${followers.length} ${
+              isFollowingView ? t("following") : t("people-following-user")
+            }`}
             className="text-xs text-slate-400"
           />
         </div>
 
         <div className="flex flex-col gap-3">
-          {followers.length === 0 ? (
+          {isLoading ? (
+            <PlayText.Primary
+              content="Loading..."
+              className="text-sm text-slate-400 text-center py-8"
+            />
+          ) : error || followers.length === 0 ? (
             <div className="rounded-3xl border border-dashed border-white/10 bg-white/5 p-12 text-center backdrop-blur-xl">
               <PlayText.Primary
-                id="no-followers"
+                content={error || "no-followers"}
                 className="text-sm font-medium text-slate-400"
               />
             </div>
@@ -88,7 +120,7 @@ export const FollowersPage = () => {
                   </div>
                   <div>
                     <PlayText.Primary
-                      content={follower.name}
+                      content={`${follower.firstname} ${follower.lastname}`}
                       className="font-bold text-sm text-white"
                     />
                     <PlayText.Primary
@@ -100,7 +132,9 @@ export const FollowersPage = () => {
 
                 <button
                   type="button"
-                  onClick={() => toggleFollow(follower.id)}
+                  onClick={() =>
+                    void toggleFollow(follower.id, follower.isFollowing)
+                  }
                   className={`rounded-xl px-4 py-2 text-xs font-semibold transition-all cursor-pointer ${
                     follower.isFollowing
                       ? "border border-white/15 bg-white/10 text-slate-300 hover:bg-white/20"

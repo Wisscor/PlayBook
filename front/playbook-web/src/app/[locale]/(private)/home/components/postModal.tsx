@@ -5,31 +5,35 @@ import { PlayInput } from "@/components/ui/Input";
 import { PlayLabel } from "@/components/ui/Label";
 import { PlayModal } from "@/components/ui/Modal";
 import { PlayText } from "@/components/ui/Text";
-import { api } from "@/services/api";
+import { useAuth } from "@/hooks/contexts/authContext";
+import { usePostController } from "@/services/post";
 import React, { useState } from "react";
 
 export const PostModal: React.FC<{
   close: () => void;
   isOpen: boolean;
 }> = ({ close, isOpen }) => {
+  const { addPost } = usePostController();
+  const { isLoading } = useAuth();
   const [postText, setPostText] = useState<string>("");
-  const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<undefined | string>(undefined);
 
-  const handleCreatePost = async () => {
+  const handleCreatePost = () => {
     if (!postText.trim()) return;
-    setIsLoading(true);
-    setError("");
-    try {
-      await api.post("/posts", { caption: postText.trim() });
-      setPostText("");
-      close();
-    } catch (requestError) {
-      console.error("Unable to create post:", requestError);
-      setError("Unable to create your post");
-    } finally {
-      setIsLoading(false);
-    }
+
+    setError(undefined);
+
+    void addPost(
+      postText,
+      () => {
+        setPostText("");
+        close();
+      },
+      (requestError) => {
+        console.error("Unable to create post:", requestError);
+        setError("Unable to create your post");
+      },
+    );
   };
 
   return (

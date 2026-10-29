@@ -15,7 +15,7 @@ class Message(Base):
         ForeignKey("conversations.id", ondelete="CASCADE"), index=True
     )
     sender_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("users.id", ondelete="CASCADE")
+        ForeignKey("users.id", ondelete="CASCADE"), index=True
     )
     body: Mapped[str] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(

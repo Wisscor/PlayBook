@@ -3,41 +3,35 @@
 import { PlayButton } from "@/components/ui/Button";
 import { PlayInput } from "@/components/ui/Input";
 import { PlayText } from "@/components/ui/Text";
-import { useNavigation } from "@/hooks/useNavigation";
 import { ROUTES } from "@/lib/constants";
 import { isEmailValid } from "@/lib/utils";
-import { signIn } from "@/services/auth";
+import { useAuthController } from "@/services/auth";
+import { SignInData } from "@/types/api";
 import React, { useState } from "react";
 
 export const SignIn = () => {
-  const { goHome } = useNavigation();
-  const [infos, setInfos] = useState({
-    username_or_email: "",
+  const { signIn, isWaiting } = useAuthController();
+
+  const [infos, setInfos] = useState<SignInData>({
+    email: "",
     password: "",
   });
   const [isHidden, setIsHidden] = useState(true);
   const [error, setError] = useState<string | undefined>(undefined);
-  const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = async (e: React.SubmitEvent) => {
+  const handleLogin = (e: React.SubmitEvent) => {
     e.preventDefault();
 
     if (error) return;
 
-    if (!isEmailValid(infos.username_or_email)) {
+    if (!isEmailValid(infos.email)) {
       setError("email-invalid");
       return;
     }
     setError(undefined);
-    setIsLoading(true);
-    try {
-      await signIn(infos);
-      goHome();
-    } catch {
+    void signIn(infos, () => {
       setError("error-credentials");
-    } finally {
-      setIsLoading(false);
-    }
+    });
   };
 
   return (
@@ -78,16 +72,14 @@ export const SignIn = () => {
                 setError(undefined);
               }}
               onBlur={() => {
-                if (!isEmailValid(infos.username_or_email)) {
+                if (!isEmailValid(infos.email)) {
                   setError("email-invalid");
                 }
               }}
               className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-slate-400 backdrop-blur-md focus:border-white/30 focus:outline-none transition-all"
               placeholder="email"
-              value={infos.username_or_email}
-              onChange={(e) =>
-                setInfos({ ...infos, username_or_email: e.target.value })
-              }
+              value={infos.email}
+              onChange={(e) => setInfos({ ...infos, email: e.target.value })}
             />
             <PlayInput.Password
               onInputClick={() => {
@@ -109,7 +101,7 @@ export const SignIn = () => {
           <div className="pt-2">
             <PlayButton.Primary
               textClassName="text-slate-950 font-semibold"
-              title={isLoading ? "logging-in" : "login"}
+              title={isWaiting ? "logging-in" : "login"}
               className="w-full rounded-2xl bg-white py-3.5 shadow-lg shadow-white/5 hover:bg-slate-100 transition-all"
               type="submit"
             />

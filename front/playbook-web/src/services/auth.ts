@@ -1,34 +1,77 @@
-import { api } from "./api";
+import { useAuth } from "@/hooks/contexts/authContext";
+import { useNavigation } from "@/hooks/useNavigation";
+import { ApiError, SignInData, SignUpData } from "@/types/api";
 import { User } from "@/types/user";
+import { api } from "./api";
+import React from "react";
 
-export interface SignUpData {
-  firstname: string;
-  lastname: string;
-  username: string;
-  email: string;
-  password: string;
-}
+export const useAuthController = () => {
+  const { connectedUser, setConnectedUser } = useAuth();
+  const { goSignIn } = useNavigation();
+  const [isWaiting, setIsWaiting] = React.useState(false);
 
-export interface SignInData {
-  username_or_email: string;
-  password: string;
-}
+  const signIn = async (data: SignInData, onError: (msg: string) => void) => {
+    setIsWaiting(true);
+    await api
+      .post("/auth/login", data)
+      .then((res) => {
+        setConnectedUser(res.data);
+        goSignIn();
+      })
+      .catch((error) => {
+        onError(error.response?.data?.message || "error-credentials");
+      })
+      .finally(() => {
+        setIsWaiting(false);
+      });
+  };
 
-export const signUp = async (data: SignUpData) => {
-  const response = await api.post<User>("/auth/signup", data);
-  return response.data;
-};
+  const signUp = async (data: SignUpData, onError: (msg: string) => void) => {
+    setIsWaiting(true);
 
-export const signIn = async (data: SignInData) => {
-  const response = await api.post<User>("/auth/login", data);
-  return response.data;
-};
+    await api
+      .post<User>("/auth/signup", data)
+      .then((res) => {
+        if (res.status === 200) {
+          void signIn(
+            { email: res.data.email, password: data.password },
+            () => {
+              onError("error-credentials");
+            },
+          );
+        }
+      })
+      .catch((error) => {
+        const apiError = error as ApiError;
 
-export const signOut = async () => {
-  await api.post("/auth/logout");
-};
+        onError(apiError.message);
+      })
+      .finally(() => {
+        setIsWaiting(false);
+      });
+  };
 
-export const getCurrentUser = async () => {
-  const response = await api.get<User>("/auth/me");
-  return response.data;
+  const signOut = async (onSuccess: () => void, onFailed?: () => void) => {
+    await api
+      .post("/auth/logout")
+      .then((res) => {
+        if (res.status === 200) {
+          setConnectedUser(undefined);
+          onSuccess();
+          goSignIn();
+        }
+      })
+      .catch((error) => {
+        console.error("error >>>>", error);
+        onFailed?.();
+      });
+  };
+
+  return {
+    signIn,
+    connectedUser,
+    signUp,
+    signOut,
+    isWaiting,
+  };
 };

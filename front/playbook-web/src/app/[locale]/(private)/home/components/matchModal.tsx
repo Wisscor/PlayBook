@@ -6,35 +6,29 @@ import { PlayInput } from "@/components/ui/Input";
 import { PlayLabel } from "@/components/ui/Label";
 import { PlayList } from "@/components/ui/List";
 import { PlayModal } from "@/components/ui/Modal";
-import { getSports } from "@/services/sports";
-import { Sport } from "@/types/api";
+import { toForm } from "@/lib/utils";
+import { useMatchController } from "@/services/match";
+import {
+  MatchAnnouncementRequestData,
+  MatchAnnouncement,
+  Sport,
+} from "@/types/api";
 import { useTranslations } from "next-intl";
 import React, { useEffect, useState } from "react";
-
-export interface MatchFormData {
-  id?: string;
-  title: string;
-  sport_id: string;
-  remaining_player_slots: number;
-  start_time: string;
-  end_time: string;
-  date: string;
-}
 
 interface MatchModalProps {
   close: () => void;
   isOpen: boolean;
-  initialData?: MatchFormData | null;
-  onSave: (data: MatchFormData) => Promise<void>;
+  initialData?: { match?: MatchAnnouncement; id?: string };
+  onSave: (data: MatchAnnouncementRequestData) => void;
 }
 
-const emptyForm: MatchFormData = {
+const emptyForm: MatchAnnouncementRequestData = {
   title: "",
   sport_id: "",
   remaining_player_slots: 0,
   start_time: "09:00",
   end_time: "10:00",
-  date: "",
 };
 
 export const MatchModal: React.FC<MatchModalProps> = ({
@@ -45,10 +39,11 @@ export const MatchModal: React.FC<MatchModalProps> = ({
 }) => {
   const t = useTranslations();
 
-  const [form, setForm] = useState<MatchFormData>(emptyForm);
-  const [sports, setSports] = useState<Sport[]>([]);
+  const { sports, getSports } = useMatchController();
+
+  const [form, setForm] = useState<MatchAnnouncementRequestData>(emptyForm);
+  const [date, setDate] = useState(new Date().toISOString());
   const [error, setError] = useState<string | undefined>(undefined);
-  const [isSaving, setIsSaving] = useState(false);
   const [matchTypeOpen, setMatchTypeOpen] = useState(false);
   const [playerNbrOpen, setPlayerNbrOpen] = useState(false);
   const [selectedSport, setSelectedSport] = useState<Sport | null>(null);
@@ -56,24 +51,24 @@ export const MatchModal: React.FC<MatchModalProps> = ({
   useEffect(() => {
     if (!isOpen) return;
     const timer = window.setTimeout(() => {
-      setForm(initialData ?? emptyForm);
+      setForm(initialData?.match ? toForm(initialData.match) : emptyForm);
+      setDate(
+        initialData?.match
+          ? new Date(initialData.match.start_time).toISOString().split("T")[0]
+          : new Date().toISOString().split("T")[0],
+      );
       setError(undefined);
-      getSports()
-        .then(setSports)
-        .catch((requestError) => {
-          console.error("Unable to load sports:", requestError);
+      void getSports(
+        () => {},
+        () => {
           setError("Unable to load sports");
-        });
+        },
+      );
     }, 0);
     return () => window.clearTimeout(timer);
   }, [initialData, isOpen]);
 
-  const update = <K extends keyof MatchFormData>(
-    field: K,
-    value: MatchFormData[K],
-  ) => setForm((current) => ({ ...current, [field]: value }));
-
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     if (
       !form.title.trim() ||
       !form.sport_id ||
@@ -88,26 +83,24 @@ export const MatchModal: React.FC<MatchModalProps> = ({
       return;
     }
 
-    setIsSaving(true);
-    setError("");
+    setError(undefined);
     try {
-      await onSave(form);
+      let newForm: MatchAnnouncementRequestData = {
+        ...form,
+        end_time: new Date(`${date}T${form.end_time}`).toISOString(),
+        start_time: new Date(`${date}T${form.start_time}`).toISOString(),
+      };
+      onSave(newForm);
       close();
     } catch (requestError) {
       console.error("Unable to save match:", requestError);
       setError("Unable to save match");
     } finally {
-      setIsSaving(false);
+      setError(undefined);
     }
   };
 
   const isFormComplete = !Object.values(form).includes("") && !error;
-
-  const handleFormSubmit = () => {
-    onSave(form);
-
-    close();
-  };
 
   const isEditing = Boolean(initialData?.id !== undefined);
 
@@ -180,16 +173,21 @@ export const MatchModal: React.FC<MatchModalProps> = ({
             <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-md">
               <DateTimeRangePicker
                 onError={(err) => setError(err)}
-                date={form.date}
+                date={date.split("T")[0]}
                 startTime={form.start_time}
                 endTime={form.end_time}
-                changeDate={(date) => setForm({ ...form, date })}
-                changeStartTime={(startTime) =>
-                  setForm({ ...form, start_time: startTime })
-                }
-                changeEndTime={(endTime) =>
-                  setForm({ ...form, end_time: endTime })
-                }
+                changeDate={(date) => {
+                  setError(undefined);
+                  setDate(date);
+                }}
+                changeStartTime={(startTime) => {
+                  setError(undefined);
+                  setForm({ ...form, start_time: startTime });
+                }}
+                changeEndTime={(endTime) => {
+                  setError(undefined);
+                  setForm({ ...form, end_time: endTime });
+                }}
               />
             </div>
           )}

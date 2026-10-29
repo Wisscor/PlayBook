@@ -39,3 +39,5 @@ export enum COMING_FROM {
   ME = "me",
   OTHER = "other",
 }
+
+export const pageSize = 1;

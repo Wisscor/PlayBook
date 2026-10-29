@@ -1,5 +1,6 @@
 import { PlayButton } from "@/components/ui/Button";
 import { PlayText } from "@/components/ui/Text";
+import { Sport } from "@/types/api";
 import { useTranslations } from "next-intl";
 import React from "react";
 
@@ -7,7 +8,8 @@ export const MatchFilterSection: React.FC<{
   filterStartDate: string;
   filterEndDate: string;
   open: () => void;
-}> = ({ filterStartDate, filterEndDate, open }) => {
+  selectedSport: Sport | undefined;
+}> = ({ filterStartDate, filterEndDate, open, selectedSport }) => {
   const t = useTranslations();
   return (
     <div className="rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl p-5 sm:p-6 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
