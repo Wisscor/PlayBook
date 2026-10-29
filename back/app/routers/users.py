@@ -30,7 +30,7 @@ from ..schemas.user import (
     UserSummaryResponse,
 )
 from ..schemas.post import PostResponse
-from .post import _enrich_posts
+from app.services.post_service import enrich_posts
 from app.core.deps import get_curr_user
 from app.core.limiter import limiter
 from app.core.config import settings
@@ -213,5 +213,5 @@ async def list_user_posts(
     return await apaginate(
         db,
         stmt,
-        transformer=lambda rows: _enrich_posts(rows, curr_user, db),
+        transformer=lambda rows: enrich_posts(rows, curr_user, db),
     )

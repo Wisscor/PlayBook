@@ -19,7 +19,7 @@ from app.core.deps import get_curr_user
 from app.database.database import get_db
 from app.models.match_announcement import MatchAnnouncement
 from app.models.match_announcement import MatchAnnouncementStatus
-from app.models.play_request import PlayerRequest, PlayerRequestStatusEnum
+from app.models.play_request import PlayerRequest
 from app.models.sport import Sport
 from app.models.user import User
 from app.schemas.match_announcement import (
@@ -28,61 +28,18 @@ from app.schemas.match_announcement import (
     MatchAnnouncementResponse,
     MatchAnnouncementUpdate,
 )
-from app.schemas.user import UserSummaryResponse
 from app.core.limiter import limiter
 from app.realtime.notify import emit_notifications
 from app.core.exceptions import ApiException
 from app.core.error_codes import ErrorCode
+from app.services.announcement_service import (
+    announcement_to_response,
+    get_announcement_or_raise,
+    get_notification_recipients,
+    require_announcement_owner,
+)
 
 router = APIRouter(prefix="/match-announcements", tags=["Match Announcements"])
-
-
-async def _get_or_404(
-    db: AsyncSession, announcement_id: uuid.UUID
-) -> MatchAnnouncement:
-    """Load an announcement with its related data."""
-    stmt = (
-        select(MatchAnnouncement)
-        .options(
-            joinedload(MatchAnnouncement.owner),
-            joinedload(MatchAnnouncement.sport),
-            selectinload(MatchAnnouncement.play_requests).joinedload(
-                PlayerRequest.sender
-            ),
-        )
-        .where(MatchAnnouncement.id == announcement_id)
-        .execution_options(populate_existing=True)
-    )
-    announcement = await db.scalar(stmt)
-    if announcement is None:
-        raise ApiException(code=ErrorCode.ANNOUNCEMENT_NOT_FOUND)
-    return announcement
-
-
-def _to_response(announcement: MatchAnnouncement) -> MatchAnnouncementResponse:
-    response = MatchAnnouncementResponse.model_validate(announcement)
-    response.accepted_players = [
-        UserSummaryResponse.model_validate(request.sender)
-        for request in announcement.play_requests
-        if request.status == PlayerRequestStatusEnum.accepted
-    ]
-    return response
-
-
-def _require_owner(announcement: MatchAnnouncement, user: User) -> None:
-    if announcement.organizer_id != user.id:
-        raise ApiException(code=ErrorCode.PERMISSION_DENIED)
-
-
-def _notification_recipients(
-    announcement: MatchAnnouncement,
-) -> set[uuid.UUID]:
-    return {
-        play_request.sender_id
-        for play_request in announcement.play_requests
-        if play_request.status
-        in {PlayerRequestStatusEnum.pending, PlayerRequestStatusEnum.accepted}
-    }
 
 
 @router.post(
@@ -105,7 +62,9 @@ async def create_announcement(
     await db.flush()  # assigns the id
     announcement_id = announcement.id  # read it now: commit expires the object
     await db.commit()
-    return _to_response(await _get_or_404(db, announcement_id))
+    return announcement_to_response(
+        await get_announcement_or_raise(db, announcement_id)
+    )
 
 
 @router.get("", response_model=Page[MatchAnnouncementResponse])
@@ -159,7 +118,9 @@ async def search_announcements(
     )
 
     return await apaginate(
-        db, stmt, transformer=lambda rows: [_to_response(r) for r in rows]
+        db,
+        stmt,
+        transformer=lambda rows: [announcement_to_response(r) for r in rows],
     )
 
 
@@ -172,7 +133,7 @@ async def get_announcement(
     _: User = Depends(get_curr_user),
 ):
     """Retrieve a match announcement."""
-    return _to_response(await _get_or_404(db, id))
+    return announcement_to_response(await get_announcement_or_raise(db, id))
 
 
 @router.patch("/{id}", response_model=MatchAnnouncementResponse)
@@ -186,8 +147,8 @@ async def update_announcement(
     me: User = Depends(get_curr_user),
 ):
     """Update an announcement owned by the current user."""
-    announcement = await _get_or_404(db, id)
-    _require_owner(announcement, me)
+    announcement = await get_announcement_or_raise(db, id)
+    require_announcement_owner(announcement, me)
 
     data = body.model_dump(exclude_unset=True)
     if any(value is None for value in data.values()):
@@ -228,7 +189,7 @@ async def update_announcement(
         getattr(announcement, field) != value for field, value in data.items()
     )
     recipient_ids = (
-        _notification_recipients(announcement) if changed else set()
+        get_notification_recipients(announcement) if changed else set()
     )
     for field, value in data.items():
         setattr(announcement, field, value)
@@ -242,8 +203,8 @@ async def update_announcement(
             target_id=announcement.id,
             match_time=announcement.start_time,
         )
-    return _to_response(
-        await _get_or_404(db, id)
+    return announcement_to_response(
+        await get_announcement_or_raise(db, id)
     )  # reload: owner and sport after commit
 
 
@@ -257,9 +218,9 @@ async def delete_announcement(
     me: User = Depends(get_curr_user),
 ):
     """Delete an announcement owned by the current user."""
-    announcement = await _get_or_404(db, id)
-    _require_owner(announcement, me)
-    recipient_ids = _notification_recipients(announcement)
+    announcement = await get_announcement_or_raise(db, id)
+    require_announcement_owner(announcement, me)
+    recipient_ids = get_notification_recipients(announcement)
     match_time = announcement.start_time
     # its play requests are deleted with it
     await db.delete(announcement)  # AsyncSession.delete must be awaited
