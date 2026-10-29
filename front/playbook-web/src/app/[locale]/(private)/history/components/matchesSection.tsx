@@ -80,13 +80,17 @@ export const MatchesSection: React.FC = () => {
   let matchContent: React.ReactNode;
   if (isLoading) {
     matchContent = (
-      <p className="py-12 text-center text-slate-300">Loading...</p>
+      <PlayText.Primary
+        id="loading"
+        className="py-12 text-center text-slate-300"
+      />
     );
   } else if (total === 0) {
     matchContent = (
-      <p className="rounded-3xl border border-dashed border-white/10 p-12 text-center text-amber-400">
-        {t("no-matches")}
-      </p>
+      <PlayText.Primary
+        id="no-matches"
+        className="rounded-3xl border border-dashed border-white/10 p-12 text-center text-amber-400"
+      />
     );
   } else {
     matchContent = (
@@ -182,7 +186,10 @@ export const MatchesSection: React.FC = () => {
     <div className="flex w-full flex-col gap-6">
       <div className="flex lg:flex-row flex-col  items-center justify-between border-b border-white/10 pb-4">
         <div className="flex items-center gap-3">
-          <h2 className="text-xl font-bold text-white">{t("my-matches")}</h2>
+          <PlayText.Primary
+            id="my-matches"
+            className="text-xl font-bold text-white"
+          />
           <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-400">
             {total} {total === 1 ? t("match") : t("matches")}
           </span>

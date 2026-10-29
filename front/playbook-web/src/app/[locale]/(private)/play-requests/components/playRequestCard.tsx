@@ -92,7 +92,8 @@ export const PlayRequestCard: React.FC<{
               ]}
             />
             <PlayText.Primary
-              content={`${getDateDifference(request.created_at)}`}
+              id={`ago`}
+              values={{ date: getDateDifference(request.created_at) }}
               className="text-[10px] text-slate-500"
             />
           </div>

@@ -37,7 +37,10 @@ export const PostsSection: React.FC = () => {
   let postsContent: React.ReactNode;
   if (isLoading) {
     postsContent = (
-      <p className="py-12 text-center text-slate-300">Loading...</p>
+      <PlayText.Primary
+        id="loading"
+        className="py-12 text-center text-slate-300"
+      />
     );
   } else if (totalPosts === 0) {
     postsContent = (

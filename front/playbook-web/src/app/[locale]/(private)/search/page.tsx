@@ -39,13 +39,17 @@ export const SearchPage = () => {
   let usersContent: ReactNode;
   if (isLoading) {
     usersContent = (
-      <p className="col-span-full py-12 text-center text-slate-300">
-        Loading...
-      </p>
+      <PlayText.Primary
+        id="loading"
+        className="col-span-full py-12 text-center text-slate-300"
+      />
     );
   } else if (error) {
     usersContent = (
-      <p className="col-span-full py-12 text-center text-rose-400">{error}</p>
+      <PlayText.Primary
+        id={error}
+        className="col-span-full py-12 text-center text-rose-400"
+      />
     );
   } else if (users.length === 0) {
     usersContent = (

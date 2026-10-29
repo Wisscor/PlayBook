@@ -60,7 +60,8 @@ export const MatchCard: React.FC<{
         <PlayText.Span
           texts={[
             {
-              content: `Slots: ${match.remaining_player_slots}`,
+              text: `slots`,
+              values: { slots: match.remaining_player_slots },
             },
           ]}
           className="text-[11px] font-medium text-slate-300"

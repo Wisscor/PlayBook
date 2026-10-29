@@ -104,7 +104,7 @@
   "filtered-from": "Filtré de",
   "filtered-to": "à",
 
-  "available": "disponible",
+  "available": "{total} disponible",
 
   "follow": "Suivre",
   "about": "À propos",
@@ -192,5 +192,12 @@
   "changes-to-terms-description": "Nous nous réservons le droit, à notre seule discrétion, de modifier ou de remplacer ces Conditions à tout moment.",
   "terms-contact-description": "Si vous avez des questions sur ces Conditions, veuillez nous contacter à :",
 
-  "legal-pages": "Pages légales"
+  "legal-pages": "Pages légales",
+  "declined": "Refusé",
+  "ago": "il y a {date}",
+  "characters": "{characters} caractères",
+  "search-by-date-range-sport": "Filtrer les matches disponibles par plage de dates ou par sport",
+  "loading": "Chargement...",
+  "no-feeds": "Aucun flux trouvé.",
+  "slots": "Places : {slots}"
 }

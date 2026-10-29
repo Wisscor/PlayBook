@@ -76,7 +76,7 @@ export const FollowCard: React.FC<{
         }`}
       >
         <PlayText.Primary
-          content={follower.isFollowing ? "following" : "follow-back"}
+          id={follower.isFollowing ? "following" : "follow-back"}
           className={`text-xs font-semibold  ${
             follower.isFollowing ? "text-slate-300" : "text-slate-950"
           }`}

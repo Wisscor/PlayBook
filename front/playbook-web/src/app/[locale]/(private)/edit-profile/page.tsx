@@ -80,7 +80,12 @@ export const EditProfilePage = () => {
   }, [connectedUser]);
 
   if (isLoading) {
-    return <div className="py-12 text-center text-slate-300">Loading...</div>;
+    return (
+      <PlayText.Primary
+        id="loading"
+        className="py-12 text-center text-slate-300"
+      />
+    );
   }
 
   if (!connectedUser) {
@@ -90,7 +95,9 @@ export const EditProfilePage = () => {
           id="login-to-see"
           className="text-lg font-medium text-slate-300 text-center"
         />
-        {error && <p className="text-sm text-rose-400">{error}</p>}
+        {error && (
+          <PlayText.Primary id={error} className="text-sm text-rose-400" />
+        )}
       </div>
     );
   }

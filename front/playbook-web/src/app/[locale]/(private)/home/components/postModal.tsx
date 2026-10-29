@@ -53,7 +53,8 @@ export const PostModal: React.FC<{
             <PlayText.Span
               texts={[
                 {
-                  content: `${postText.length} characters`,
+                  text: `characters`,
+                  values: { characters: postText.length },
                   className: "text-xs text-slate-400",
                 },
               ]}
@@ -61,7 +62,9 @@ export const PostModal: React.FC<{
           </div>
         </div>
 
-        {error && <p className="text-sm text-rose-400">{error}</p>}
+        {error && (
+          <PlayText.Primary id={error} className="text-sm text-rose-400" />
+        )}
 
         {postText.trim().length > 0 && (
           <div className="pt-2">

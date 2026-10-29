@@ -13,6 +13,7 @@ import { MatchFilterSection } from "./components/matchFilterSection";
 import { PostsFeed } from "./components/postsFeed";
 import { RightSideSection } from "./components/rightSideSection";
 import { usePlayRequestsController } from "@/services/playRequest";
+import { PlayText } from "@/components/ui/Text";
 
 interface CommunityMatch {
   id: string;
@@ -89,13 +90,17 @@ export const CommunityPageContent: React.FC = () => {
   let feedContent: React.ReactNode;
   if (isLoading) {
     feedContent = (
-      <p className="py-12 text-center text-slate-300">Loading...</p>
+      <PlayText.Primary
+        id="loading"
+        className="py-12 text-center text-slate-300"
+      />
     );
   } else if (feeds.length === 0) {
     feedContent = (
-      <p className="rounded-3xl border border-dashed border-white/10 p-12 text-center text-slate-400">
-        No feeds yet.
-      </p>
+      <PlayText.Primary
+        id="no-feeds"
+        className="rounded-3xl border border-dashed border-white/10 p-12 text-center text-slate-400"
+      />
     );
   } else {
     feedContent = <PostsFeed feeds={feeds} />;

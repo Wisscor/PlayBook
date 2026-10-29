@@ -105,7 +105,7 @@
   "filtered-from": "تم التصفية من",
   "filtered-to": "إلى",
 
-  "available": "متاح",
+  "available": "متاح {total}",
 
   "follow": "متابعة",
   "about": "عن",
@@ -194,5 +194,13 @@
   "changes-to-terms-description": "نحن نحتفظ بالحق، بحكم حسن ظننا، بتعديل أو استبدال هذه الشروط في أي وقت.",
   "terms-contact-description": "إذا كانت لديك أي أسئلة حول هذه الشروط، يرجى الاتصال بنا على: ",
 
-  "legal-pages": "الصفحات القانونية"
+  "legal-pages": "الصفحات القانونية",
+  "declined": "مرفوض",
+
+  "ago": "منذ {date}",
+  "characters": "حروف {characters}",
+  "search-by-date-range-sport": "تصفية المباريات المتاحة حسب نطاق التاريخ أو الرياضة",
+  "loading": "جارٍ التحميل...",
+  "no-feeds": "لم يتم العثور على أي منشورات.",
+  "slots": "الفتحات: {slots}"
 }

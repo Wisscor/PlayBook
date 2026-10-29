@@ -23,7 +23,7 @@ export const MatchFilterSection: React.FC<{
           content={
             filterStartDate || filterEndDate
               ? ` ${t("filtered-from")} ${filterStartDate || "Start"} ${t("filtered-to")} ${filterEndDate || "End"}`
-              : "Filter available matches by custom date range"
+              : t("search-by-date-range-sport")
           }
           className="text-xs text-slate-400"
         />

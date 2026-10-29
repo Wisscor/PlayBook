@@ -3,7 +3,6 @@ import { useAuthController } from "@/services/auth";
 import { usePathname } from "next/navigation";
 import React from "react";
 import { Link } from "../../../../../i18n/navigation";
-import { useNavigation } from "@/hooks/useNavigation";
 
 export const BurgerMenu: React.FC<{
   isOpen: boolean;
@@ -17,7 +16,6 @@ export const BurgerMenu: React.FC<{
 }> = ({ isOpen, menu, locale, close, more }) => {
   const { signOut } = useAuthController();
   const pathname = usePathname();
-  const { goSignIn } = useNavigation();
 
   return (
     <div
@@ -59,7 +57,7 @@ export const BurgerMenu: React.FC<{
           onClick={() => {
             void signOut(() => {
               close();
-              goSignIn();
+              window.location.reload();
             });
           }}
           className="flex w-full cursor-pointer rounded-xl px-4 py-2.5 text-left text-rose-300 transition-colors hover:bg-rose-500/10"

@@ -2,7 +2,7 @@
 
 import { PlayText } from "@/components/ui/Text";
 import { COMING_FROM } from "@/lib/constants";
-import { api } from "@/services/api";
+import { useUserController } from "@/services/user";
 import { User } from "@/types/user";
 import { useEffect, useState } from "react";
 import { AboutSection } from "../profile/components/aboutSection";
@@ -10,7 +10,8 @@ import { MainDetails } from "../profile/components/mainDetails";
 
 export const UserProfilePage = () => {
   const userId = localStorage.getItem("userId");
-  const [user, setUser] = useState<User | null>(null);
+  const { getUser } = useUserController();
+  const [user, setUser] = useState<User | undefined | null>(undefined);
   const [isLoading, setIsLoading] = useState(Boolean(userId));
   const [error, setError] = useState("");
 
@@ -21,8 +22,8 @@ export const UserProfilePage = () => {
 
     const loadUser = async () => {
       try {
-        const response = await api.get<User>(`/users/${userId}`);
-        setUser(response.data);
+        const fetchedUser = await getUser(userId);
+        setUser(fetchedUser);
       } catch (requestError) {
         console.error("Unable to load user profile:", requestError);
         setError("Unable to load user profile");
@@ -35,7 +36,12 @@ export const UserProfilePage = () => {
   }, [userId]);
 
   if (isLoading) {
-    return <div className="py-12 text-center text-slate-300">Loading...</div>;
+    return (
+      <PlayText.Primary
+        id="loading"
+        className="py-12 text-center text-slate-300"
+      />
+    );
   }
 
   if (!user || error) {

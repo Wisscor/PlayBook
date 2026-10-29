@@ -22,7 +22,7 @@ export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [logoutError, setLogoutError] = useState("");
-  const { goMessages, goSearch, goSignIn } = useNavigation();
+  const { goMessages, goSearch } = useNavigation();
 
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const notificationRef = useRef<HTMLDivElement>(null);
@@ -85,7 +85,8 @@ export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
     setLogoutError("");
     void signOut(
       () => {
-        goSignIn();
+        // goSignIn();
+        window.location.reload();
       },
       () => {
         setLogoutError("Unable to log out");
@@ -343,9 +344,10 @@ export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
           />
         </div>
         {logoutError && (
-          <p className="px-6 pb-2 text-right text-sm text-rose-400 md:px-12 lg:px-20">
-            {logoutError}
-          </p>
+          <PlayText.Primary
+            id={logoutError}
+            className="px-6 pb-2 text-right text-sm text-rose-400 md:px-12 lg:px-20"
+          />
         )}
       </header>
 
@@ -356,10 +358,22 @@ export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
       </main>
 
       <footer className="border-t border-white/10 bg-slate-950/80 backdrop-blur-xl py-6 text-center text-sm text-slate-400">
-        <div className="mx-auto max-w-7xl px-6 md:px-12 lg:px-20">
+        <div className="mx-auto max-w-7xl px-6 md:px-12 lg:px-20 flex items-center justify-center gap-4 flex-col md:flex-row">
+          <Link
+            href={ROUTES.PRIVACY_POLICY}
+            className="rounded-xl p-2 text-sm font-medium text-slate-200 hover:bg-white/10 transition-colors"
+          >
+            <PlayText.Primary id="privacy-policy" />
+          </Link>
           <p>
             &copy; {new Date().getFullYear()} playbook. All rights reserved.
           </p>
+          <Link
+            href={ROUTES.TERMS_OF_SERVICE}
+            className="rounded-xl p-2 text-sm font-medium text-slate-200 hover:bg-white/10 transition-colors"
+          >
+            <PlayText.Primary id="terms-of-service" />
+          </Link>
         </div>
       </footer>
     </div>

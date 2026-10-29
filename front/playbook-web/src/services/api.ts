@@ -1,6 +1,9 @@
 import { ApiError } from "@/types/api";
 import axios, { AxiosError } from "axios";
 
+const SUPPORTED_LOCALES = new Set(["en", "fr", "ar"]);
+const DEFAULT_LOCALE = "en";
+
 export const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000",
   withCredentials: true,
@@ -22,10 +25,20 @@ api.interceptors.response.use(
     const data = error.response?.data;
     const url = error.config?.url ?? "";
 
-    const isLoginRequest = url.includes("/auth");
+    if (typeof window !== "undefined" && status === 401) {
+      const currentPath = window.location.pathname;
 
-    if (status === 401 && !isLoginRequest) {
-      window.location.href = "/en/login";
+      const pathSegments = currentPath.split("/");
+      const currentLocale = SUPPORTED_LOCALES.has(pathSegments[1])
+        ? pathSegments[1]
+        : DEFAULT_LOCALE;
+
+      const isAuthPath = currentPath.includes("/auth");
+      const isAuthApiRequest = url.includes("/auth");
+
+      if (!isAuthPath && !isAuthApiRequest) {
+        window.location.href = `/${currentLocale}/auth?mode=signin`;
+      }
     }
 
     const apiError: ApiError = {

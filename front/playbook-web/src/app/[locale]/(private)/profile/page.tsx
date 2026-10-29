@@ -62,7 +62,12 @@ export const ProfilePage = () => {
   }, []);
 
   if (isLoading) {
-    return <div className="py-12 text-center text-slate-300">Loading...</div>;
+    return (
+      <PlayText.Primary
+        id="loading"
+        className="py-12 text-center text-slate-300"
+      />
+    );
   }
 
   if (!connectedUser) {

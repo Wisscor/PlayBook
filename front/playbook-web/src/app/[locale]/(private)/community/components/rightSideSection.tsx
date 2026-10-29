@@ -51,7 +51,8 @@ export const RightSideSection: React.FC<{
           <PlayText.Span
             texts={[
               {
-                content: `${total} ${t("available")}`,
+                content: `available`,
+                values: { total: total },
               },
             ]}
             className="text-xs text-slate-400 font-medium"

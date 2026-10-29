@@ -36,7 +36,7 @@ export const FollowersPage = () => {
   if (isLoading) {
     followersContent = (
       <PlayText.Primary
-        content="Loading..."
+        id="loading"
         className="text-sm text-slate-400 text-center py-8"
       />
     );
@@ -44,7 +44,7 @@ export const FollowersPage = () => {
     followersContent = (
       <div className="rounded-3xl border border-dashed border-white/10 bg-white/5 p-12 text-center backdrop-blur-xl">
         <PlayText.Primary
-          content={error || "no-followers"}
+          id={error || "no-followers"}
           className="text-sm font-medium text-slate-400"
         />
       </div>
