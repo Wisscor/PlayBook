@@ -4,6 +4,7 @@ export interface PostData {
   created_at: string;
   updated_at: string;
   author?: {
+    id?: string;
     username: string;
     firstname: string;
     lastname: string;
@@ -52,6 +53,7 @@ export interface Message {
 
 export interface Contact {
   id: string;
+  profileId: string;
   conversationId: string;
   name: string;
   username: string;

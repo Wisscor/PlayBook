@@ -3,6 +3,7 @@
 import React from "react";
 import { PlayText } from "@/components/ui/Text";
 import { Post as PostData } from "@/types/api";
+import { useNavigation } from "@/hooks/useNavigation";
 
 export interface PostProps {
   post: PostData;
@@ -10,7 +11,9 @@ export interface PostProps {
 }
 
 export const Post: React.FC<PostProps> = ({ post, onDelete }) => {
+  const { goUserProfile } = useNavigation();
   const author = post.author ?? post.user;
+  const authorId = author?.id;
   const authorName = author
     ? `${author.firstname} ${author.lastname}`
     : undefined;
@@ -18,14 +21,32 @@ export const Post: React.FC<PostProps> = ({ post, onDelete }) => {
   return (
     <article className="group relative flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-white/5 text-white shadow-xl backdrop-blur-xl transition-all duration-300 hover:border-white/20 hover:bg-white/10 hover:shadow-2xl">
       <div className="flex items-center justify-between border-b border-white/10 bg-black/20 px-5 py-3">
-        <PlayText.Span
-          texts={[
-            {
-              content: authorName ?? "Post",
-              className: "text-xs font-semibold text-slate-200",
-            },
-          ]}
-        />
+        {authorId ? (
+          <button
+            type="button"
+            onClick={() => goUserProfile(authorId)}
+            aria-label={`View ${authorName}'s profile`}
+            className="cursor-pointer rounded text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+          >
+            <PlayText.Span
+              texts={[
+                {
+                  content: authorName ?? "Post",
+                  className: "text-xs font-semibold text-slate-200",
+                },
+              ]}
+            />
+          </button>
+        ) : (
+          <PlayText.Span
+            texts={[
+              {
+                content: authorName ?? "Post",
+                className: "text-xs font-semibold text-slate-200",
+              },
+            ]}
+          />
+        )}
         <PlayText.Primary
           content={new Date(post.created_at).toLocaleDateString()}
           className="text-xs font-medium uppercase tracking-wider text-slate-400"

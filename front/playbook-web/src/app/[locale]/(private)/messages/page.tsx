@@ -31,6 +31,7 @@ export const MessagesPage = () => {
     () =>
       conversations.map((conversation) => ({
         id: conversation.id,
+        profileId: conversation.peer_id,
         conversationId: conversation.id,
         name: conversation.peer_username,
         username: conversation.peer_username,

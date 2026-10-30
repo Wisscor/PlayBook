@@ -7,11 +7,13 @@ import { useSearchParams } from "next/navigation";
 import { api } from "@/services/api";
 import { useAuth } from "@/hooks/contexts/authContext";
 import { UserSummary } from "@/types/user";
+import { useNavigation } from "@/hooks/useNavigation";
 
 export const FollowersPage = () => {
   const t = useTranslations();
   const searchParams = useSearchParams();
   const { connectedUser } = useAuth();
+  const { goUserProfile } = useNavigation();
   const [savedUserId] = React.useState<string | null>(() =>
     typeof window === "undefined"
       ? null
@@ -114,21 +116,34 @@ export const FollowersPage = () => {
                 key={follower.id}
                 className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-xl flex items-center justify-between shadow-lg hover:bg-white/10 transition-all"
               >
-                <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => goUserProfile(follower.id)}
+                  aria-label={`View ${follower.firstname} ${follower.lastname}'s profile`}
+                  className="flex min-w-0 items-center gap-3 rounded-xl text-left cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+                >
                   <div className="flex h-12 w-12 items-center justify-center rounded-full bg-linear-to-tr from-indigo-950 to-indigo-600 font-bold text-sm text-white shadow-md">
-                    {follower.avatar}
+                    {follower.avatar ? (
+                      <img
+                        src={`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}/${follower.avatar}`}
+                        alt=""
+                        className="h-full w-full rounded-full object-cover"
+                      />
+                    ) : (
+                      `${follower.firstname.charAt(0)}${follower.lastname.charAt(0)}`
+                    )}
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <PlayText.Primary
                       content={`${follower.firstname} ${follower.lastname}`}
-                      className="font-bold text-sm text-white"
+                      className="font-bold text-sm text-white truncate"
                     />
                     <PlayText.Primary
-                      content={follower.username}
-                      className="text-xs text-slate-400"
+                      content={`@${follower.username}`}
+                      className="text-xs text-slate-400 truncate"
                     />
                   </div>
-                </div>
+                </button>
 
                 <button
                   type="button"

@@ -4,6 +4,7 @@ import { PlayText } from "@/components/ui/Text";
 import { MatchAnnouncement } from "@/types/api";
 import { useTranslations } from "next-intl";
 import React, { useEffect } from "react";
+import { useNavigation } from "@/hooks/useNavigation";
 
 export const RightSideSection: React.FC<{
   userId?: string;
@@ -15,6 +16,7 @@ export const RightSideSection: React.FC<{
   scroll: (pageNumber: number) => void;
 }> = ({ userId, matches, pageSize, total, pageNumber, pages, scroll }) => {
   const t = useTranslations();
+  const { goUserProfile } = useNavigation();
   const [matchSearchQuery, setMatchSearchQuery] = React.useState<string>("");
   const [filteredMatches, setFilteredMatches] =
     React.useState<MatchAnnouncement[]>(matches);
@@ -88,6 +90,15 @@ export const RightSideSection: React.FC<{
                     className="text-[10px] font-semibold bg-white/10 px-2 py-0.5 rounded-full text-sky-400"
                   />
                 </div>
+                {match.owner.id !== userId && (
+                  <button
+                    type="button"
+                    onClick={() => goUserProfile(match.owner.id)}
+                    className="self-start text-xs text-slate-300 underline-offset-2 hover:text-white hover:underline cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 rounded"
+                  >
+                    {match.owner.firstname} @{match.owner.username}
+                  </button>
+                )}
                 <PlayText.Primary
                   content={`${new Date(match.start_time).toISOString().split("T")[0]} • ${new Date(match.start_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} - ${new Date(match.end_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`}
                   className="text-[11px] text-slate-400"

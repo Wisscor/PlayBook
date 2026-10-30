@@ -1,12 +1,12 @@
 import { PlayText } from "@/components/ui/Text";
 import React from "react";
-import { Link } from "../../../../../../i18n/navigation";
-import { ROUTES } from "@/lib/constants";
 import { Feed } from "@/types/api";
+import { useNavigation } from "@/hooks/useNavigation";
 
 export const PostsFeed: React.FC<{
   feeds: Feed[];
 }> = ({ feeds }) => {
+  const { goUserProfile } = useNavigation();
   const getTimeAgo = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -30,9 +30,11 @@ export const PostsFeed: React.FC<{
           key={feed.id}
           className="rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl p-6 shadow-xl flex flex-col gap-4"
         >
-          <Link
-            href={ROUTES.USER_PROFILE}
-            className="flex items-center justify-between"
+          <button
+            type="button"
+            onClick={() => goUserProfile(feed.author.id)}
+            aria-label={`View ${feed.author.firstname} ${feed.author.lastname}'s profile`}
+            className="flex items-center justify-between text-left cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 rounded-xl"
           >
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-linear-to-tr from-indigo-900 to-indigo-600 font-bold text-sm text-white shadow-md">
@@ -55,7 +57,7 @@ export const PostsFeed: React.FC<{
                 />
               </div>
             </div>
-          </Link>
+          </button>
 
           <PlayText.Primary
             content={feed.caption}
