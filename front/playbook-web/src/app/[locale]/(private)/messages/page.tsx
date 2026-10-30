@@ -5,7 +5,6 @@ import { useAuth } from "@/hooks/contexts/authContext";
 import { useChat } from "@/hooks/contexts/chatContext";
 import { Contact, Message } from "@/types/api";
 import { api } from "@/services/api";
-import { useSearchParams } from "next/navigation";
 import React, { useEffect, useMemo, useState } from "react";
 import { ContactsList } from "./components/contactsList";
 import { Conversation } from "./components/conversation";
@@ -21,10 +20,7 @@ export const MessagesPage = () => {
     markRead,
     connected,
   } = useChat();
-  const searchParams = useSearchParams();
-  const [selectedContactId, setSelectedContactId] = useState(
-    searchParams.get("conversation") ?? "",
-  );
+  const [selectedContactId, setSelectedContactId] = useState("");
   const [messageInput, setMessageInput] = useState("");
   const [mobileView, setMobileView] = useState<"list" | "chat">("list");
   const [peerAvatars, setPeerAvatars] = useState<Record<string, string>>({});
@@ -101,12 +97,7 @@ export const MessagesPage = () => {
     [connectedUser?.id, conversations, messages, onlineUserIds, peerAvatars],
   );
 
-  const requestedConversationId = searchParams.get("conversation");
-  const selectedConversationId =
-    requestedConversationId &&
-    conversations.some((item) => item.id === requestedConversationId)
-      ? requestedConversationId
-      : selectedContactId;
+  const selectedConversationId = selectedContactId;
   const firstConversationId = contacts[0]?.id;
 
   useEffect(() => {
