@@ -21,7 +21,7 @@ export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
   const pathname = usePathname();
   const [isExpanded, setIsExpanded] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const [logoutError, setLogoutError] = useState("");
+  const [logoutError, setLogoutError] = useState<string | undefined>(undefined);
   const { goMessages, goSearch } = useNavigation();
 
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
@@ -87,8 +87,8 @@ export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
       () => {
         window.location.reload();
       },
-      () => {
-        setLogoutError("Unable to log out");
+      (error) => {
+        setLogoutError(error);
         setIsLoggingOut(false);
       },
     );

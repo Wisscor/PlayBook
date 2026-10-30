@@ -17,15 +17,11 @@ export const FollowCard: React.FC<{
   };
 
   const followUser = (id: string) => {
-    void follow(id, onSuccess, (error) => {
-      console.error("Unable to update follow relationship:", error);
-    });
+    void follow(id, onSuccess);
   };
 
   const unfollowUser = (id: string) => {
-    void unfollow(id, onSuccess, (error) => {
-      console.error("Unable to update follow relationship:", error);
-    });
+    void unfollow(id, onSuccess);
   };
 
   return (

@@ -13,13 +13,9 @@ export const PlayRequestCard: React.FC<{
   );
 
   React.useEffect(() => {
-    void getMatch(
-      request.announcement_id,
-      (match) => {
-        setMatch(match);
-      },
-      () => {},
-    );
+    void getMatch(request.announcement_id, (match) => {
+      setMatch(match);
+    });
   }, [request.id]);
 
   if (match) {

@@ -19,9 +19,6 @@ export const usePlayRequestsController = () => {
           onSuccess();
         }
       })
-      .catch((error) => {
-        console.error("Error joining match >>>>", error);
-      })
       .finally(() => {
         setIsJoining(false);
       });
@@ -49,9 +46,6 @@ export const usePlayRequestsController = () => {
           setRequestsPageNumber(res.data.page);
           setRequestsPages(res.data.pages);
         }
-      })
-      .catch((error) => {
-        console.error("Error fetching requests >>>>", error);
       });
   };
 
@@ -64,9 +58,6 @@ export const usePlayRequestsController = () => {
         if (res.status == 200) {
           setRequests(res.data.items);
         }
-      })
-      .catch((error) => {
-        console.error("Error fetching announcement requests >>>>", error);
       });
   };
 

@@ -3,6 +3,7 @@ import { api } from "./api";
 import { pageSize } from "@/lib/constants";
 import React from "react";
 import { useAuth } from "@/hooks/contexts/authContext";
+import { ApiError } from "@/types/api";
 
 export const useUserController = () => {
   const { setIsLoading } = useAuth();
@@ -13,7 +14,7 @@ export const useUserController = () => {
 
   const loadUsers = async (
     pageNumber: number,
-    onError?: () => void,
+    onError?: (error: string) => void,
     searchQuery?: string,
   ) => {
     let defaultParams = `page=${pageNumber}&size=${pageSize}`;
@@ -31,9 +32,8 @@ export const useUserController = () => {
           setUserPageNumber(res.data.page);
         }
       })
-      .catch((error) => {
-        console.error("Error loading users >>>", error);
-        onError?.();
+      .catch((error: ApiError) => {
+        onError?.(error?.errorCode || "error-loading-users");
       })
       .finally(() => {
         setIsLoading(false);
@@ -41,16 +41,12 @@ export const useUserController = () => {
   };
 
   const getUser = async (userId: string) => {
-    try {
-      const res = await api.get<User>(`/users/${userId}`);
+    const res = await api.get<User>(`/users/${userId}`);
 
-      if (res.status == 200) {
-        return res.data;
-      }
-      return null;
-    } catch (error) {
-      console.error("error getting user >>>", error);
+    if (res.status == 200) {
+      return res.data;
     }
+    return null;
   };
 
   return {

@@ -73,14 +73,9 @@ export const Match: React.FC<MatchProps> = ({ match, onEdit, onDelete }) => {
           remaining_player_slots: match.playerNbr as number,
         };
 
-        void updateMatch(
-          match.id,
-          updatedMatch,
-          () => {
-            window.location.reload();
-          },
-          () => {},
-        );
+        void updateMatch(match.id, updatedMatch, () => {
+          window.location.reload();
+        });
       }
     }, 5000);
 

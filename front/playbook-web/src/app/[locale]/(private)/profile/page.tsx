@@ -46,8 +46,6 @@ export const ProfilePage = () => {
       setIsLoading(true);
 
       await uploadAvatar(file);
-    } catch (error) {
-      console.error("Failed to upload avatar:", error);
     } finally {
       setIsLoading(false);
 

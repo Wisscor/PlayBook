@@ -33,7 +33,7 @@ export const EditProfilePage = () => {
     bio: false,
   });
 
-  const [error, setError] = useState("");
+  const [error, setError] = useState<string | undefined>(undefined);
 
   const isSomethingChanged = () => {
     if (!connectedUser) return false;
@@ -315,8 +315,8 @@ export const EditProfilePage = () => {
                     bio: false,
                   });
                 },
-                () => {
-                  setError("Unable to update your profile");
+                (error) => {
+                  setError(error);
                 },
               );
             }}

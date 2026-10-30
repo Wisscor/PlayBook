@@ -30,8 +30,7 @@ export const PostModal: React.FC<{
         close();
       },
       (requestError) => {
-        console.error("Unable to create post:", requestError);
-        setError("Unable to create your post");
+        setError(requestError);
       },
     );
   };

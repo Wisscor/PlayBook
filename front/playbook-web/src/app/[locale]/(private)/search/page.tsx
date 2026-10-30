@@ -21,8 +21,8 @@ export const SearchPage = () => {
   }, []);
 
   useEffect(() => {
-    void loadUsers(userPageNumber, () => {
-      setError("error-loading-users");
+    void loadUsers(userPageNumber, (error) => {
+      setError(error);
     });
   }, [connectedUser?.id]);
 

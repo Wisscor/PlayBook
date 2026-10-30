@@ -1,5 +1,6 @@
 import { useAuth } from "@/hooks/contexts/authContext";
 import {
+  ApiError,
   MatchAnnouncement,
   MatchAnnouncementPaginated,
   MatchAnnouncementRequestData,
@@ -36,7 +37,10 @@ export const useMatchController = () => {
       });
   };
 
-  const getSports = async (onSuccess: () => void, onError: () => void) => {
+  const getSports = async (
+    onSuccess: () => void,
+    onError: (error?: string) => void,
+  ) => {
     await api
       .get<Sport[]>("/sports")
       .then((res) => {
@@ -45,9 +49,8 @@ export const useMatchController = () => {
           onSuccess();
         }
       })
-      .catch((error) => {
-        onError();
-        console.error("Error fetching sports >>>>", error);
+      .catch((error: ApiError) => {
+        onError(error.errorCode);
       });
   };
 
@@ -55,7 +58,7 @@ export const useMatchController = () => {
     userId?: string,
     page?: number,
     size?: number,
-    onError?: () => void,
+    onError?: (error?: string) => void,
     additionalFilters?: {
       field: string;
       value: string;
@@ -81,37 +84,25 @@ export const useMatchController = () => {
           setTotal(res.data.total);
         }
       })
-      .catch((error) => {
-        console.error("Error fetching matches >>>>", error);
-        onError?.();
+      .catch((error: ApiError) => {
+        onError?.(error.errorCode);
       })
       .finally(() => {
         setIsLoading(false);
       });
   };
 
-  const deleteMatch = async (
-    id: string,
-    onSuccess: () => void,
-    onError: () => void,
-  ) => {
-    await api
-      .delete(`/match-announcements/${id}`)
-      .then((res) => {
-        if (res.status === 204) {
-          onSuccess();
-        }
-      })
-      .catch((error) => {
-        console.error("Error deleting match >>>>", error);
-        onError();
-      });
+  const deleteMatch = async (id: string, onSuccess: () => void) => {
+    await api.delete(`/match-announcements/${id}`).then((res) => {
+      if (res.status === 204) {
+        onSuccess();
+      }
+    });
   };
 
   const getMatch = async (
     id: string,
     onSuccess: (match: MatchAnnouncement) => void,
-    onError: () => void,
   ) => {
     await api
       .get<MatchAnnouncement>(`/match-announcements/${id}`)
@@ -119,10 +110,6 @@ export const useMatchController = () => {
         if (res.status === 200) {
           onSuccess(res.data);
         }
-      })
-      .catch((error) => {
-        console.error("Error fetching  match >>>>", error);
-        onError();
       });
   };
 
@@ -130,7 +117,6 @@ export const useMatchController = () => {
     id: string,
     payload: UpdatedMatchRequest,
     onSuccess: () => void,
-    onError: () => void,
   ) => {
     await api
       .patch<MatchAnnouncement>(`/match-announcements/${id}`, payload)
@@ -138,10 +124,6 @@ export const useMatchController = () => {
         if (res.status === 200) {
           onSuccess();
         }
-      })
-      .catch((error) => {
-        console.error("Error updating match");
-        onError();
       });
   };
 

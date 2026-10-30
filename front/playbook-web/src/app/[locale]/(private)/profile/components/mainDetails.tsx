@@ -31,27 +31,15 @@ export const MainDetails: React.FC<{ user: User; comingFrom: COMING_FROM }> = ({
     if (!user.id || isFollowPending) return;
     setIsFollowPending(true);
     if (isFollowing) {
-      void unfollow(
-        user.id,
-        () => {
-          setIsFollowing(false);
-          setIsFollowPending(false);
-        },
-        () => {
-          console.error("Unable to unfollow user");
-        },
-      );
+      void unfollow(user.id, () => {
+        setIsFollowing(false);
+        setIsFollowPending(false);
+      });
     } else {
-      void follow(
-        user.id,
-        () => {
-          setIsFollowing(true);
-          setIsFollowPending(false);
-        },
-        () => {
-          console.error("Unable to follow user");
-        },
-      );
+      void follow(user.id, () => {
+        setIsFollowing(true);
+        setIsFollowPending(false);
+      });
     }
   };
 

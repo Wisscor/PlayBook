@@ -60,8 +60,8 @@ export const MatchModal: React.FC<MatchModalProps> = ({
       setError(undefined);
       void getSports(
         () => {},
-        () => {
-          setError("Unable to load sports");
+        (error) => {
+          setError(error);
         },
       );
     }, 0);
@@ -94,9 +94,8 @@ export const MatchModal: React.FC<MatchModalProps> = ({
       };
       onSave(newForm);
       close();
-    } catch (requestError) {
-      console.error("Unable to save match:", requestError);
-      setError("Unable to save match");
+    } catch {
+      setError("unable-to-create-match");
     } finally {
       setError(undefined);
     }

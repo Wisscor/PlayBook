@@ -41,7 +41,7 @@ export const MatchesSection: React.FC = () => {
         setIsLoading(true);
 
         if (connectedUser?.id) {
-          void loadMatches(connectedUser.id, pageNumber, pageSize, () => {});
+          void loadMatches(connectedUser.id, pageNumber, pageSize);
         }
       });
     }, 0);
@@ -59,16 +59,9 @@ export const MatchesSection: React.FC = () => {
     };
 
     if (selectedMatch?.id) {
-      void updateMatch(
-        selectedMatch.id,
-        payload,
-        () => {
-          window.location.reload();
-        },
-        () => {
-          console.error("Error updating match");
-        },
-      );
+      void updateMatch(selectedMatch.id, payload, () => {
+        window.location.reload();
+      });
     } else {
       void addMatch(payload, () => {
         setSelectedMatch(undefined);
@@ -165,15 +158,9 @@ export const MatchesSection: React.FC = () => {
                 setIsModalOpen(true);
               }}
               onDelete={() => {
-                void deleteMatch(
-                  match.id,
-                  () => {
-                    window.location.reload();
-                  },
-                  () => {
-                    console.error("Error deleting match");
-                  },
-                );
+                void deleteMatch(match.id, () => {
+                  window.location.reload();
+                });
               }}
             />
           ))}

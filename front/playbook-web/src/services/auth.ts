@@ -1,6 +1,6 @@
 import { useAuth } from "@/hooks/contexts/authContext";
 import { useNavigation } from "@/hooks/useNavigation";
-import { SignInData, SignUpData } from "@/types/api";
+import { ApiError, SignInData, SignUpData } from "@/types/api";
 import { User } from "@/types/user";
 import React from "react";
 import { api } from "./api";
@@ -49,7 +49,10 @@ export const useAuthController = () => {
       });
   };
 
-  const signOut = async (onSuccess: () => void, onFailed?: () => void) => {
+  const signOut = async (
+    onSuccess: () => void,
+    onFailed?: (error?: string) => void,
+  ) => {
     await api
       .post("/auth/logout")
       .then((res) => {
@@ -59,9 +62,8 @@ export const useAuthController = () => {
           goSignIn();
         }
       })
-      .catch((error) => {
-        console.error("error >>>>", error);
-        onFailed?.();
+      .catch((error: ApiError) => {
+        onFailed?.(error.errorCode);
       });
   };
 

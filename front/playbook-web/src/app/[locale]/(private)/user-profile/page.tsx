@@ -21,15 +21,13 @@ export const UserProfilePage = () => {
     }
 
     const loadUser = async () => {
-      try {
-        const fetchedUser = await getUser(userId);
-        setUser(fetchedUser);
-      } catch (requestError) {
-        console.error("Unable to load user profile:", requestError);
-        setError("Unable to load user profile");
-      } finally {
-        setIsLoading(false);
+      const fetchedUser = await getUser(userId);
+      if (!fetchedUser) {
+        setError("unable-to-load-user");
+        return;
       }
+      setUser(fetchedUser);
+      setIsLoading(false);
     };
 
     void loadUser();
