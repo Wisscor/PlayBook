@@ -12,6 +12,7 @@ interface InputProps {
   className?: string;
   onBlur?: React.FocusEventHandler<HTMLInputElement>;
   onInputClick?: React.MouseEventHandler<HTMLInputElement>;
+   max: number;
 }
 
 interface AreaProps {
@@ -34,11 +35,13 @@ const Primary: React.FC<InputProps> = ({
   className,
   onBlur,
   onInputClick,
+  max,
 }) => {
   const t = useTranslations();
 
   return (
     <input
+      maxLength={max}
       onClick={onInputClick}
       onBlur={onBlur}
       value={value}

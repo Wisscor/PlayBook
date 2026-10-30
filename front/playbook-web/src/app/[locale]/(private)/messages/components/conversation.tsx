@@ -108,6 +108,7 @@ export const Conversation: React.FC<{
       >
         <PlayInput.Primary
           type="text"
+          max={500}
           value={messageInput}
           onChange={(e) => setMessageInput(e.target.value)}
           placeholder="type-message"

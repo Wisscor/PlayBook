@@ -19,7 +19,7 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
 
-  (error: AxiosError<{ detail?: string; message?: string }>) => {
+  (error: AxiosError<{ detail?: unknown; message?: unknown }>) => {
     const status = error.response?.status;
     const data = error.response?.data;
 
@@ -28,13 +28,18 @@ api.interceptors.response.use(
     if (!error.response) {
       message = "Unable to connect to the server.";
     } else {
-      message = data?.detail ?? data?.message ?? error.message ?? message;
+      const responseMessage = data?.detail ?? data?.message;
+      if (typeof responseMessage === "string") {
+        message = responseMessage;
+      } else if (error.message) {
+        message = error.message;
+      }
     }
 
     const apiError: ApiError = {
       message,
       status: status ?? null,
-      details: data?.detail,
+      details: data?.detail ?? data?.message,
     };
 
     return Promise.reject(apiError);

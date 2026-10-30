@@ -33,6 +33,7 @@ export const ROUTES = {
   SEARCH: "/search",
   MESSAGES: "/messages",
   FOLLOWERS: "/followers",
+  MATCH_PARTICIPANTS: "/match-participants",
 } as const;
 
 export enum COMING_FROM {

@@ -25,5 +25,9 @@ export const useNavigation = () => {
       localStorage.setItem("userid_of_requested_user_for_followers", userId);
       push(`${ROUTES.FOLLOWERS}`);
     },
+    goMatchParticipants: (matchId: string) => {
+      localStorage.setItem("match_id_for_participants", matchId);
+      push(ROUTES.MATCH_PARTICIPANTS);
+    },
   };
 };

@@ -11,6 +11,7 @@ import MatchModal from "../../home/components/matchModal";
 import { Match } from "./match";
 import { useProfileController } from "@/services/profile";
 import { pageSize } from "@/lib/constants";
+import { useNavigation } from "@/hooks/useNavigation";
 
 export const MatchesSection: React.FC = () => {
   const t = useTranslations();
@@ -30,6 +31,7 @@ export const MatchesSection: React.FC = () => {
   >(undefined);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { fetchUser } = useProfileController();
+  const { goMatchParticipants } = useNavigation();
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -155,6 +157,7 @@ export const MatchesSection: React.FC = () => {
                 setSelectedMatch(match);
                 setIsModalOpen(true);
               }}
+              onViewPlayers={goMatchParticipants}
               onDelete={() => {
                 void deleteMatch(
                   match.id,

@@ -5,6 +5,8 @@ import { MatchAnnouncement } from "@/types/api";
 import { useTranslations } from "next-intl";
 import React, { useEffect } from "react";
 import { useNavigation } from "@/hooks/useNavigation";
+import { useMatchController } from "@/services/match";
+import { ApiError } from "@/types/api";
 
 export const RightSideSection: React.FC<{
   userId?: string;
@@ -17,6 +19,15 @@ export const RightSideSection: React.FC<{
 }> = ({ userId, matches, pageSize, total, pageNumber, pages, scroll }) => {
   const t = useTranslations();
   const { goUserProfile } = useNavigation();
+  const { requestToJoinMatch } = useMatchController();
+  const [joiningMatchId, setJoiningMatchId] = React.useState<string | null>(null);
+  const [joinedMatchIds, setJoinedMatchIds] = React.useState<Set<string>>(
+    () => new Set(),
+  );
+  const [joinError, setJoinError] = React.useState<{
+    matchId: string;
+    message: string;
+  } | null>(null);
   const [matchSearchQuery, setMatchSearchQuery] = React.useState<string>("");
   const [filteredMatches, setFilteredMatches] =
     React.useState<MatchAnnouncement[]>(matches);
@@ -40,6 +51,31 @@ export const RightSideSection: React.FC<{
   useEffect(() => {
     setFilteredMatches(matches);
   }, [matches]);
+
+  const handleJoinMatch = (matchId: string) => {
+    if (joiningMatchId || joinedMatchIds.has(matchId)) return;
+    setJoinError("");
+    setJoiningMatchId(matchId);
+    void requestToJoinMatch(
+      matchId,
+      () => {
+        setJoinedMatchIds((current) => new Set(current).add(matchId));
+        setJoiningMatchId(null);
+      },
+      (error) => {
+        const apiError = error as ApiError;
+        setJoinError({
+          matchId,
+          message:
+            apiError.message ||
+            (typeof apiError.details === "string"
+              ? apiError.details
+              : "Unable to join match"),
+        });
+        setJoiningMatchId(null);
+      },
+    );
+  };
 
   return (
     <div className="col-span-1 lg:col-span-1 flex flex-col gap-6">
@@ -116,12 +152,23 @@ export const RightSideSection: React.FC<{
 
                   {match.owner.id !== userId && (
                     <PlayButton.Primary
+                      onClick={() => handleJoinMatch(match.id)}
+                      disabled={
+                        joiningMatchId === match.id ||
+                        joinedMatchIds.has(match.id)
+                      }
                       textClassName="text-xs font-semibold text-white"
                       title="join-match"
-                      className="rounded-lg bg-white/10 px-3 py-1  hover:bg-white/20 transition-all cursor-pointer"
+                      className="rounded-lg bg-white/10 px-3 py-1 hover:bg-white/20 transition-all cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
                     />
                   )}
                 </div>
+                {joinError?.matchId === match.id && joiningMatchId === null && (
+                  <PlayText.Primary
+                    content={joinError.message}
+                    className="text-xs text-rose-400"
+                  />
+                )}
               </div>
             ))
           )}
