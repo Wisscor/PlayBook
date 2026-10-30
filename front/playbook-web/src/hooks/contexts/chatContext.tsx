@@ -229,10 +229,16 @@ export function ChatProvider({
       });
     }, 0);
     connect();
+    const heartbeatTimer = setInterval(() => {
+      if (socketRef.current?.readyState === WebSocket.OPEN) {
+        socketRef.current.send(JSON.stringify({ type: "ping" }));
+      }
+    }, 30_000);
 
     return () => {
       disposed = true;
       clearTimeout(loadTimer);
+      clearInterval(heartbeatTimer);
       if (reconnectRef.current) clearTimeout(reconnectRef.current);
       socketRef.current?.close();
       socketRef.current = null;

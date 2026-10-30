@@ -81,9 +81,12 @@ export const ContactsList: React.FC<{
                       contact.avatar
                     )}
                   </button>
-                  {contact.online && (
-                    <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-emerald-500 border-2 border-slate-950" />
-                  )}
+                  <span
+                    aria-label={contact.online ? "Online" : "Offline"}
+                    className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-slate-950 ${
+                      contact.online ? "bg-emerald-500" : "bg-slate-500"
+                    }`}
+                  />
                 </div>
                 <div className="flex flex-col flex-1 min-w-0">
                   <div className="flex justify-between items-center">

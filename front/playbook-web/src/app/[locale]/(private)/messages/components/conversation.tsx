@@ -41,9 +41,12 @@ export const Conversation: React.FC<{
               activeContact.avatar
             )}
           </div>
-          {activeContact.online && (
-            <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-500 border-2 border-slate-950" />
-          )}
+          <span
+            aria-label={activeContact.online ? "Online" : "Offline"}
+            className={`absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-slate-950 ${
+              activeContact.online ? "bg-emerald-500" : "bg-slate-500"
+            }`}
+          />
         </button>
         <button
           type="button"

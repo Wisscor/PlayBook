@@ -117,6 +117,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 "username": user.username,
             }
         )
+        contacts = await connection.on_connect(websocket, user, first_socket)
         receive_task = asyncio.create_task(receive_loop(ctx))
         watchdog_task = asyncio.create_task(_idle_watchdog(ctx))
         tasks = (receive_task, watchdog_task)
