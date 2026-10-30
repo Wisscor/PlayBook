@@ -71,7 +71,15 @@ export const ContactsList: React.FC<{
                     aria-label={`View ${contact.name}'s profile`}
                     className="flex h-11 w-11 items-center justify-center rounded-full bg-linear-to-tr from-indigo-950 to-indigo-600 font-bold text-sm text-white shadow-md cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
                   >
-                    {contact.avatar}
+                    {contact.avatarUrl ? (
+                      <img
+                        src={`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}/${contact.avatarUrl}`}
+                        alt=""
+                        className="h-full w-full rounded-full object-cover"
+                      />
+                    ) : (
+                      contact.avatar
+                    )}
                   </button>
                   {contact.online && (
                     <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-emerald-500 border-2 border-slate-950" />

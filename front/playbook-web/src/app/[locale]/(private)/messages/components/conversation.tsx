@@ -31,7 +31,15 @@ export const Conversation: React.FC<{
           className="relative shrink-0 cursor-pointer rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
         >
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-linear-to-tr from-indigo-950 to-indigo-600 font-bold text-sm text-white shadow-md">
-            {activeContact.avatar}
+            {activeContact.avatarUrl ? (
+              <img
+                src={`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}/${activeContact.avatarUrl}`}
+                alt=""
+                className="h-full w-full rounded-full object-cover"
+              />
+            ) : (
+              activeContact.avatar
+            )}
           </div>
           {activeContact.online && (
             <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-500 border-2 border-slate-950" />

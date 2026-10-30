@@ -38,9 +38,17 @@ export const PostsFeed: React.FC<{
           >
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-linear-to-tr from-indigo-900 to-indigo-600 font-bold text-sm text-white shadow-md">
-                {feed.author
-                  ? `${feed.author.firstname.charAt(0)}${feed.author.lastname.charAt(0)}`
-                  : "P"}
+                {feed.author?.avatar ? (
+                  <img
+                    src={`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}/${feed.author.avatar}`}
+                    alt=""
+                    className="h-full w-full rounded-full object-cover"
+                  />
+                ) : feed.author ? (
+                  `${feed.author.firstname.charAt(0)}${feed.author.lastname.charAt(0)}`
+                ) : (
+                  "P"
+                )}
               </div>
               <div>
                 <PlayText.Primary

@@ -58,6 +58,7 @@ export interface Contact {
   name: string;
   username: string;
   avatar: string;
+  avatarUrl?: string;
   lastMessage: string;
   online: boolean;
   messages: Message[];

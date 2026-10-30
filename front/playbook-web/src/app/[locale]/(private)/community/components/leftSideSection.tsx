@@ -3,14 +3,22 @@ import { ROUTES } from "@/lib/constants";
 import React from "react";
 import { Link } from "../../../../../../i18n/navigation";
 import { User } from "@/types/user";
+import { useNavigation } from "@/hooks/useNavigation";
 
 export const LeftSideSection: React.FC<{
   user?: User;
 }> = ({ user }) => {
+  const { goProfile } = useNavigation();
+
   return (
     <div className="hidden lg:flex flex-col gap-4 col-span-1">
       <div className="rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl p-5 shadow-xl flex flex-col gap-5 sticky top-20">
-        <div className="flex flex-col items-center text-center gap-3 border-b border-white/10 pb-4">
+        <button
+          type="button"
+          onClick={goProfile}
+          aria-label="View your profile"
+          className="flex flex-col items-center text-center gap-3 border-b border-white/10 pb-4 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 rounded-xl"
+        >
           <div className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-white/20 bg-linear-to-tr from-indigo-950 to-indigo-600 font-extrabold text-lg text-white shadow-lg">
             {user?.avatar ? (
               <img
@@ -35,8 +43,7 @@ export const LeftSideSection: React.FC<{
               className="text-xs text-slate-400"
             />
           </div>
-        </div>
-
+        </button>
         <div className="flex flex-col gap-1.5">
           <Link
             href={ROUTES.PROFILE}

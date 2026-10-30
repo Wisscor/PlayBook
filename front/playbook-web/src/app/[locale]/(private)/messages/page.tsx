@@ -4,6 +4,7 @@ import { PlayButton } from "@/components/ui/Button";
 import { useAuth } from "@/hooks/contexts/authContext";
 import { useChat } from "@/hooks/contexts/chatContext";
 import { Contact, Message } from "@/types/api";
+import { api } from "@/services/api";
 import { useSearchParams } from "next/navigation";
 import React, { useEffect, useMemo, useState } from "react";
 import { ContactsList } from "./components/contactsList";
@@ -26,6 +27,43 @@ export const MessagesPage = () => {
   );
   const [messageInput, setMessageInput] = useState("");
   const [mobileView, setMobileView] = useState<"list" | "chat">("list");
+  const [peerAvatars, setPeerAvatars] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadPeerAvatars = async () => {
+      const profiles = await Promise.all(
+        conversations.map(async (conversation) => {
+          try {
+            const response = await api.get<{ avatar?: string }>(
+              `/users/${conversation.peer_id}`,
+            );
+            return [conversation.peer_id, response.data.avatar] as const;
+          } catch (error) {
+            console.error("Unable to load contact avatar:", error);
+            return [conversation.peer_id, undefined] as const;
+          }
+        }),
+      );
+
+      if (isMounted) {
+        setPeerAvatars(
+          Object.fromEntries(
+            profiles.filter(([, avatar]) => avatar) as [string, string][],
+          ),
+        );
+      }
+    };
+
+    if (conversations.length > 0) {
+      void loadPeerAvatars();
+    }
+
+    return () => {
+      isMounted = false;
+    };
+  }, [conversations]);
 
   const contacts = useMemo<Contact[]>(
     () =>
@@ -36,6 +74,7 @@ export const MessagesPage = () => {
         name: conversation.peer_username,
         username: conversation.peer_username,
         avatar: conversation.peer_username.slice(0, 2).toUpperCase(),
+        avatarUrl: peerAvatars[conversation.peer_id],
         lastMessage:
           messages[conversation.id]?.at(-1)?.body ?? "",
         online: onlineUserIds.includes(conversation.peer_id),
@@ -59,7 +98,7 @@ export const MessagesPage = () => {
           }));
         })(),
       })),
-    [connectedUser?.id, conversations, messages, onlineUserIds],
+    [connectedUser?.id, conversations, messages, onlineUserIds, peerAvatars],
   );
 
   const requestedConversationId = searchParams.get("conversation");
