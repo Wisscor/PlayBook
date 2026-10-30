@@ -30,7 +30,7 @@ export const FollowCard: React.FC<{
         onClick={() => {
           goUserProfile(follower.id);
         }}
-        className="flex items-center gap-3"
+        className="flex items-center gap-3 cursor-pointer"
       >
         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-linear-to-tr from-indigo-950 to-indigo-600 font-bold text-sm text-white shadow-md">
           {follower?.avatar ? (

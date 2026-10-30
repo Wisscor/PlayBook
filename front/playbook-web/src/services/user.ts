@@ -22,6 +22,8 @@ export const useUserController = () => {
       defaultParams += `&search=${searchQuery}`;
     }
 
+    setIsLoading(true);
+
     await api
       .get<UserPaginated>(`/users?${defaultParams}`)
       .then((res) => {

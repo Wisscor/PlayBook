@@ -4,7 +4,7 @@ import { useNavigation } from "@/hooks/useNavigation";
 import { useMatchController } from "@/services/match";
 import { useState } from "react";
 import { Action } from "./components/action";
-import MatchModal from "./components/matchModal";
+import { MatchModal } from "./components/matchModal";
 import { PostModal } from "./components/postModal";
 
 export const HomePage = () => {

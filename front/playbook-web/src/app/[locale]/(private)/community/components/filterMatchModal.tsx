@@ -142,5 +142,3 @@ export const FilterMatchModal: React.FC<{
     </PlayModal.Primary>
   );
 };
-
-export default FilterMatchModal;

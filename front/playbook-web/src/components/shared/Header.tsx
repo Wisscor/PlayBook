@@ -25,7 +25,7 @@ export const Header: React.FC = () => {
           alt="app-logo-dark"
           src="/logos/app-logo.png"
           fill
-          preload
+          loading="eager"
           sizes="(max-width: 640px) 112px, 128px"
           className="object-contain"
         />
@@ -156,5 +156,3 @@ export const Header: React.FC = () => {
     </header>
   );
 };
-
-export default Header;

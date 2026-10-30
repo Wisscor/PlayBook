@@ -6,7 +6,7 @@ import React from "react";
 import { api } from "./api";
 
 export const useAuthController = () => {
-  const { connectedUser, setConnectedUser } = useAuth();
+  const { setConnectedUser } = useAuth();
   const { goSignIn } = useNavigation();
   const [isWaiting, setIsWaiting] = React.useState(false);
 
@@ -69,7 +69,6 @@ export const useAuthController = () => {
 
   return {
     signIn,
-    connectedUser,
     signUp,
     signOut,
     isWaiting,

@@ -12,7 +12,8 @@ import { UserCard } from "./components/userCard";
 export const SearchPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [error, setError] = useState("");
-  const { loadUsers, userPages, userPageNumber, users } = useUserController();
+  const { loadUsers, userPages, userPageNumber, users, totalUsers } =
+    useUserController();
   const { fetchUser } = useProfileController();
   const { isLoading, connectedUser } = useAuth();
 
@@ -97,46 +98,48 @@ export const SearchPage = () => {
           {usersContent}
         </div>
 
-        <div className="flex items-center justify-center my-6 space-x-4">
-          {userPageNumber > 1 && (
-            <button
-              onClick={() => {
-                void loadUsers(userPageNumber - 1, () => {
-                  setError("error-loading-users");
-                });
-              }}
-              className="cursor-pointer"
-            >
-              <PlayText.Primary
-                id="previous"
-                className="text-sm text-slate-400 hover:text-slate-200 transition-color"
-              />
-            </button>
-          )}
-          <PlayText.Primary
-            content={
-              userPages > 0
-                ? `${userPageNumber}/${userPages}`
-                : userPageNumber.toString()
-            }
-            className="text-sm text-slate-400 font-bold transition-color"
-          />
-          {userPageNumber < userPages && (
-            <button
-              onClick={() => {
-                void loadUsers(userPageNumber + 1, () => {
-                  setError("error-loading-users");
-                });
-              }}
-              className="cursor-pointer"
-            >
-              <PlayText.Primary
-                id="next"
-                className="text-sm text-slate-400 hover:text-slate-200 transition-color"
-              />
-            </button>
-          )}
-        </div>
+        {totalUsers > 0 && (
+          <div className="flex items-center justify-center my-6 space-x-4">
+            {userPageNumber > 1 && (
+              <button
+                onClick={() => {
+                  void loadUsers(userPageNumber - 1, () => {
+                    setError("error-loading-users");
+                  });
+                }}
+                className="cursor-pointer"
+              >
+                <PlayText.Primary
+                  id="previous"
+                  className="text-sm text-slate-400 hover:text-slate-200 transition-color"
+                />
+              </button>
+            )}
+            <PlayText.Primary
+              content={
+                userPages > 0
+                  ? `${userPageNumber}/${userPages}`
+                  : userPageNumber.toString()
+              }
+              className="text-sm text-slate-400 font-bold transition-color"
+            />
+            {userPageNumber < userPages && (
+              <button
+                onClick={() => {
+                  void loadUsers(userPageNumber + 1, () => {
+                    setError("error-loading-users");
+                  });
+                }}
+                className="cursor-pointer"
+              >
+                <PlayText.Primary
+                  id="next"
+                  className="text-sm text-slate-400 hover:text-slate-200 transition-color"
+                />
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

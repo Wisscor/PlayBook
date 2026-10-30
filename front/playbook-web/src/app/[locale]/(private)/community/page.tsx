@@ -15,20 +15,11 @@ import { RightSideSection } from "./components/rightSideSection";
 import { usePlayRequestsController } from "@/services/playRequest";
 import { PlayText } from "@/components/ui/Text";
 
-interface CommunityMatch {
-  id: string;
-  name: string;
-  type: string;
-  players: string;
-  date: string;
-  startTime: string;
-  endTime: string;
-}
-
-export const CommunityPageContent: React.FC = () => {
+export const CommunityPage = () => {
   const { connectedUser, isLoading } = useAuth();
   const { fetchUser } = useProfileController();
-  const { loadFeeds, feedPageNumber, feeds } = usePostController();
+  const { loadFeeds, feedPageNumber, feeds, totalFeeds, feedPages } =
+    usePostController();
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [filterDate, setFilterDate] = useState<string>("");
   const [filterStartTime, setFilterStartTime] = useState<string>("");
@@ -88,14 +79,14 @@ export const CommunityPageContent: React.FC = () => {
   }, [isFilterModalOpen]);
 
   let feedContent: React.ReactNode;
-  if (isLoading) {
+  if (isLoading && totalFeeds === 0) {
     feedContent = (
       <PlayText.Primary
         id="loading"
         className="py-12 text-center text-slate-300"
       />
     );
-  } else if (feeds.length === 0) {
+  } else if (totalFeeds === 0 && !isLoading) {
     feedContent = (
       <PlayText.Primary
         id="no-feeds"
@@ -103,7 +94,47 @@ export const CommunityPageContent: React.FC = () => {
       />
     );
   } else {
-    feedContent = <PostsFeed feeds={feeds} />;
+    feedContent = (
+      <div>
+        <PostsFeed feeds={feeds} />
+        <div className="flex items-center justify-center my-6 space-x-4">
+          {feedPageNumber > 1 && (
+            <button
+              onClick={() => {
+                void loadFeeds(feedPageNumber - 1);
+              }}
+              className="cursor-pointer"
+            >
+              <PlayText.Primary
+                id="previous"
+                className="text-sm text-slate-400 hover:text-slate-200 transition-color"
+              />
+            </button>
+          )}
+          <PlayText.Primary
+            content={
+              feedPageNumber > 0
+                ? `${feedPageNumber}/${feedPages}`
+                : feedPageNumber.toString()
+            }
+            className="text-sm text-slate-400 font-bold transition-color"
+          />
+          {feedPageNumber < feedPages && (
+            <button
+              onClick={() => {
+                void loadFeeds(feedPageNumber + 1);
+              }}
+              className="cursor-pointer"
+            >
+              <PlayText.Primary
+                id="next"
+                className="text-sm text-slate-400 hover:text-slate-200 transition-color"
+              />
+            </button>
+          )}
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -150,4 +181,4 @@ export const CommunityPageContent: React.FC = () => {
   );
 };
 
-export default CommunityPageContent;
+export default CommunityPage;

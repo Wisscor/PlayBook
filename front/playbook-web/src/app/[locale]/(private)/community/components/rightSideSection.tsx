@@ -99,22 +99,6 @@ export const RightSideSection: React.FC<{
               />
             </button>
           )}
-        </div>
-
-        <div className="flex items-center justify-center my-6 space-x-4">
-          {pageNumber > 1 && (
-            <button
-              onClick={() => {
-                scroll(pageNumber - 1);
-              }}
-              className="cursor-pointer"
-            >
-              <PlayText.Primary
-                id="previous"
-                className="text-sm text-slate-400 hover:text-slate-200 transition-color"
-              />
-            </button>
-          )}
           <PlayText.Primary
             content={
               pages > 0 ? `${pageNumber}/${pages}` : pageNumber.toString()

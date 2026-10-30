@@ -1,38 +1,9 @@
-import localFont from "next/font/local";
+import { Oswald } from "next/font/google";
 
-export const myTTFFont = localFont({
-  src: [
-    {
-      path: "./fonts/Oswald-ExtraLight.ttf",
-      weight: "200",
-      style: "normal",
-    },
-    {
-      path: "./fonts/Oswald-Light.ttf",
-      weight: "300",
-      style: "normal",
-    },
-    {
-      path: "./fonts/Oswald-Regular.ttf",
-      weight: "400",
-      style: "normal",
-    },
-    {
-      path: "./fonts/Oswald-Medium.ttf",
-      weight: "500",
-      style: "normal",
-    },
-    {
-      path: "./fonts/Oswald-SemiBold.ttf",
-      weight: "600",
-      style: "normal",
-    },
-    {
-      path: "./fonts/Oswald-Bold.ttf",
-      weight: "700",
-      style: "bold",
-    },
-  ],
+export const oswald = Oswald({
+  subsets: ["latin"],
+  weight: ["200", "300", "400", "500", "600", "700"],
   variable: "--font-oswald",
   display: "swap",
+  preload: true,
 });

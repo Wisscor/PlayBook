@@ -96,7 +96,7 @@
 
   "view-profile": "View Profile",
   "match-filter-search": "Search by match name ...",
-  "-sport": "Search by date range ...",
+  "search-by-date-range": "Search by date range ...",
 
   "reset": "Reset",
   "apply-filter": "Apply Filter",

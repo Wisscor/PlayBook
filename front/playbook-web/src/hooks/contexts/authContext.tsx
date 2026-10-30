@@ -19,7 +19,7 @@ export function AuthProvider({
     undefined,
   );
 
-  const [isLoading, setIsLoading] = React.useState(true);
+  const [isLoading, setIsLoading] = React.useState(false);
 
   const value = useMemo(
     () => ({

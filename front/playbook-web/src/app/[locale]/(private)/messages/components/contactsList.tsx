@@ -81,5 +81,3 @@ export const ContactsList: React.FC<{
     </div>
   );
 };
-
-export default ContactsList;

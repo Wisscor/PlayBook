@@ -52,6 +52,7 @@ export const MatchModal: React.FC<MatchModalProps> = ({
     if (!isOpen) return;
     const timer = window.setTimeout(() => {
       setForm(initialData?.match ? toForm(initialData.match) : emptyForm);
+      setSelectedSport(initialData?.match?.sport ?? null);
       setDate(
         initialData?.match
           ? new Date(initialData.match.start_time).toISOString().split("T")[0]
@@ -210,5 +211,3 @@ export const MatchModal: React.FC<MatchModalProps> = ({
     </PlayModal.Primary>
   );
 };
-
-export default MatchModal;

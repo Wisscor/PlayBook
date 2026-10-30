@@ -11,7 +11,7 @@ import {
 } from "@/types/api";
 import { useTranslations } from "next-intl";
 import React, { useEffect, useState } from "react";
-import MatchModal from "../../home/components/matchModal";
+import { MatchModal } from "../../home/components/matchModal";
 import { Match } from "./match";
 import { useProfileController } from "@/services/profile";
 import { pageSize } from "@/lib/constants";
@@ -28,7 +28,7 @@ export const MatchesSection: React.FC = () => {
     pages,
     total,
   } = useMatchController();
-  const { isLoading, setIsLoading, connectedUser } = useAuth();
+  const { isLoading, connectedUser } = useAuth();
   const [selectedMatch, setSelectedMatch] = useState<
     MatchAnnouncement | undefined
   >(undefined);
@@ -38,8 +38,6 @@ export const MatchesSection: React.FC = () => {
   useEffect(() => {
     const timer = window.setTimeout(() => {
       void fetchUser(() => {
-        setIsLoading(true);
-
         if (connectedUser?.id) {
           void loadMatches(connectedUser.id, pageNumber, pageSize);
         }
@@ -71,14 +69,14 @@ export const MatchesSection: React.FC = () => {
   };
 
   let matchContent: React.ReactNode;
-  if (isLoading) {
+  if (isLoading && total === 0) {
     matchContent = (
       <PlayText.Primary
         id="loading"
         className="py-12 text-center text-slate-300"
       />
     );
-  } else if (total === 0) {
+  } else if (total === 0 && !isLoading) {
     matchContent = (
       <PlayText.Primary
         id="no-matches"
@@ -207,5 +205,3 @@ export const MatchesSection: React.FC = () => {
     </div>
   );
 };
-
-export default MatchesSection;

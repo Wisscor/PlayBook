@@ -105,7 +105,7 @@ export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
               alt="app-logo"
               src="/logos/app-logo.png"
               fill
-              priority
+              loading="eager"
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               className="object-contain"
             />
@@ -358,21 +358,9 @@ export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
 
       <footer className="border-t border-white/10 bg-slate-950/80 backdrop-blur-xl py-6 text-center text-sm text-slate-400">
         <div className="mx-auto max-w-7xl px-6 md:px-12 lg:px-20 flex items-center justify-center gap-4 flex-col md:flex-row">
-          <Link
-            href={ROUTES.PRIVACY_POLICY}
-            className="rounded-xl p-2 text-sm font-medium text-slate-200 hover:bg-white/10 transition-colors"
-          >
-            <PlayText.Primary id="privacy-policy" />
-          </Link>
           <p>
             &copy; {new Date().getFullYear()} playbook. All rights reserved.
           </p>
-          <Link
-            href={ROUTES.TERMS_OF_SERVICE}
-            className="rounded-xl p-2 text-sm font-medium text-slate-200 hover:bg-white/10 transition-colors"
-          >
-            <PlayText.Primary id="terms-of-service" />
-          </Link>
         </div>
       </footer>
     </div>

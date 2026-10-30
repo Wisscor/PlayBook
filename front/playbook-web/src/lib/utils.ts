@@ -1,7 +1,7 @@
 import { MatchAnnouncement, MatchAnnouncementRequestData } from "@/types/api";
 
 export const isEmailValid = (email: string): boolean => {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const emailRegex = /^[^\s@]+@[^\s@.]+(?:\.[^\s@.]+)+$/;
   return emailRegex.test(email);
 };
 

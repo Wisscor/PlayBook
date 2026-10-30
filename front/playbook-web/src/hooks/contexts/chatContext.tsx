@@ -3,7 +3,15 @@
 import { api } from "@/services/api";
 import { RealtimeMessage } from "@/types/api";
 import { useAuth } from "./authContext";
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 export interface ChatConversation {
   id: string;
@@ -45,7 +53,9 @@ export function ChatProvider({
   const attemptRef = useRef(0);
 
   const loadConversations = useCallback(async () => {
-    const response = await api.get<ChatConversation[]>("/realtime/conversations");
+    const response = await api.get<ChatConversation[]>(
+      "/realtime/conversations",
+    );
     setConversations(response.data);
   }, []);
 
@@ -68,7 +78,7 @@ export function ChatProvider({
     }>(`/realtime/conversations/${conversationId}/messages`);
     setMessages((current) => ({
       ...current,
-      [conversationId]: response.data.items.reverse(),
+      [conversationId]: response.data.items.toReversed(),
     }));
   }, []);
 
@@ -190,7 +200,7 @@ export function ChatProvider({
 
   const sendMessage = useCallback((conversationId: string, body: string) => {
     const socket = socketRef.current;
-    if (!socket || socket.readyState !== WebSocket.OPEN) return false;
+    if (socket?.readyState !== WebSocket.OPEN) return false;
     socket.send(
       JSON.stringify({
         type: "message.send",
@@ -203,7 +213,7 @@ export function ChatProvider({
 
   const markRead = useCallback((conversationId: string, messageId: string) => {
     const socket = socketRef.current;
-    if (!socket || socket.readyState !== WebSocket.OPEN) return false;
+    if (socket?.readyState !== WebSocket.OPEN) return false;
     socket.send(
       JSON.stringify({
         type: "read",

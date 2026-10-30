@@ -5,9 +5,9 @@ import { NextIntlClientProvider } from "next-intl";
 import { notFound } from "next/navigation";
 import { ReactNode } from "react";
 import { Locale, locales } from "../../../i18n";
-import { myTTFFont } from "../../../public/fonts";
 import { AuthProvider } from "@/hooks/contexts/authContext";
 import { ChatProvider } from "@/hooks/contexts/chatContext";
+import { oswald } from "@/public/fonts";
 
 type Props = {
   readonly children: ReactNode;
@@ -25,10 +25,10 @@ export default async function LocaleLayout({ children, params }: Props) {
     <html
       lang={locale}
       dir={locale === "ar" ? "rtl" : "ltr"}
-      className={` h-full `}
+      className={` h-full ${oswald.variable} `}
       data-scroll-behavior="smooth"
     >
-      <body className={`  ${myTTFFont.className} min-h-full flex flex-col`}>
+      <body className={`  ${oswald.className} min-h-full flex flex-col`}>
         <NextIntlClientProvider locale={locale} messages={messages}>
           <AuthProvider>
             <ChatProvider>
