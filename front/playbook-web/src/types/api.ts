@@ -170,6 +170,34 @@ export interface UpdatedMatchRequest {
   end_time: string;
 }
 
+export interface PlayRequestPaginated {
+  items: PlayRequest[];
+  total: number;
+  page: number;
+  size: number;
+  pages: number;
+}
+
+export interface MatchOverview {
+  id: string;
+  matchname: string;
+  matchType: string;
+  playerNbr: string | number;
+  date: string;
+  startTime: string;
+  endTime: string;
+  status: string;
+}
+
+export interface UpdatedMatchRequest {
+  title: string;
+  sport_id: string;
+  remaining_player_slots: number;
+  match_status: string;
+  start_time: string;
+  end_time: string;
+}
+
 export type ApiError = {
   status?: number;
   errorCode?: string;

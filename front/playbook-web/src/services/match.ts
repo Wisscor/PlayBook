@@ -168,7 +168,6 @@ export const useMatchController = () => {
     updateMatch,
     pages,
     total,
-
     decide,
     getMatch,
   };

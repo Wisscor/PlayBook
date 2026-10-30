@@ -85,7 +85,6 @@ export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
     setLogoutError("");
     void signOut(
       () => {
-        // goSignIn();
         window.location.reload();
       },
       () => {

@@ -1,7 +1,6 @@
 import { PlayInput } from "@/components/ui/Input";
 import { PlayText } from "@/components/ui/Text";
 import { MatchAnnouncement, PlayRequest } from "@/types/api";
-import { useTranslations } from "next-intl";
 import React, { useEffect } from "react";
 import { MatchCard } from "./matchCard";
 
@@ -14,7 +13,6 @@ export const RightSideSection: React.FC<{
   scroll: (pageNumber: number) => void;
   requests: PlayRequest[];
 }> = ({ userId, matches, total, pageNumber, pages, scroll, requests }) => {
-  const t = useTranslations();
   const [matchSearchQuery, setMatchSearchQuery] = React.useState<string>("");
   const [filteredMatches, setFilteredMatches] =
     React.useState<MatchAnnouncement[]>(matches);

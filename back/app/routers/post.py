@@ -1,5 +1,4 @@
 import uuid
-from collections.abc import Sequence
 from typing import Optional, List
 from datetime import datetime
 from fastapi import (
@@ -32,45 +31,11 @@ from app.core.limiter import limiter
 from app.realtime.notify import emit_notifications
 from app.core.exceptions import ApiException
 from app.core.error_codes import ErrorCode
+from app.services.post_service import enrich_posts
 
 router = APIRouter(
     tags=["Posts"],
 )
-
-
-async def _enrich_posts(
-    posts: Sequence[Post],
-    curr_user: Optional[User],
-    db: AsyncSession,
-) -> List[PostResponse]:
-    """Build response objects with author summaries."""
-    if not posts:
-        return []
-
-    # Construct PostResponse objects
-    responses = []
-    for p in posts:
-        user_summary = None
-        if p.user:
-            user_summary = UserSummaryResponse(
-                id=p.user.id,
-                username=p.user.username,
-                firstname=p.user.firstname,
-                lastname=p.user.lastname,
-                avatar=p.user.avatar,
-            )
-
-        resp = PostResponse(
-            id=p.id,
-            user_id=p.user_id,
-            author=user_summary,
-            caption=p.caption,
-            created_at=p.created_at,
-            updated_at=p.updated_at,
-        )
-        responses.append(resp)
-
-    return responses
 
 
 @router.post(
@@ -119,7 +84,7 @@ async def create_post(
     loaded_post = await db.scalar(stmt)
     if loaded_post is None:
         raise ApiException(code=ErrorCode.POST_NOT_FOUND)
-    enriched = await _enrich_posts([loaded_post], curr_user, db)
+    enriched = await enrich_posts([loaded_post], curr_user, db)
     return enriched[0]
 
 
@@ -146,7 +111,7 @@ async def get_feed(
     )
 
     async def _transform(rows):
-        return await _enrich_posts(rows, curr_user, db)
+        return await enrich_posts(rows, curr_user, db)
 
     return await apaginate(db, stmt, transformer=_transform)
 
@@ -174,7 +139,7 @@ async def list_posts(
         stmt = stmt.where(Post.user_id == user_id)
 
     async def _transform(rows):
-        return await _enrich_posts(rows, curr_user, db)
+        return await enrich_posts(rows, curr_user, db)
 
     return await apaginate(db, stmt, transformer=_transform)
 
@@ -199,7 +164,7 @@ async def get_post(
     if not post:
         raise ApiException(code=ErrorCode.POST_NOT_FOUND)
 
-    enriched = await _enrich_posts([post], curr_user, db)
+    enriched = await enrich_posts([post], curr_user, db)
     return enriched[0]
 
 
@@ -234,7 +199,7 @@ async def update_post(
     await db.commit()
     await db.refresh(post)
 
-    enriched = await _enrich_posts([post], curr_user, db)
+    enriched = await enrich_posts([post], curr_user, db)
     return enriched[0]
 
 

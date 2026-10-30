@@ -1,46 +1,47 @@
 import uuid
-
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, and_
 from typing import Optional
-from ..models import User, Follower, Post
+
 from pydantic import EmailStr
+from sqlalchemy import and_, func, select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from ..models import Follower, Post, User
+from ..realtime import registry
+from ..realtime.services.conversations import delete_user_conversations
 from ..schemas.user import UserProfileResponse
+from .avatar_service import remove_avatar
 
 
 async def get_user_by_email(
     db: AsyncSession,
     email: EmailStr,
 ) -> Optional[User]:
-    stmt = select(User).where(User.email == email)
-    return (await db.execute(stmt)).scalar_one_or_none()
+    statement = select(User).where(User.email == email)
+    return (await db.execute(statement)).scalar_one_or_none()
 
 
 async def get_user_by_username(
     db: AsyncSession,
     username: str,
 ) -> Optional[User]:
-    stmt = select(User).where(User.username == username)
-    return (await db.execute(stmt)).scalar_one_or_none()
+    statement = select(User).where(User.username == username)
+    return (await db.execute(statement)).scalar_one_or_none()
 
 
 async def get_user_by_id(
     db: AsyncSession,
     user_id: uuid.UUID,
 ) -> Optional[User]:
-    stmt = select(User).where(User.id == user_id)
-    return (await db.execute(stmt)).scalar_one_or_none()
+    statement = select(User).where(User.id == user_id)
+    return (await db.execute(statement)).scalar_one_or_none()
 
 
-async def build_user_profile(
+async def load_user_profile(
     db: AsyncSession,
     target_user: User,
-    curr_user: User,
+    current_user: User,
 ) -> UserProfileResponse:
-    """Build a UserProfileResponse from a User model.
-
-    If viewer_id is None (e.g. /me), is_following is set to None.
-    """
+    """Load a profile with social counts and viewer follow state."""
     followers_count = (
         await db.scalar(
             select(func.count())
@@ -49,7 +50,6 @@ async def build_user_profile(
         )
         or 0
     )
-
     following_count = (
         await db.scalar(
             select(func.count())
@@ -58,7 +58,6 @@ async def build_user_profile(
         )
         or 0
     )
-
     posts_count = (
         await db.scalar(
             select(func.count())
@@ -68,18 +67,17 @@ async def build_user_profile(
         or 0
     )
 
-    # Determine if the viewer (current user) is following the target user
-    is_following: Optional[bool] = None
-    if curr_user.id != target_user.id:
-        is_following_edge = await db.scalar(
+    is_following = None
+    if current_user.id != target_user.id:
+        following_edge = await db.scalar(
             select(Follower).where(
                 and_(
-                    Follower.follower_id == curr_user.id,
+                    Follower.follower_id == current_user.id,
                     Follower.following_id == target_user.id,
                 )
             )
         )
-        is_following = is_following_edge is not None
+        is_following = following_edge is not None
 
     profile = UserProfileResponse.model_validate(target_user)
     profile.followers_count = followers_count
@@ -87,3 +85,14 @@ async def build_user_profile(
     profile.posts_count = posts_count
     profile.is_following = is_following
     return profile
+
+
+async def delete_user_account(db: AsyncSession, user: User) -> None:
+    """Delete the user's data, connections, and local avatar."""
+    avatar_path = user.avatar
+    await delete_user_conversations(db, user.id)
+    await db.delete(user)
+    await db.commit()
+    await registry.close_user(user.id)
+    if avatar_path and avatar_path.startswith("uploads/"):
+        remove_avatar(avatar_path)
