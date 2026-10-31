@@ -13,6 +13,7 @@ import { BurgerMenu } from "./components/burgerMenu";
 import { NotificationPopUp } from "./notificationPopUp";
 import { useAuthController } from "@/services/auth";
 import { useChat } from "@/hooks/contexts/chatContext";
+import { useRealtimeController } from "@/services/realtime";
 
 export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
   const { signOut } = useAuthController();
@@ -22,12 +23,10 @@ export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [logoutError, setLogoutError] = useState<string | undefined>(undefined);
   const { goMessages, goSearch } = useNavigation();
-  const {
-    unreadMessages,
-    notifications,
-    markNotificationRead,
-    markAllNotificationsRead,
-  } = useChat();
+  const { unreadMessages, notifications } = useChat();
+
+  const { markAllNotificationsRead, markNotificationRead } =
+    useRealtimeController();
 
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const notificationRef = useRef<HTMLDivElement>(null);
@@ -88,15 +87,17 @@ export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
   };
   const notificationItems = notifications.map((notification) => ({
     id: notification.id,
-    text: `${notification.actor_username} ${{
-      follow: "followed you.",
-      post_created: "created a new post.",
-      play_request: "sent you a play request.",
-      play_request_accepted: "accepted your play request.",
-      play_request_rejected: "rejected your play request.",
-      match_updated: "updated a match you joined.",
-      match_cancelled: "cancelled a match you joined.",
-    }[notification.event_type] ?? "triggered a notification."}`,
+    text: `${notification.actor_username} ${
+      {
+        follow: "followed you.",
+        post_created: "created a new post.",
+        play_request: "sent you a play request.",
+        play_request_accepted: "accepted your play request.",
+        play_request_rejected: "rejected your play request.",
+        match_updated: "updated a match you joined.",
+        match_cancelled: "cancelled a match you joined.",
+      }[notification.event_type] ?? "triggered a notification."
+    }`,
     time: new Date(notification.created_at).toLocaleString(),
     read: Boolean(notification.read_at),
   }));
@@ -175,7 +176,7 @@ export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
                       ? {
                           content: unreadMessages.toString(),
                           className:
-                          "absolute -top-1 -right-1 flex min-h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white shadow-md",
+                            "absolute -top-1 -right-1 flex min-h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white shadow-md",
                         }
                       : {},
                   ]}

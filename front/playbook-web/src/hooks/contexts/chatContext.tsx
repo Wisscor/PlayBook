@@ -12,6 +12,7 @@ import React, {
   useRef,
   useState,
 } from "react";
+import { sortMessages } from "@/lib/utils";
 
 export interface ChatConversation {
   id: string;
@@ -38,12 +39,13 @@ type ChatContextValue = {
   connected: boolean;
   timeoutRemaining: number;
   notifications: ChatNotification[];
-  markNotificationRead: (notificationId: string) => Promise<void>;
-  markAllNotificationsRead: () => Promise<void>;
-  createConversation: (peerId: string) => Promise<string>;
-  loadMessages: (conversationId: string) => Promise<void>;
   sendMessage: (conversationId: string, body: string) => boolean;
   markRead: (conversationId: string, messageId: string) => boolean;
+  setNotifications: React.Dispatch<React.SetStateAction<ChatNotification[]>>;
+  loadConversations: () => Promise<void>;
+  setMessages: React.Dispatch<
+    React.SetStateAction<Record<string, RealtimeMessage[]>>
+  >;
 };
 
 const ChatContext = createContext<ChatContextValue | undefined>(undefined);
@@ -51,14 +53,6 @@ const ChatContext = createContext<ChatContextValue | undefined>(undefined);
 function getWebSocketUrl() {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
   return `${apiUrl.replace(/^http/, "ws")}/ws`;
-}
-
-function sortMessages(messages: RealtimeMessage[]) {
-  return [...messages].sort((a, b) => {
-    const timeDifference =
-      new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
-    return timeDifference || a.id.localeCompare(b.id);
-  });
 }
 
 export function ChatProvider({
@@ -71,63 +65,7 @@ export function ChatProvider({
   );
   const [onlineUserIds, setOnlineUserIds] = useState<string[]>([]);
   const [notifications, setNotifications] = useState<ChatNotification[]>([]);
-  const markAllNotificationsRead = useCallback(async () => {
-    const unreadIds = notifications
-      .filter((notification) => !notification.read_at)
-      .map((notification) => notification.id);
 
-    if (unreadIds.length === 0) return;
-
-    const readAt = new Date().toISOString();
-    setNotifications((current) =>
-      current.map((notification) =>
-        unreadIds.includes(notification.id)
-          ? { ...notification, read_at: readAt }
-          : notification,
-      ),
-    );
-
-    try {
-      await api.post("/realtime/notifications/read", {
-        notification_ids: unreadIds,
-      });
-    } catch (error) {
-      console.error("Unable to mark notifications as read:", error);
-      setNotifications((current) =>
-        current.map((notification) =>
-          unreadIds.includes(notification.id)
-            ? { ...notification, read_at: null }
-            : notification,
-        ),
-      );
-    }
-  }, [notifications]);
-
-  const markNotificationRead = useCallback(async (notificationId: string) => {
-    setNotifications((current) =>
-      current.map((notification) => {
-        if (notification.id !== notificationId || notification.read_at) {
-          return notification;
-        }
-        return { ...notification, read_at: new Date().toISOString() };
-      }),
-    );
-
-    try {
-      await api.post("/realtime/notifications/read", {
-        notification_ids: [notificationId],
-      });
-    } catch (error) {
-      console.error("Unable to mark notification as read:", error);
-      setNotifications((current) =>
-        current.map((notification) =>
-          notification.id === notificationId
-            ? { ...notification, read_at: null }
-            : notification,
-        ),
-      );
-    }
-  }, []);
   const [connected, setConnected] = useState(false);
   const [timeoutRemaining, setTimeoutRemaining] = useState(0);
   const timeoutDeadlineRef = useRef(0);
@@ -137,50 +75,14 @@ export function ChatProvider({
   const receivedMessageIdsRef = useRef(new Set<string>());
 
   const loadConversations = useCallback(async () => {
-    try {
-      const response = await api.get<ChatConversation[]>(
-        "/realtime/conversations",
-      );
-
-      console.log("realtime conv are >>>>", response);
-
-      setConversations(response.data);
-    } catch (error) {
-      console.error("Unable to load conversations:", error);
-    }
+    await api.get<ChatConversation[]>("/realtime/conversations").then((res) => {
+      if (res.status == 200) {
+        setConversations(res.data);
+      }
+    });
   }, [connectedUser?.id]);
 
-  const createConversation = useCallback(async (peerId: string) => {
-    const response = await api.post<{ id: string }>("/realtime/conversations", {
-      peer_id: peerId,
-    });
-    await loadConversations();
-    return response.data.id;
-  }, []);
-
-  const loadMessages = useCallback(async (conversationId: string) => {
-    const response = await api.get<{
-      items: RealtimeMessage[];
-      next_cursor: string | null;
-    }>(`/realtime/conversations/${conversationId}/messages`);
-    setMessages((current) => ({
-      ...current,
-      [conversationId]: sortMessages(
-        [...(current[conversationId] ?? []), ...response.data.items].filter(
-          (message, index, all) =>
-            all.findIndex((item) => item.id === message.id) === index,
-        ),
-      ),
-    }));
-  }, []);
-
   useEffect(() => {
-    console.log("chat effect:", {
-      isLoading,
-      userId: connectedUser?.id,
-      user: connectedUser,
-    });
-
     if (isLoading || !connectedUser?.id) return;
 
     let disposed = false;
@@ -227,7 +129,6 @@ export function ChatProvider({
         try {
           frame = JSON.parse(event.data) as typeof frame;
         } catch {
-          console.error("Received invalid chat WebSocket frame");
           return;
         }
 
@@ -367,18 +268,13 @@ export function ChatProvider({
     };
 
     const loadTimer = setTimeout(() => {
-      void loadConversations().catch((error) => {
-        console.error("Unable to load conversations:", error);
-      });
+      void loadConversations();
     }, 0);
     connect();
     const notificationsTimer = setTimeout(() => {
       void api
         .get<{ items: ChatNotification[] }>("/realtime/notifications")
-        .then((response) => setNotifications(response.data.items))
-        .catch((error) => {
-          console.error("Unable to load notifications:", error);
-        });
+        .then((response) => setNotifications(response.data.items));
     }, 0);
     const heartbeatTimer = setInterval(() => {
       if (socketRef.current?.readyState === WebSocket.OPEN) {
@@ -446,12 +342,11 @@ export function ChatProvider({
       connected,
       timeoutRemaining,
       notifications,
-      markNotificationRead,
-      markAllNotificationsRead,
-      createConversation,
-      loadMessages,
       sendMessage,
       markRead,
+      setNotifications,
+      loadConversations,
+      setMessages,
     }),
     [
       conversations,
@@ -461,12 +356,11 @@ export function ChatProvider({
       connected,
       timeoutRemaining,
       notifications,
-      markNotificationRead,
-      markAllNotificationsRead,
-      createConversation,
-      loadMessages,
       sendMessage,
       markRead,
+      setNotifications,
+      loadConversations,
+      setMessages,
     ],
   );
 

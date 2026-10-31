@@ -3,58 +3,35 @@
 import { PlayButton } from "@/components/ui/Button";
 import { useAuth } from "@/hooks/contexts/authContext";
 import { useChat } from "@/hooks/contexts/chatContext";
+import { useRealtimeController } from "@/services/realtime";
+import { useUserController } from "@/services/user";
 import { Contact, Message } from "@/types/api";
-import { api } from "@/services/api";
+import { useSearchParams } from "next/navigation";
 import React, { useEffect, useMemo, useState } from "react";
 import { ContactsList } from "./components/contactsList";
 import { Conversation } from "./components/conversation";
-import { useSearchParams } from "next/navigation";
 
 const MessagesPage = () => {
   const { connectedUser } = useAuth();
+  const { loadPeerAvatars, peerAvatars } = useUserController();
   const {
     conversations,
     messages,
     onlineUserIds,
-    loadMessages,
     sendMessage,
     markRead,
     connected,
   } = useChat();
+  const { loadMessages } = useRealtimeController();
   const [selectedContactId, setSelectedContactId] = useState("");
   const [messageInput, setMessageInput] = useState("");
   const [mobileView, setMobileView] = useState<"list" | "chat">("list");
-  const [peerAvatars, setPeerAvatars] = useState<Record<string, string>>({});
 
   useEffect(() => {
     let isMounted = true;
 
-    const loadPeerAvatars = async () => {
-      const profiles = await Promise.all(
-        conversations.map(async (conversation) => {
-          try {
-            const response = await api.get<{ avatar?: string }>(
-              `/users/${conversation.peer_id}`,
-            );
-            return [conversation.peer_id, response.data.avatar] as const;
-          } catch (error) {
-            console.error("Unable to load contact avatar:", error);
-            return [conversation.peer_id, undefined] as const;
-          }
-        }),
-      );
-
-      if (isMounted) {
-        setPeerAvatars(
-          Object.fromEntries(
-            profiles.filter(([, avatar]) => avatar) as [string, string][],
-          ),
-        );
-      }
-    };
-
     if (conversations.length > 0) {
-      void loadPeerAvatars();
+      void loadPeerAvatars(conversations, isMounted);
     }
 
     return () => {
@@ -100,9 +77,7 @@ const MessagesPage = () => {
   useEffect(() => {
     const conversationId = selectedConversationId;
     if (!conversationId || messages[conversationId]) return;
-    void loadMessages(conversationId).catch((error) => {
-      console.error("Unable to load conversation messages:", error);
-    });
+    void loadMessages(conversationId);
   }, [loadMessages, messages, selectedConversationId]);
 
   useEffect(() => {

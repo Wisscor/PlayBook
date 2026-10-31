@@ -152,11 +152,6 @@ export const useMatchController = () => {
         }
       })
       .catch((error) => {
-        console.error("Error requesting to join match:", {
-          message: error?.message,
-          status: error?.status,
-          details: error?.details,
-        });
         onError(error);
       });
   };

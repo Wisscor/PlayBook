@@ -1,4 +1,8 @@
-import { MatchAnnouncement, MatchAnnouncementRequestData } from "@/types/api";
+import {
+  MatchAnnouncement,
+  MatchAnnouncementRequestData,
+  RealtimeMessage,
+} from "@/types/api";
 
 export const isEmailValid = (email: string): boolean => {
   const emailRegex = /^[^\s@]+@[^\s@.]+(?:\.[^\s@.]+)+$/;
@@ -34,4 +38,12 @@ export const getDateDifference = (dateString: string) => {
     return `${diffInHours}h`;
   }
   return `${diffInDays}d`;
+};
+
+export const sortMessages = (messages: RealtimeMessage[]) => {
+  return [...messages].sort((a, b) => {
+    const timeDifference =
+      new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+    return timeDifference || a.id.localeCompare(b.id);
+  });
 };

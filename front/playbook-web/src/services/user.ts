@@ -4,6 +4,7 @@ import { pageSize } from "@/lib/constants";
 import React from "react";
 import { useAuth } from "@/hooks/contexts/authContext";
 import { ApiError } from "@/types/api";
+import { ChatConversation } from "@/hooks/contexts/chatContext";
 
 export const useUserController = () => {
   const { setIsLoading } = useAuth();
@@ -11,6 +12,9 @@ export const useUserController = () => {
   const [userPageNumber, setUserPageNumber] = React.useState(1);
   const [totalUsers, setTotalUsers] = React.useState(1);
   const [userPages, setUserPages] = React.useState(1);
+  const [peerAvatars, setPeerAvatars] = React.useState<Record<string, string>>(
+    {},
+  );
 
   const loadUsers = async (
     pageNumber: number,
@@ -51,6 +55,32 @@ export const useUserController = () => {
     return null;
   };
 
+  const loadPeerAvatars = async (
+    conversations: ChatConversation[],
+    isMounted: boolean,
+  ) => {
+    const profiles = await Promise.all(
+      conversations.map(async (conversation) => {
+        try {
+          const response = await api.get<{ avatar?: string }>(
+            `/users/${conversation.peer_id}`,
+          );
+          return [conversation.peer_id, response.data.avatar] as const;
+        } catch {
+          return [conversation.peer_id, undefined] as const;
+        }
+      }),
+    );
+
+    if (isMounted) {
+      setPeerAvatars(
+        Object.fromEntries(
+          profiles.filter(([, avatar]) => avatar) as [string, string][],
+        ),
+      );
+    }
+  };
+
   return {
     loadUsers,
     users,
@@ -58,5 +88,7 @@ export const useUserController = () => {
     totalUsers,
     userPages,
     getUser,
+    loadPeerAvatars,
+    peerAvatars,
   };
 };

@@ -1,10 +1,10 @@
 import { PlayButton } from "@/components/ui/Button";
 import { PlayText } from "@/components/ui/Text";
-import { useChat } from "@/hooks/contexts/chatContext";
 import { useNavigation } from "@/hooks/useNavigation";
 import { COMING_FROM, ROUTES } from "@/lib/constants";
 import { useFollowerController } from "@/services/follower";
 import { useProfileController } from "@/services/profile";
+import { useRealtimeController } from "@/services/realtime";
 import { ApiError } from "@/types/api";
 import { User } from "@/types/user";
 import { useTranslations } from "next-intl";
@@ -18,7 +18,7 @@ export const MainDetails: React.FC<{ user: User; comingFrom: COMING_FROM }> = ({
 }) => {
   const t = useTranslations();
   const { goMessages } = useNavigation();
-  const { createConversation } = useChat();
+  const { createConversation } = useRealtimeController();
   const { deleteUser } = useProfileController();
   const { follow, unfollow } = useFollowerController();
   const [isFollowing, setIsFollowing] = React.useState(
@@ -139,17 +139,19 @@ export const MainDetails: React.FC<{ user: User; comingFrom: COMING_FROM }> = ({
               onClick={() => {
                 if (!user.id) return;
                 setConversationError("");
-                void createConversation(user.id)
-                  .then((conversationId) => goMessages(conversationId))
-                  .catch((error) => {
-                    console.error("Unable to start conversation:", error);
-                    const apiError = error as ApiError;
+                void createConversation(
+                  user.id,
+                  (conversationId) => {
+                    goMessages(conversationId);
+                  },
+                  (error: ApiError) => {
                     setConversationError(
-                      apiError.status === 403
+                      error.status === 403
                         ? t("mutual-follow-required")
                         : t("conversation-error"),
                     );
-                  });
+                  },
+                );
               }}
               type="button"
               className="rounded-xl border border-white/20 bg-white/10 py-2.5 backdrop-blur-md transition-all hover:bg-white/20 active:scale-95 cursor-pointer shadow-md text-center"

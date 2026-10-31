@@ -94,7 +94,6 @@ export const Conversation: React.FC<{
                 texts={[{ content: msg.time }]}
                 className="text-[10px] text-slate-400 mt-1 px-1"
               />
-              {/* Display the "seen" status only if the message is sent by the current user and has been seen by the recipient. */}
               {isMe && msg.seen && (
                 <PlayText.Primary
                   id="seen"
