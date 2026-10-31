@@ -28,7 +28,6 @@ back/
 ├── app/
 │   ├── __init__.py
 │   ├── main.py
-│   ├── logging_conf.py
 │   ├── core/
 │   ├── database/
 │   ├── models/

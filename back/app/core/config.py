@@ -12,7 +12,6 @@ class Settings(BaseSettings):
     # App
     app_name: str = "PlayBook"
     debug: bool = False
-    log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO"
 
     # Databse
     database_url: str
