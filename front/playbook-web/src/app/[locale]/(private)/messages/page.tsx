@@ -71,14 +71,12 @@ export const MessagesPage = () => {
         username: conversation.peer_username,
         avatar: conversation.peer_username.slice(0, 2).toUpperCase(),
         avatarUrl: peerAvatars[conversation.peer_id],
-        lastMessage:
-          messages[conversation.id]?.at(-1)?.body ?? "",
+        lastMessage: messages[conversation.id]?.at(-1)?.body ?? "",
         online: onlineUserIds.includes(conversation.peer_id),
         messages: (() => {
           const conversationMessages = messages[conversation.id] ?? [];
           const lastReadIndex = conversationMessages.findIndex(
-            (message) =>
-              message.id === conversation.peer_last_read_message_id,
+            (message) => message.id === conversation.peer_last_read_message_id,
           );
           return conversationMessages.map<Message>((message, index) => ({
             id: message.id,
@@ -89,8 +87,7 @@ export const MessagesPage = () => {
               minute: "2-digit",
             }),
             seen:
-              message.sender_id === connectedUser?.id &&
-              lastReadIndex >= index,
+              message.sender_id === connectedUser?.id && lastReadIndex >= index,
           }));
         })(),
       })),
@@ -136,6 +133,12 @@ export const MessagesPage = () => {
     contacts.find((contact) => contact.id === selectedConversationId) ??
     contacts[0];
 
+  useEffect(() => {
+    if (activeContact) {
+      setSelectedContactId(activeContact.id);
+    }
+  }, [activeContact]);
+
   const handleSendMessage = (event: React.SubmitEvent) => {
     event.preventDefault();
     if (!selectedConversationId || !messageInput.trim()) return;
@@ -152,14 +155,18 @@ export const MessagesPage = () => {
   return (
     <div className="flex flex-col min-h-[calc(100vh-140px)] bg-slate-950 text-white px-2 sm:px-4 py-4 md:px-12 lg:px-20">
       <div className="max-w-7xl mx-auto w-full min-h-0 grid grid-cols-1 md:grid-cols-3 gap-6 h-[calc(100vh-170px)] md:h-[calc(100vh-200px)]">
-        <div className={`col-span-1 h-full min-h-0 ${mobileView === "chat" ? "hidden md:flex" : "flex"} flex-col`}>
+        <div
+          className={`col-span-1 h-full min-h-0 ${mobileView === "chat" ? "hidden md:flex" : "flex"} flex-col`}
+        >
           <ContactsList
             contacts={contacts}
             selectedContactId={selectedConversationId}
             setSelectedContactId={handleSelectContact}
           />
         </div>
-        <div className={`col-span-1 md:col-span-2 h-full min-h-0 ${mobileView === "list" ? "hidden md:flex" : "flex"} flex-col relative`}>
+        <div
+          className={`col-span-1 md:col-span-2 h-full min-h-0 ${mobileView === "list" ? "hidden md:flex" : "flex"} flex-col relative`}
+        >
           <div className="md:hidden flex items-center pb-3">
             <PlayButton.Primary
               textClassName="text-xs font-semibold text-slate-300"
