@@ -15,12 +15,7 @@ export const UserCard: React.FC<{
       key={user.id}
       className="rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl p-6 shadow-xl flex flex-col justify-between gap-4 hover:bg-white/10 transition-all"
     >
-      <button
-        type="button"
-        onClick={() => goUserProfile(user.id)}
-        aria-label={`View ${user.firstname} ${user.lastname}'s profile`}
-        className="flex items-center gap-4 rounded-xl text-left cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
-      >
+      <div className="flex items-center gap-4 rounded-xl text-left">
         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-linear-to-tr from-indigo-950 to-indigo-600 font-bold text-base text-white shadow-md">
           {user.avatar ? (
             <img
@@ -45,7 +40,7 @@ export const UserCard: React.FC<{
             className="text-xs text-slate-400"
           />
         </div>
-      </button>
+      </div>
 
       <div className="pt-2 flex justify-end">
         <PlayButton.Primary
