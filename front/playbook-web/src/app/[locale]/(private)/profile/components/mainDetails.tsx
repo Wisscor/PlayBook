@@ -115,7 +115,7 @@ export const MainDetails: React.FC<{ user: User; comingFrom: COMING_FROM }> = ({
               onClick={() => {
                 void deleteUser();
               }}
-              className=" rounded-xl border border-white/20 bg-white/10 p-2.5 backdrop-blur-md transition-all hover:bg-white/20 active:scale-95 cursor-pointer shadow-md text-center"
+              className=" rounded-xl  border border-white/20 bg-white/10 p-2.5 backdrop-blur-md transition-all hover:bg-white/20 active:scale-95 cursor-pointer shadow-md text-center"
             >
               <Image
                 alt="delete"

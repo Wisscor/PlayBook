@@ -63,7 +63,7 @@ export const Post: React.FC<PostProps> = ({ post, onDelete }) => {
           <button
             type="button"
             onClick={() => onDelete(post.id)}
-            className="rounded-lg border border-rose-500/20 bg-rose-500/10 px-3 py-1.5 text-xs font-semibold text-rose-400 transition-colors hover:bg-rose-500/20"
+            className="rounded-lg cursor-pointer border border-rose-500/20 bg-rose-500/10 px-3 py-1.5 text-xs font-semibold text-rose-400 transition-colors hover:bg-rose-500/20"
           >
             <PlayText.Span texts={[{ text: "delete" }]} />
           </button>

@@ -20,6 +20,7 @@ interface AreaProps {
   value: string;
   className?: string;
   onChange?: React.ChangeEventHandler<HTMLTextAreaElement>;
+  disabled?: boolean;
 }
 
 interface PasswordProps extends InputProps {
@@ -63,11 +64,13 @@ const Area: React.FC<AreaProps> = ({
   value,
   className,
   onChange,
+  disabled,
 }) => {
   const t = useTranslations();
 
   return (
     <textarea
+      disabled={disabled}
       maxLength={500}
       value={value}
       onChange={onChange}

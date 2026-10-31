@@ -7,7 +7,7 @@ import { ReactNode } from "react";
 import { Locale, locales } from "../../../i18n";
 import { AuthProvider } from "@/hooks/contexts/authContext";
 import { ChatProvider } from "@/hooks/contexts/chatContext";
-import { oswald } from "@/public/fonts";
+import { roboto } from "@/public/fonts";
 
 type Props = {
   readonly children: ReactNode;
@@ -25,10 +25,10 @@ export default async function LocaleLayout({ children, params }: Props) {
     <html
       lang={locale}
       dir={locale === "ar" ? "rtl" : "ltr"}
-      className={` h-full ${oswald.variable} `}
+      className={` h-full ${roboto.variable} `}
       data-scroll-behavior="smooth"
     >
-      <body className={`  ${oswald.className} min-h-full flex flex-col`}>
+      <body className={`  ${roboto.className} min-h-full flex flex-col`}>
         <NextIntlClientProvider locale={locale} messages={messages}>
           <AuthProvider>
             <ChatProvider>
