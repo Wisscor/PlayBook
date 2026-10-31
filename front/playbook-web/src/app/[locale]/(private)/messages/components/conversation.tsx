@@ -2,8 +2,10 @@ import { PlayButton } from "@/components/ui/Button";
 import { PlayInput } from "@/components/ui/Input";
 import { PlayText } from "@/components/ui/Text";
 import { Contact } from "@/types/api";
+import { useChat } from "@/hooks/contexts/chatContext";
 import React, { useEffect, useRef } from "react";
 import { useNavigation } from "@/hooks/useNavigation";
+import { useTranslations } from "next-intl";
 
 export const Conversation: React.FC<{
   activeContact: Contact;
@@ -11,7 +13,9 @@ export const Conversation: React.FC<{
   messageInput: string;
   setMessageInput: React.Dispatch<React.SetStateAction<string>>;
 }> = ({ activeContact, handleSendMessage, messageInput, setMessageInput }) => {
+  const { timeoutRemaining } = useChat();
   const { goUserProfile } = useNavigation();
+  const t = useTranslations();
   const messagesContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -102,6 +106,11 @@ export const Conversation: React.FC<{
         })}
       </div>
 
+      {timeoutRemaining > 0 && (
+        <p role="status" className="shrink-0 pb-3 text-sm text-amber-300">
+          {t("chat-rate-limit-warning", { seconds: timeoutRemaining })}
+        </p>
+      )}
       <form
         onSubmit={handleSendMessage}
         className="flex shrink-0 items-center gap-3 border-t border-white/10 pt-4"

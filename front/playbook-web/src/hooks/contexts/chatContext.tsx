@@ -36,6 +36,7 @@ type ChatContextValue = {
   messages: Record<string, RealtimeMessage[]>;
   onlineUserIds: string[];
   connected: boolean;
+  timeoutRemaining: number;
   notifications: ChatNotification[];
   markNotificationRead: (notificationId: string) => Promise<void>;
   markAllNotificationsRead: () => Promise<void>;
@@ -128,6 +129,8 @@ export function ChatProvider({
     }
   }, []);
   const [connected, setConnected] = useState(false);
+  const [timeoutRemaining, setTimeoutRemaining] = useState(0);
+  const timeoutDeadlineRef = useRef(0);
   const socketRef = useRef<WebSocket | null>(null);
   const reconnectRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const attemptRef = useRef(0);
@@ -181,6 +184,14 @@ export function ChatProvider({
     if (isLoading || !connectedUser?.id) return;
 
     let disposed = false;
+    const timeoutTimer = setInterval(() => {
+      const remaining = Math.max(
+        0,
+        Math.ceil((timeoutDeadlineRef.current - performance.now()) / 1000),
+      );
+      setTimeoutRemaining(remaining);
+      if (remaining === 0) timeoutDeadlineRef.current = 0;
+    }, 250);
     const connect = () => {
       if (disposed) return;
       const socket = new WebSocket(getWebSocketUrl());
@@ -193,6 +204,8 @@ export function ChatProvider({
       socket.onmessage = (event) => {
         let frame: {
           type?: string;
+          reason?: string;
+          retry_after?: number;
           id?: string;
           conversation_id?: string;
           sender_id?: string;
@@ -215,6 +228,19 @@ export function ChatProvider({
           frame = JSON.parse(event.data) as typeof frame;
         } catch {
           console.error("Received invalid chat WebSocket frame");
+          return;
+        }
+
+        if (
+          frame.type === "error" &&
+          frame.reason === "timed_out" &&
+          typeof frame.retry_after === "number" &&
+          Number.isFinite(frame.retry_after) &&
+          frame.retry_after >= 0
+        ) {
+          timeoutDeadlineRef.current =
+            performance.now() + frame.retry_after * 1000;
+          setTimeoutRemaining(Math.ceil(frame.retry_after));
           return;
         }
 
@@ -329,6 +355,8 @@ export function ChatProvider({
       socket.onclose = () => {
         socketRef.current = null;
         setConnected(false);
+        timeoutDeadlineRef.current = 0;
+        setTimeoutRemaining(0);
         if (!disposed) {
           const delay = Math.min(1000 * 2 ** attemptRef.current, 10000);
           attemptRef.current += 1;
@@ -363,6 +391,7 @@ export function ChatProvider({
       clearTimeout(loadTimer);
       clearTimeout(notificationsTimer);
       clearInterval(heartbeatTimer);
+      clearInterval(timeoutTimer);
       if (reconnectRef.current) clearTimeout(reconnectRef.current);
       socketRef.current?.close();
       socketRef.current = null;
@@ -415,6 +444,7 @@ export function ChatProvider({
       messages,
       onlineUserIds,
       connected,
+      timeoutRemaining,
       notifications,
       markNotificationRead,
       markAllNotificationsRead,
@@ -429,6 +459,7 @@ export function ChatProvider({
       messages,
       onlineUserIds,
       connected,
+      timeoutRemaining,
       notifications,
       markNotificationRead,
       markAllNotificationsRead,

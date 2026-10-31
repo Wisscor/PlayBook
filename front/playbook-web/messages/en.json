@@ -123,6 +123,7 @@
   "offline": "Offline",
   "send": "Send",
   "type-message": "Type a message...",
+  "chat-rate-limit-warning": "Messaging is temporarily disabled because you exceeded the message rate limit. Try again in {seconds} seconds.",
   "search-contacts": "Search contacts...",
 
   "back-contacts": "Back to Contacts",

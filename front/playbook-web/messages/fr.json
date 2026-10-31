@@ -123,6 +123,7 @@
   "offline": "Hors ligne",
   "send": "Envoyer",
   "type-message": "Écrivez un message...",
+  "chat-rate-limit-warning": "La messagerie est temporairement désactivée car vous avez dépassé la limite de messages. Réessayez dans {seconds} secondes.",
   "search-contacts": "Rechercher des contacts...",
 
   "back-contacts": "Retour aux contacts",
