@@ -73,6 +73,7 @@ async def follow_user(
         actor_id=curr_user.id,
         target_user_id=user_id,
     )
+
     return FollowToggleResponse(following=True, user_id=user_id)
 
 

@@ -5,22 +5,13 @@ import React from "react";
 export const NotificationPopUp: React.FC<{
   unreadCount: number;
   notifications: {
-    id: number;
+    id: string;
     text: string;
     time: string;
     read: boolean;
   }[];
-  setNotifications: React.Dispatch<
-    React.SetStateAction<
-      {
-        id: number;
-        text: string;
-        time: string;
-        read: boolean;
-      }[]
-    >
-  >;
-}> = ({ unreadCount, notifications, setNotifications }) => {
+  onRead: (id: string) => void;
+}> = ({ unreadCount, notifications, onRead }) => {
   const t = useTranslations();
   return (
     <div className="absolute right-0 mt-3 w-80 rounded-3xl border border-white/10 bg-slate-950/95 backdrop-blur-2xl shadow-2xl p-4 flex flex-col gap-3 z-50">
@@ -50,11 +41,7 @@ export const NotificationPopUp: React.FC<{
             <button
               key={notif.id}
               onClick={() => {
-                setNotifications(
-                  notifications.map((n) =>
-                    n.id === notif.id ? { ...n, read: true } : n,
-                  ),
-                );
+                void onRead(notif.id);
               }}
               className={`rounded-2xl border p-3 flex flex-col gap-1 transition-all cursor-pointer ${
                 notif.read

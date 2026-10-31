@@ -192,13 +192,18 @@ Successful response:
     "id": "CONVERSATION_UUID",
     "peer_id": "USER_B_UUID",
     "peer_username": "user_b",
-    "unread_count": 0
+    "unread_count": 0,
+    "peer_last_read_message_id": null
   }
 ]
 ```
 
 The frontend calls this from `ChatProvider` after the authenticated user is
 available. The response is stored in the `conversations` state.
+
+`peer_last_read_message_id` is the latest message the other participant has
+read. The frontend uses it to show `Seen` on the sender's messages, including
+after a page refresh.
 
 The messages page converts each conversation into a `Contact` object for the
 existing components.
@@ -363,6 +368,8 @@ Frontend sends:
 
 The backend updates the participant's
 `last_read_message_id`. It also sends a read event to the other participant.
+The frontend stores that event as `peer_last_read_message_id` and links it to
+the corresponding sent messages.
 
 Frontend code:
 

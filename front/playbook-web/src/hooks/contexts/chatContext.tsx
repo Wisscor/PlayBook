@@ -18,13 +18,27 @@ export interface ChatConversation {
   peer_id: string;
   peer_username: string;
   unread_count: number;
+  peer_last_read_message_id: string | null;
+}
+
+export interface ChatNotification {
+  id: string;
+  event_type: string;
+  actor_username: string;
+  read_at: string | null;
+  created_at: string;
+  match_time: string | null;
 }
 
 type ChatContextValue = {
   conversations: ChatConversation[];
+  unreadMessages: number;
   messages: Record<string, RealtimeMessage[]>;
   onlineUserIds: string[];
   connected: boolean;
+  notifications: ChatNotification[];
+  markNotificationRead: (notificationId: string) => Promise<void>;
+  markAllNotificationsRead: () => Promise<void>;
   createConversation: (peerId: string) => Promise<string>;
   loadMessages: (conversationId: string) => Promise<void>;
   sendMessage: (conversationId: string, body: string) => boolean;
@@ -38,6 +52,14 @@ function getWebSocketUrl() {
   return `${apiUrl.replace(/^http/, "ws")}/ws`;
 }
 
+function sortMessages(messages: RealtimeMessage[]) {
+  return [...messages].sort((a, b) => {
+    const timeDifference =
+      new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+    return timeDifference || a.id.localeCompare(b.id);
+  });
+}
+
 export function ChatProvider({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
@@ -47,29 +69,91 @@ export function ChatProvider({
     {},
   );
   const [onlineUserIds, setOnlineUserIds] = useState<string[]>([]);
+  const [notifications, setNotifications] = useState<ChatNotification[]>([]);
+  const markAllNotificationsRead = useCallback(async () => {
+    const unreadIds = notifications
+      .filter((notification) => !notification.read_at)
+      .map((notification) => notification.id);
+
+    if (unreadIds.length === 0) return;
+
+    const readAt = new Date().toISOString();
+    setNotifications((current) =>
+      current.map((notification) =>
+        unreadIds.includes(notification.id)
+          ? { ...notification, read_at: readAt }
+          : notification,
+      ),
+    );
+
+    try {
+      await api.post("/realtime/notifications/read", {
+        notification_ids: unreadIds,
+      });
+    } catch (error) {
+      console.error("Unable to mark notifications as read:", error);
+      setNotifications((current) =>
+        current.map((notification) =>
+          unreadIds.includes(notification.id)
+            ? { ...notification, read_at: null }
+            : notification,
+        ),
+      );
+    }
+  }, [notifications]);
+
+  const markNotificationRead = useCallback(async (notificationId: string) => {
+    setNotifications((current) =>
+      current.map((notification) => {
+        if (notification.id !== notificationId || notification.read_at) {
+          return notification;
+        }
+        return { ...notification, read_at: new Date().toISOString() };
+      }),
+    );
+
+    try {
+      await api.post("/realtime/notifications/read", {
+        notification_ids: [notificationId],
+      });
+    } catch (error) {
+      console.error("Unable to mark notification as read:", error);
+      setNotifications((current) =>
+        current.map((notification) =>
+          notification.id === notificationId
+            ? { ...notification, read_at: null }
+            : notification,
+        ),
+      );
+    }
+  }, []);
   const [connected, setConnected] = useState(false);
   const socketRef = useRef<WebSocket | null>(null);
   const reconnectRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const attemptRef = useRef(0);
+  const receivedMessageIdsRef = useRef(new Set<string>());
 
   const loadConversations = useCallback(async () => {
-    const response = await api.get<ChatConversation[]>(
-      "/realtime/conversations",
-    );
-    setConversations(response.data);
-  }, []);
-
-  const createConversation = useCallback(
-    async (peerId: string) => {
-      const response = await api.post<{ id: string }>(
+    try {
+      const response = await api.get<ChatConversation[]>(
         "/realtime/conversations",
-        { peer_id: peerId },
       );
-      await loadConversations();
-      return response.data.id;
-    },
-    [loadConversations],
-  );
+
+      console.log("realtime conv are >>>>", response);
+
+      setConversations(response.data);
+    } catch (error) {
+      console.error("Unable to load conversations:", error);
+    }
+  }, [connectedUser?.id]);
+
+  const createConversation = useCallback(async (peerId: string) => {
+    const response = await api.post<{ id: string }>("/realtime/conversations", {
+      peer_id: peerId,
+    });
+    await loadConversations();
+    return response.data.id;
+  }, []);
 
   const loadMessages = useCallback(async (conversationId: string) => {
     const response = await api.get<{
@@ -78,11 +162,22 @@ export function ChatProvider({
     }>(`/realtime/conversations/${conversationId}/messages`);
     setMessages((current) => ({
       ...current,
-      [conversationId]: response.data.items.toReversed(),
+      [conversationId]: sortMessages(
+        [...(current[conversationId] ?? []), ...response.data.items].filter(
+          (message, index, all) =>
+            all.findIndex((item) => item.id === message.id) === index,
+        ),
+      ),
     }));
   }, []);
 
   useEffect(() => {
+    console.log("chat effect:", {
+      isLoading,
+      userId: connectedUser?.id,
+      user: connectedUser,
+    });
+
     if (isLoading || !connectedUser?.id) return;
 
     let disposed = false;
@@ -107,7 +202,14 @@ export function ChatProvider({
           peer_username?: string;
           user_id?: string;
           unread_count?: number;
+          peer_last_read_message_id?: string | null;
+          message_id?: string;
           online?: boolean | string[];
+          event_type?: string;
+          actor_id?: string;
+          actor_username?: string;
+          read_at?: string | null;
+          match_time?: string | null;
         };
         try {
           frame = JSON.parse(event.data) as typeof frame;
@@ -125,14 +227,46 @@ export function ChatProvider({
           frame.created_at
         ) {
           const message = frame as RealtimeMessage;
+          if (receivedMessageIdsRef.current.has(message.id)) return;
+          receivedMessageIdsRef.current.add(message.id);
           setMessages((current) => {
             const existing = current[message.conversation_id] ?? [];
             if (existing.some((item) => item.id === message.id)) return current;
             return {
               ...current,
-              [message.conversation_id]: [...existing, message],
+              [message.conversation_id]: sortMessages([...existing, message]),
             };
           });
+          if (
+            connectedUser?.id &&
+            String(message.sender_id) !== String(connectedUser.id)
+          ) {
+            setConversations((current) =>
+              current.map((conversation) =>
+                conversation.id === message.conversation_id
+                  ? {
+                      ...conversation,
+                      unread_count: conversation.unread_count + 1,
+                    }
+                  : conversation,
+              ),
+            );
+          }
+        } else if (
+          frame.type === "read" &&
+          frame.conversation_id &&
+          frame.message_id
+        ) {
+          setConversations((current) =>
+            current.map((conversation) =>
+              conversation.id === frame.conversation_id
+                ? {
+                    ...conversation,
+                    peer_last_read_message_id: frame.message_id!,
+                  }
+                : conversation,
+            ),
+          );
         } else if (
           frame.type === "conversation.new" &&
           frame.id &&
@@ -148,6 +282,29 @@ export function ChatProvider({
                     peer_id: frame.peer_id!,
                     peer_username: frame.peer_username!,
                     unread_count: 0,
+                    peer_last_read_message_id: null,
+                  },
+                  ...current,
+                ],
+          );
+        } else if (
+          frame.type === "notification" &&
+          frame.id &&
+          frame.event_type &&
+          frame.actor_username &&
+          frame.created_at
+        ) {
+          setNotifications((current) =>
+            current.some((notification) => notification.id === frame.id)
+              ? current
+              : [
+                  {
+                    id: frame.id!,
+                    event_type: frame.event_type!,
+                    actor_username: frame.actor_username!,
+                    read_at: frame.read_at ?? null,
+                    created_at: frame.created_at!,
+                    match_time: frame.match_time ?? null,
                   },
                   ...current,
                 ],
@@ -187,10 +344,25 @@ export function ChatProvider({
       });
     }, 0);
     connect();
+    const notificationsTimer = setTimeout(() => {
+      void api
+        .get<{ items: ChatNotification[] }>("/realtime/notifications")
+        .then((response) => setNotifications(response.data.items))
+        .catch((error) => {
+          console.error("Unable to load notifications:", error);
+        });
+    }, 0);
+    const heartbeatTimer = setInterval(() => {
+      if (socketRef.current?.readyState === WebSocket.OPEN) {
+        socketRef.current.send(JSON.stringify({ type: "ping" }));
+      }
+    }, 30_000);
 
     return () => {
       disposed = true;
       clearTimeout(loadTimer);
+      clearTimeout(notificationsTimer);
+      clearInterval(heartbeatTimer);
       if (reconnectRef.current) clearTimeout(reconnectRef.current);
       socketRef.current?.close();
       socketRef.current = null;
@@ -221,15 +393,31 @@ export function ChatProvider({
         message_id: messageId,
       }),
     );
+    setConversations((current) =>
+      current.map((conversation) =>
+        conversation.id === conversationId
+          ? { ...conversation, unread_count: 0 }
+          : conversation,
+      ),
+    );
     return true;
   }, []);
+
+  const unreadMessages = conversations.reduce(
+    (total, conversation) => total + conversation.unread_count,
+    0,
+  );
 
   const value = useMemo(
     () => ({
       conversations,
+      unreadMessages,
       messages,
       onlineUserIds,
       connected,
+      notifications,
+      markNotificationRead,
+      markAllNotificationsRead,
       createConversation,
       loadMessages,
       sendMessage,
@@ -237,9 +425,13 @@ export function ChatProvider({
     }),
     [
       conversations,
+      unreadMessages,
       messages,
       onlineUserIds,
       connected,
+      notifications,
+      markNotificationRead,
+      markAllNotificationsRead,
       createConversation,
       loadMessages,
       sendMessage,

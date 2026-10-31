@@ -3,7 +3,9 @@
 import { PlayButton } from "@/components/ui/Button";
 import { PlayText } from "@/components/ui/Text";
 import { useAuth } from "@/hooks/contexts/authContext";
+import { pageSize } from "@/lib/constants";
 import { useMatchController } from "@/services/match";
+import { useProfileController } from "@/services/profile";
 import {
   MatchAnnouncement,
   MatchAnnouncementRequestData,
@@ -13,8 +15,6 @@ import { useTranslations } from "next-intl";
 import React, { useEffect, useState } from "react";
 import { MatchModal } from "../../home/components/matchModal";
 import { Match } from "./match";
-import { useProfileController } from "@/services/profile";
-import { pageSize } from "@/lib/constants";
 
 export const MatchesSection: React.FC = () => {
   const t = useTranslations();

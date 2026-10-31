@@ -1,7 +1,8 @@
 "use client";
 
+import { api } from "@/services/api";
 import { User } from "@/types/user";
-import React, { createContext, useContext, useMemo } from "react";
+import React, { createContext, useContext, useEffect, useMemo } from "react";
 
 type AuthContextType = {
   connectedUser: User | undefined;
@@ -20,6 +21,26 @@ export function AuthProvider({
   );
 
   const [isLoading, setIsLoading] = React.useState(false);
+
+  useEffect(() => {
+    const fetchUser = async (onSuccess?: () => void) => {
+      setIsLoading(true);
+      await api
+        .get<User>("/users/me")
+        .then((res) => {
+          setConnectedUser(res.data);
+          onSuccess?.();
+        })
+        .catch(() => {
+          setConnectedUser(undefined);
+        })
+        .finally(() => {
+          setIsLoading(false);
+        });
+    };
+
+    void fetchUser();
+  }, []);
 
   const value = useMemo(
     () => ({

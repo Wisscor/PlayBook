@@ -12,8 +12,7 @@ import { Link } from "../../../../i18n/navigation";
 import { BurgerMenu } from "./components/burgerMenu";
 import { NotificationPopUp } from "./notificationPopUp";
 import { useAuthController } from "@/services/auth";
-
-const unreadMessages = 3;
+import { useChat } from "@/hooks/contexts/chatContext";
 
 export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
   const { signOut } = useAuthController();
@@ -23,30 +22,15 @@ export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [logoutError, setLogoutError] = useState<string | undefined>(undefined);
   const { goMessages, goSearch } = useNavigation();
+  const {
+    unreadMessages,
+    notifications,
+    markNotificationRead,
+    markAllNotificationsRead,
+  } = useChat();
 
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const notificationRef = useRef<HTMLDivElement>(null);
-
-  const [notifications, setNotifications] = useState([
-    {
-      id: 1,
-      text: "Alex Johnson invited you to a basketball match.",
-      time: "10m ago",
-      read: false,
-    },
-    {
-      id: 2,
-      text: "Your match 'Weekend Football' starts tomorrow.",
-      time: "1h ago",
-      read: false,
-    },
-    {
-      id: 3,
-      text: "Sarah Connor liked your post.",
-      time: "3h ago",
-      read: true,
-    },
-  ]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -94,8 +78,28 @@ export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
     );
   };
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
-
+  const unreadCount = notifications.filter((n) => !n.read_at).length;
+  const toggleNotifications = () => {
+    const willOpen = !isNotificationsOpen;
+    setIsNotificationsOpen(willOpen);
+    if (willOpen) {
+      void markAllNotificationsRead();
+    }
+  };
+  const notificationItems = notifications.map((notification) => ({
+    id: notification.id,
+    text: `${notification.actor_username} ${{
+      follow: "followed you.",
+      post_created: "created a new post.",
+      play_request: "sent you a play request.",
+      play_request_accepted: "accepted your play request.",
+      play_request_rejected: "rejected your play request.",
+      match_updated: "updated a match you joined.",
+      match_cancelled: "cancelled a match you joined.",
+    }[notification.event_type] ?? "triggered a notification."}`,
+    time: new Date(notification.created_at).toLocaleString(),
+    read: Boolean(notification.read_at),
+  }));
   return (
     <div className="flex min-h-screen flex-col bg-slate-950 text-white">
       <header className="sticky top-0 z-50 border-b border-white/10 bg-slate-950/80 backdrop-blur-xl shadow-2xl">
@@ -171,7 +175,7 @@ export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
                       ? {
                           content: unreadMessages.toString(),
                           className:
-                            "absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white shadow-md",
+                          "absolute -top-1 -right-1 flex min-h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white shadow-md",
                         }
                       : {},
                   ]}
@@ -181,7 +185,7 @@ export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
               <div className="relative block" ref={notificationRef}>
                 <PlayButton.Complexe
                   type="button"
-                  onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
+                  onClick={toggleNotifications}
                   className="relative rounded-xl border border-white/10 bg-white/5 p-2.5 backdrop-blur-md transition-all hover:bg-white/10 cursor-pointer flex items-center justify-center"
                   aria-label="Notifications"
                 >
@@ -207,8 +211,8 @@ export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
 
                 {isNotificationsOpen && (
                   <NotificationPopUp
-                    setNotifications={setNotifications}
-                    notifications={notifications}
+                    onRead={markNotificationRead}
+                    notifications={notificationItems}
                     unreadCount={unreadCount}
                   />
                 )}
@@ -267,7 +271,10 @@ export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
 
                 <PlayButton.Complexe
                   type="button"
-                  onClick={() => goMessages()}
+                  onClick={() => {
+                    setIsExpanded(false);
+                    goMessages();
+                  }}
                   className="relative rounded-xl border border-white/10 bg-white/5 p-2.5 backdrop-blur-md transition-all hover:bg-white/10 cursor-pointer flex items-center justify-center"
                   aria-label="Messages"
                 >
@@ -284,7 +291,7 @@ export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
                         ? {
                             content: unreadMessages.toString(),
                             className:
-                              "absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white shadow-md",
+                              "absolute -top-1 -right-1 flex min-h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white shadow-md",
                           }
                         : {},
                     ]}
@@ -294,7 +301,7 @@ export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
                 <div className="relative block" ref={notificationRef}>
                   <PlayButton.Complexe
                     type="button"
-                    onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
+                    onClick={toggleNotifications}
                     className="relative rounded-xl border border-white/10 bg-white/5 p-2.5 backdrop-blur-md transition-all hover:bg-white/10 cursor-pointer flex items-center justify-center"
                     aria-label="Notifications"
                   >
@@ -320,8 +327,8 @@ export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
 
                   {isNotificationsOpen && (
                     <NotificationPopUp
-                      setNotifications={setNotifications}
-                      notifications={notifications}
+                      onRead={markNotificationRead}
+                      notifications={notificationItems}
                       unreadCount={unreadCount}
                     />
                   )}

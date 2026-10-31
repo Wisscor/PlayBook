@@ -212,8 +212,10 @@ async def decide_play_request(
         and announcement.remaining_player_slots <= 0
     ):
         raise ApiException(code=ErrorCode.ANNOUNCEMENT_FULL)
-
-    play_request.status = body.status
+    notification_target_user_id = play_request.sender_id
+    notification_target_id = play_request.announcement_id
+    notification_match_time = announcement.start_time
+    play_request.status = PlayerRequestStatusEnum(body.status)
     if play_request.status == PlayerRequestStatusEnum.accepted:
         announcement.remaining_player_slots -= 1
 
@@ -226,8 +228,8 @@ async def decide_play_request(
             else "play_request_rejected"
         ),
         actor_id=me.id,
-        target_user_id=play_request.sender_id,
-        target_id=play_request.announcement_id,
-        match_time=announcement.start_time,
+        target_user_id=notification_target_user_id,
+        target_id=notification_target_id,
+        match_time=notification_match_time,
     )
     return await _get_request(db, id)
