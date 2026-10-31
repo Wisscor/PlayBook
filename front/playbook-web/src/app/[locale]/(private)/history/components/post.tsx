@@ -2,7 +2,7 @@
 
 import React from "react";
 import { PlayText } from "@/components/ui/Text";
-import { Post as PostData } from "@/types/api";
+import { PostData } from "@/types/api";
 import { useNavigation } from "@/hooks/useNavigation";
 
 export interface PostProps {
@@ -12,7 +12,7 @@ export interface PostProps {
 
 export const Post: React.FC<PostProps> = ({ post, onDelete }) => {
   const { goUserProfile } = useNavigation();
-  const author = post.author ?? post.user;
+  const author = post.author;
   const authorId = author?.id;
   const authorName = author
     ? `${author.firstname} ${author.lastname}`

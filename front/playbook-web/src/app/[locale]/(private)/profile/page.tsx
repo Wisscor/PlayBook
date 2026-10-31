@@ -24,7 +24,7 @@ const mocked: User = {
   posts_count: 0,
 };
 
-export const ProfilePage = () => {
+const ProfilePage = () => {
   const { connectedUser, isLoading, setIsLoading } = useAuth();
   const { goFollowers } = useNavigation();
   const { uploadAvatar, fetchUser } = useProfileController();

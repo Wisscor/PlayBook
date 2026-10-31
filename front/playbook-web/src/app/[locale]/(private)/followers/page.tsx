@@ -8,7 +8,7 @@ import { useSearchParams } from "next/navigation";
 import React from "react";
 import { FollowCard } from "./components/followCard";
 
-export const FollowersPage = () => {
+const FollowersPage = () => {
   const t = useTranslations();
   const searchParams = useSearchParams();
   const { connectedUser, isLoading } = useAuth();

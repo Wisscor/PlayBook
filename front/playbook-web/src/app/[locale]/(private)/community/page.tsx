@@ -15,7 +15,7 @@ import { RightSideSection } from "./components/rightSideSection";
 import { usePlayRequestsController } from "@/services/playRequest";
 import { PlayText } from "@/components/ui/Text";
 
-export const CommunityPage = () => {
+const CommunityPage = () => {
   const { connectedUser, isLoading } = useAuth();
   const { fetchUser } = useProfileController();
   const { loadFeeds, feedPageNumber, feeds, totalFeeds, feedPages } =

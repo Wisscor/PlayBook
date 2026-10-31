@@ -2,8 +2,7 @@ import { Header } from "@/components/shared/Header";
 import { PlayText } from "@/components/ui/Text";
 import { useTranslations } from "next-intl";
 import React from "react";
-
-export const PrivacyPage = () => {
+const PrivacyPage = () => {
   const t = useTranslations();
   const datasCollected = [
     {

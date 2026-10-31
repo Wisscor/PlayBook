@@ -21,7 +21,7 @@ const PROTECTED_ROUTES = [
 
 const GUEST_ONLY_ROUTES = ["/auth", ROUTES.SIGNIN, ROUTES.SIGNUP];
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   const pathnameSegments = pathname.split("/");
@@ -37,8 +37,9 @@ export function middleware(request: NextRequest) {
   );
 
   if (isGuestOnlyRoute && sessionToken) {
-    const homeUrl = new URL(`/${currentLocale}${ROUTES.HOME}`, request.url);
-    return NextResponse.redirect(homeUrl);
+    return NextResponse.redirect(
+      new URL(`/${currentLocale}${ROUTES.HOME}`, request.url),
+    );
   }
 
   const isProtectedRoute = PROTECTED_ROUTES.some((route) =>
@@ -66,7 +67,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    String.raw`/((?!api|_next/static|_next/image|favicon.ico|.*\..*).*)`,
-  ],
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|.*\\..*).*)"],
 };

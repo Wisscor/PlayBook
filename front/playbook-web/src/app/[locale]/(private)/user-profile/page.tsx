@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 import { AboutSection } from "../profile/components/aboutSection";
 import { MainDetails } from "../profile/components/mainDetails";
 
-export const UserProfilePage = () => {
+const UserProfilePage = () => {
   const userId = localStorage.getItem("userId");
   const { getUser } = useUserController();
   const [user, setUser] = useState<User | undefined | null>(undefined);

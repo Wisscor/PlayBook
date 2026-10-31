@@ -9,7 +9,7 @@ import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { UserCard } from "./components/userCard";
 
-export const SearchPage = () => {
+const SearchPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [error, setError] = useState("");
   const { loadUsers, userPages, userPageNumber, users, totalUsers } =

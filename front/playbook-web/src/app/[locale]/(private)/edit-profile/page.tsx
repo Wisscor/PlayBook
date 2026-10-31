@@ -13,7 +13,7 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { Info } from "./components/info";
 
-export const EditProfilePage = () => {
+const EditProfilePage = () => {
   const t = useTranslations();
   const { connectedUser, setConnectedUser, isLoading } = useAuth();
   const { updateProfile, fetchUser } = useProfileController();

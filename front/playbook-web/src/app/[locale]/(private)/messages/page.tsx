@@ -8,8 +8,9 @@ import { api } from "@/services/api";
 import React, { useEffect, useMemo, useState } from "react";
 import { ContactsList } from "./components/contactsList";
 import { Conversation } from "./components/conversation";
+import { useSearchParams } from "next/navigation";
 
-export const MessagesPage = () => {
+const MessagesPage = () => {
   const { connectedUser } = useAuth();
   const {
     conversations,
@@ -95,18 +96,17 @@ export const MessagesPage = () => {
   );
 
   const selectedConversationId = selectedContactId;
-  const firstConversationId = contacts[0]?.id;
 
   useEffect(() => {
-    const conversationId = selectedConversationId || firstConversationId;
+    const conversationId = selectedConversationId;
     if (!conversationId || messages[conversationId]) return;
     void loadMessages(conversationId).catch((error) => {
       console.error("Unable to load conversation messages:", error);
     });
-  }, [firstConversationId, loadMessages, messages, selectedConversationId]);
+  }, [loadMessages, messages, selectedConversationId]);
 
   useEffect(() => {
-    const conversationId = selectedConversationId || firstConversationId;
+    const conversationId = selectedConversationId;
     const conversationMessages = conversationId
       ? messages[conversationId]
       : undefined;
@@ -123,15 +123,14 @@ export const MessagesPage = () => {
   }, [
     connectedUser?.id,
     connected,
-    firstConversationId,
     markRead,
     messages,
     selectedConversationId,
   ]);
 
-  const activeContact =
-    contacts.find((contact) => contact.id === selectedConversationId) ??
-    contacts[0];
+  const activeContact = contacts.find(
+    (contact) => contact.id === selectedConversationId,
+  );
 
   useEffect(() => {
     if (activeContact) {
@@ -139,9 +138,15 @@ export const MessagesPage = () => {
     }
   }, [activeContact]);
 
-  console.log("actibve is >>", activeContact);
-  console.log("contacts is >>", contacts);
-  console.log("conversations is >>", conversations);
+  const searchParams = useSearchParams();
+
+  const params = searchParams.get("conversation");
+
+  useEffect(() => {
+    if (params) {
+      setSelectedContactId(params);
+    }
+  }, [params]);
 
   const handleSendMessage = (event: React.SubmitEvent) => {
     event.preventDefault();

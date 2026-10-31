@@ -7,7 +7,7 @@ import { Action } from "./components/action";
 import { MatchModal } from "./components/matchModal";
 import { PostModal } from "./components/postModal";
 
-export const HomePage = () => {
+const HomePage = () => {
   const { goProfile, goCommunity } = useNavigation();
   const { addMatch } = useMatchController();
   const [matchModalOpen, setMatchModalOpen] = useState(false);

@@ -5,7 +5,7 @@ import { PlayText } from "@/components/ui/Text";
 import { useTranslations } from "next-intl";
 import React from "react";
 
-export const TermsOfServicePage = () => {
+const TermsOfServicePage = () => {
   const t = useTranslations();
 
   const userConductRules = [

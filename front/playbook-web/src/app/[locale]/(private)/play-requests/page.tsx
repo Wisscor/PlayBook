@@ -5,7 +5,7 @@ import { usePlayRequestsController } from "@/services/playRequest";
 import React, { useEffect } from "react";
 import { PlayRequestCard } from "./components/playRequestCard";
 
-export const PlayRequestsPage = () => {
+const PlayRequestsPage = () => {
   const { loadRequests, requests, requestsPageNumber, requestsPages } =
     usePlayRequestsController();
 
