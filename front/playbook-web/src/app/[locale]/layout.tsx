@@ -8,11 +8,14 @@ import { Locale, locales } from "../../../i18n";
 import { AuthProvider } from "@/hooks/contexts/authContext";
 import { ChatProvider } from "@/hooks/contexts/chatContext";
 import { roboto } from "@/public/fonts";
+import { pageTitle } from "@/lib/pageTitle";
 
 type Props = {
   readonly children: ReactNode;
   readonly params: Promise<{ locale: string }>;
 };
+
+export const generateMetadata = pageTitle("title-home");
 
 export default async function LocaleLayout({ children, params }: Props) {
   const { locale } = await params;

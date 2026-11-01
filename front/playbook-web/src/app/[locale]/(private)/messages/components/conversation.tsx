@@ -101,7 +101,7 @@ export const Conversation: React.FC<{
               }`}
             >
               <div
-                className={`wrap-break-word rounded-2xl px-4 py-2.5 text-sm shadow-md backdrop-blur-md ${
+                className={`wrap-break-word rounded-2xl w-full px-4 py-2.5 text-sm shadow-md backdrop-blur-md ${
                   isMe
                     ? "rounded-ee-sm bg-linear-to-br from-primary to-extra font-medium text-white shadow-primary/20"
                     : "rounded-es-sm border border-white/10 bg-secondary/40 text-stone-100"

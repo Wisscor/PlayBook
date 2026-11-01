@@ -1,4 +1,10 @@
 {
+  "auth-title": "Sign in",
+  "title-home": "Home",
+  "title-community": "Community",
+  "title-search": "Find players",
+  "title-history": "History",
+  "title-user-profile": "Player profile",
   "english": "English",
   "french": "French",
   "arabic": "Arabic",

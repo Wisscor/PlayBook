@@ -61,126 +61,125 @@ export const SignUp: React.FC = () => {
   };
 
   return (
-    <div className="w-full max-w-4xl overflow-hidden rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl shadow-2xl transition-all duration-300 lg:grid lg:grid-cols-2">
-      <div className="flex flex-col justify-center border-b border-white/10 bg-slate-950/40 p-8 lg:border-b-0 lg:border-r lg:p-12">
-        <div className="mb-8 text-center lg:text-left">
+    <div className="flex w-full flex-col gap-6">
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center gap-3">
+          <span className="h-8 w-1.5 rounded-full bg-linear-to-b from-primary to-extra" />
           <PlayText.Primary
             id="signUp"
-            className="text-2xl lg:text-3xl font-bold tracking-tight text-white"
+            className="text-2xl font-extrabold tracking-tight text-stone-100 sm:text-3xl"
           />
         </div>
-
-        <form onSubmit={handleSignUp} className="space-y-4">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <PlayInput.Primary
-              onInputClick={() => {
-                setError(undefined);
-              }}
-              placeholder="firstName"
-              value={infos.firstName}
-              onChange={(e) =>
-                setInfos({ ...infos, firstName: e.target.value })
-              }
-            />
-            <PlayInput.Primary
-              onInputClick={() => {
-                setError(undefined);
-              }}
-              placeholder="lastName"
-              value={infos.lastName}
-              onChange={(e) => setInfos({ ...infos, lastName: e.target.value })}
-            />
-          </div>
-
-          <PlayInput.Primary
-            onInputClick={() => {
-              setError(undefined);
-            }}
-            placeholder="username"
-            value={infos.username}
-            onChange={(e) => setInfos({ ...infos, username: e.target.value })}
-          />
-
-          <PlayInput.Primary
-            onInputClick={() => {
-              setError(undefined);
-            }}
-            onBlur={() => {
-              if (!isEmailValid(infos.email)) {
-                setError("email-invalid");
-              }
-            }}
-            placeholder="email"
-            type="email"
-            value={infos.email}
-            onChange={(e) => setInfos({ ...infos, email: e.target.value })}
-          />
-
-          <PlayInput.Password
-            onInputClick={() => {
-              setError(undefined);
-            }}
-            onClick={() =>
-              setIsHidden({ ...isHidden, original: !isHidden.original })
-            }
-            isHidden={isHidden.original}
-            placeholder="password"
-            value={infos.password}
-            onChange={(e) => setInfos({ ...infos, password: e.target.value })}
-          />
-
-          <PlayInput.Password
-            onInputClick={() => {
-              setError(undefined);
-            }}
-            onClick={() =>
-              setIsHidden({ ...isHidden, confirm: !isHidden.confirm })
-            }
-            isHidden={isHidden.confirm}
-            placeholder="confirm-password"
-            value={infos.confirmPassword}
-            onChange={(e) =>
-              setInfos({ ...infos, confirmPassword: e.target.value })
-            }
-          />
-
-          {error && (
-            <PlayText.Primary id={error} className="text-sm text-rose-400" />
-          )}
-
-          <div className="pt-2">
-            <PlayButton.Primary
-              title={isWaiting ? "signing-up" : "signUp"}
-              className="w-full rounded-2xl bg-white py-3.5 shadow-lg shadow-white/5 hover:bg-slate-100 transition-all text-slate-950 font-semibold"
-              type="submit"
-            />
-          </div>
-        </form>
-
-        <div className="mt-6 text-center lg:hidden">
-          <PlayText.Span
-            className="text-sm text-slate-300 justify-center"
-            texts={[
-              {
-                text: "already-have-account",
-              },
-              {
-                text: "login",
-                className: "text-white underline font-semibold",
-                path: ROUTES.SIGNIN,
-              },
-            ]}
-          />
-        </div>
-      </div>
-
-      <div className="hidden lg:flex flex-col items-center justify-center gap-6 bg-linear-to-b from-secondary/40 via-extra/20 to-primary/40 p-12 text-center">
         <PlayText.Primary
           id="welcome-message"
-          className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl"
+          className="text-pretty text-sm leading-relaxed text-stone-400"
         />
+      </div>
+
+      <form onSubmit={handleSignUp} className="flex flex-col gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <PlayInput.Primary
+            name="firstName"
+            autoComplete="given-name"
+            onInputClick={() => {
+              setError(undefined);
+            }}
+            placeholder="firstName"
+            value={infos.firstName}
+            onChange={(e) => setInfos({ ...infos, firstName: e.target.value })}
+          />
+          <PlayInput.Primary
+            name="lastName"
+            autoComplete="family-name"
+            onInputClick={() => {
+              setError(undefined);
+            }}
+            placeholder="lastName"
+            value={infos.lastName}
+            onChange={(e) => setInfos({ ...infos, lastName: e.target.value })}
+          />
+        </div>
+
+        <PlayInput.Primary
+          name="username"
+          autoComplete="username"
+          onInputClick={() => {
+            setError(undefined);
+          }}
+          placeholder="username"
+          value={infos.username}
+          onChange={(e) => setInfos({ ...infos, username: e.target.value })}
+        />
+
+        <PlayInput.Primary
+          name="email"
+          autoComplete="email"
+          onInputClick={() => {
+            setError(undefined);
+          }}
+          onBlur={() => {
+            if (!isEmailValid(infos.email)) {
+              setError("email-invalid");
+            }
+          }}
+          placeholder="email"
+          type="email"
+          value={infos.email}
+          onChange={(e) => setInfos({ ...infos, email: e.target.value })}
+        />
+
+        <PlayInput.Password
+          name="password"
+          autoComplete="new-password"
+          onInputClick={() => {
+            setError(undefined);
+          }}
+          onClick={() =>
+            setIsHidden({ ...isHidden, original: !isHidden.original })
+          }
+          isHidden={isHidden.original}
+          placeholder="password"
+          value={infos.password}
+          onChange={(e) => setInfos({ ...infos, password: e.target.value })}
+        />
+
+        <PlayInput.Password
+          name="confirmPassword"
+          autoComplete="new-password"
+          onInputClick={() => {
+            setError(undefined);
+          }}
+          onClick={() =>
+            setIsHidden({ ...isHidden, confirm: !isHidden.confirm })
+          }
+          isHidden={isHidden.confirm}
+          placeholder="confirm-password"
+          value={infos.confirmPassword}
+          onChange={(e) =>
+            setInfos({ ...infos, confirmPassword: e.target.value })
+          }
+        />
+
+        {error && (
+          <div
+            role="alert"
+            className="rounded-2xl border border-rose-500/30 bg-rose-500/10 px-4 py-3"
+          >
+            <PlayText.Primary id={error} className="text-sm text-rose-300" />
+          </div>
+        )}
+
+        <PlayButton.Primary
+          title={isWaiting ? "signing-up" : "signUp"}
+          textClassName="text-white font-semibold"
+          className="mt-1 w-full rounded-2xl py-3.5 shadow-lg shadow-primary/30 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-primary/40 active:scale-[0.98] disabled:opacity-60"
+          type="submit"
+        />
+      </form>
+
+      <div className="border-t border-white/10 pt-5 text-center">
         <PlayText.Span
-          className="text-sm text-slate-300 justify-center"
+          className="justify-center text-sm text-stone-400"
           texts={[
             {
               text: "already-have-account",
@@ -188,7 +187,7 @@ export const SignUp: React.FC = () => {
             {
               text: "login",
               className:
-                "text-white underline font-semibold hover:text-slate-200 transition-colors",
+                "font-semibold text-amber-200 underline-offset-4 transition-colors hover:text-amber-100 hover:underline",
               path: ROUTES.SIGNIN,
             },
           ]}

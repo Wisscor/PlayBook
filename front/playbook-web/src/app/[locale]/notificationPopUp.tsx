@@ -83,7 +83,7 @@ export const NotificationPopUp: React.FC<{
                 onRead(notif.id);
               }}
               style={{ animationDelay: `${Math.min(index, 6) * 45}ms` }}
-              className={`np-item group relative flex cursor-pointer items-start gap-3 overflow-hidden rounded-2xl border p-3 text-start transition-all duration-300 animate-[np-item-in_0.4s_cubic-bezier(0.22,1,0.36,1)_both] hover:-translate-y-0.5 hover:border-primary/60 hover:bg-primary/15 active:translate-y-0 active:scale-[0.98] ${
+              className={`np-item grouprelative flex cursor-pointer items-start gap-3 overflow--hidden rounded-2xl border p-3 text-start transition-all duration-300 animate-[np-item-in_0.4s_cubic-bezier(0.22,1,0.36,1)_both] hover:-translate-y-0.5 hover:border-primary/60 hover:bg-primary/15 active:translate-y-0 active:scale-[0.98] ${
                 notif.read
                   ? "border-white/5 bg-white/5"
                   : "border-primary/40 bg-primary/10 shadow-md shadow-primary/10"

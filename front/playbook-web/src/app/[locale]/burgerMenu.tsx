@@ -4,7 +4,6 @@ import React from "react";
 
 export const BurgerMenu: React.FC<{
   isOpen: boolean;
-
   locale: string;
   close: () => void;
   more: React.JSX.Element;

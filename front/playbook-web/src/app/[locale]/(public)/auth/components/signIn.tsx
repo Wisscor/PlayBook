@@ -9,6 +9,9 @@ import { useAuthController } from "@/services/auth";
 import { SignInData } from "@/types/api";
 import React, { useState } from "react";
 
+const inputClass =
+  "w-full rounded-2xl border border-white/10 bg-neutral-950/40 text-stone-100 placeholder-stone-500 backdrop-blur-md transition-all duration-300 hover:border-white/20 focus:border-primary/70 focus:outline-none focus:ring-2 focus:ring-primary/30";
+
 export const SignIn: React.FC = () => {
   const { signIn, isWaiting } = useAuthController();
 
@@ -35,14 +38,66 @@ export const SignIn: React.FC = () => {
   };
 
   return (
-    <div className="w-full max-w-4xl overflow-hidden rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl shadow-2xl transition-all duration-300 lg:grid lg:grid-cols-2">
-      <div className="hidden lg:flex flex-col items-center justify-center gap-6 bg-linear-to-b from-secondary/40 via-extra/20 to-primary/40 p-12 text-center">
+    <div className="flex w-full flex-col gap-6">
+      <div className="flex items-center gap-3">
+        <span className="h-8 w-1.5 rounded-full bg-linear-to-b from-primary to-extra" />
         <PlayText.Primary
-          id="welcome"
-          className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl"
+          id="login"
+          className="text-2xl font-extrabold tracking-tight text-stone-100 sm:text-3xl"
         />
+      </div>
+
+      <form onSubmit={handleLogin} className="flex flex-col gap-5">
+        <div className="flex flex-col gap-4">
+          <PlayInput.Primary
+            autoComplete="email"
+            onInputClick={() => {
+              setError(undefined);
+            }}
+            onBlur={() => {
+              if (!isEmailValid(infos.email)) {
+                setError("email-invalid");
+              }
+            }}
+            className={inputClass}
+            placeholder="email"
+            value={infos.email}
+            onChange={(e) => setInfos({ ...infos, email: e.target.value })}
+          />
+          <PlayInput.Password
+            autoComplete="current-password"
+            onInputClick={() => {
+              setError(undefined);
+            }}
+            className={inputClass}
+            onClick={() => setIsHidden(!isHidden)}
+            isHidden={isHidden}
+            placeholder="password"
+            value={infos.password}
+            onChange={(e) => setInfos({ ...infos, password: e.target.value })}
+          />
+        </div>
+
+        {error && (
+          <div
+            role="alert"
+            className="rounded-2xl border border-rose-500/30 bg-rose-500/10 px-4 py-3"
+          >
+            <PlayText.Primary id={error} className="text-sm text-rose-300" />
+          </div>
+        )}
+
+        <PlayButton.Primary
+          textClassName="text-white font-semibold"
+          title={isWaiting ? "logging-in" : "login"}
+          className="w-full rounded-2xl py-3.5 shadow-lg shadow-primary/30 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-primary/40 active:scale-[0.98] disabled:opacity-60"
+          type="submit"
+        />
+      </form>
+
+      <div className="border-t border-white/10 pt-5 text-center">
         <PlayText.Span
-          className="text-sm text-slate-300"
+          className="text-sm text-stone-400"
           texts={[
             {
               text: "are-you-new",
@@ -50,79 +105,11 @@ export const SignIn: React.FC = () => {
             {
               text: "signup-now",
               className:
-                "text-white underline font-semibold hover:text-slate-200 transition-colors",
+                "font-semibold text-amber-200 underline-offset-4 transition-colors hover:text-amber-100 hover:underline",
               path: ROUTES.SIGNUP,
             },
           ]}
         />
-      </div>
-
-      <div className="flex flex-col justify-center border-t border-white/10 bg-slate-950/40 p-8 lg:border-t-0 lg:border-l lg:p-12">
-        <div className="mb-8 text-center lg:text-left">
-          <PlayText.Primary
-            id="login"
-            className="text-2xl lg:text-3xl font-bold tracking-tight text-white"
-          />
-        </div>
-
-        <form onSubmit={handleLogin} className="space-y-5">
-          <div className="space-y-4">
-            <PlayInput.Primary
-              onInputClick={() => {
-                setError(undefined);
-              }}
-              onBlur={() => {
-                if (!isEmailValid(infos.email)) {
-                  setError("email-invalid");
-                }
-              }}
-              className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-slate-400 backdrop-blur-md focus:border-white/30 focus:outline-none transition-all"
-              placeholder="email"
-              value={infos.email}
-              onChange={(e) => setInfos({ ...infos, email: e.target.value })}
-            />
-            <PlayInput.Password
-              onInputClick={() => {
-                setError(undefined);
-              }}
-              className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-slate-400 backdrop-blur-md focus:border-white/30 focus:outline-none transition-all"
-              onClick={() => setIsHidden(!isHidden)}
-              isHidden={isHidden}
-              placeholder="password"
-              value={infos.password}
-              onChange={(e) => setInfos({ ...infos, password: e.target.value })}
-            />
-          </div>
-
-          {error && (
-            <PlayText.Primary id={error} className="text-sm text-rose-400" />
-          )}
-
-          <div className="pt-2">
-            <PlayButton.Primary
-              textClassName="text-slate-950 font-semibold"
-              title={isWaiting ? "logging-in" : "login"}
-              className="w-full rounded-2xl bg-white py-3.5 shadow-lg shadow-white/5 hover:bg-slate-100 transition-all"
-              type="submit"
-            />
-          </div>
-        </form>
-
-        <div className="mt-6 text-center lg:hidden">
-          <PlayText.Span
-            className="text-sm text-slate-300"
-            texts={[
-              {
-                text: "are-you-new",
-              },
-              {
-                text: "signup-now",
-                className: "text-white underline font-semibold",
-                path: ROUTES.SIGNUP,
-              },
-            ]}
-          />
-        </div>
       </div>
     </div>
   );

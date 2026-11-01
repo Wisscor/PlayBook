@@ -1,7 +1,5 @@
-"use client";
-
-import { Header } from "@/components/shared/Header";
 import { PlayText } from "@/components/ui/Text";
+import { LegalPage, LegalSection } from "@/components/shared/legal";
 import { useTranslations } from "next-intl";
 import React from "react";
 
@@ -15,102 +13,56 @@ const TermsOfServicePage = () => {
   ];
 
   return (
-    <div className="relative flex min-h-screen flex-col overflow-hidden bg-linear-to-b from-secondary via-extra to-primary px-6 py-8 md:px-12 lg:px-20 lg:py-12">
-      <main className="relative z-10 flex flex-1 flex-col justify-between">
-        <div className="w-full">
-          <Header />
-        </div>
+    <LegalPage titleId="terms-of-service" date="November 1, 2026">
+      <LegalSection titleId="agreement-to-terms" mark="1" index={0}>
+        <PlayText.Span
+          texts={[
+            { text: "by-accessing-or-using" },
+            { content: " PlayBook", className: "font-semibold text-amber-200" },
+            { text: "you-agree-to-be-bound" },
+          ]}
+        />
+      </LegalSection>
 
-        <div className="flex flex-col min-h-[calc(100vh-140px)] text-white px-4 py-8 md:px-12 lg:px-20 gap-8">
-          <div className="max-w-4xl mx-auto w-full flex flex-col gap-8">
-            <div className="flex flex-col gap-3 border-b border-white/10 pb-6">
-              <PlayText.Primary
-                id="terms-of-service"
-                className="text-3xl font-extrabold tracking-tight text-white"
+      <LegalSection titleId="user-accounts" mark="2" index={1}>
+        <PlayText.Primary id="user-accounts-description-1" />
+        <PlayText.Primary id="user-accounts-description-2" />
+      </LegalSection>
+
+      <LegalSection titleId="user-conduct" mark="3" index={2}>
+        <PlayText.Primary id="user-conduct-description" />
+        <ul className="mt-1 flex flex-col gap-2">
+          {userConductRules.map((rule) => (
+            <li
+              key={rule}
+              className="flex gap-3 rounded-2xl border border-white/5 bg-neutral-950/40 px-4 py-3 text-stone-400"
+            >
+              <span
+                aria-hidden
+                className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-primary"
               />
+              {t(rule)}
+            </li>
+          ))}
+        </ul>
+      </LegalSection>
 
-              <PlayText.Primary
-                id="last-updated"
-                values={{
-                  date: "November 1, 2026",
-                }}
-                className="text-xs text-slate-400"
-              />
-            </div>
+      <LegalSection titleId="changes-to-terms" mark="4" index={3}>
+        <PlayText.Primary id="changes-to-terms-description" />
+      </LegalSection>
 
-            <div className="flex flex-col gap-6 text-sm text-slate-300 leading-relaxed">
-              <section className="rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl p-6 shadow-xl flex flex-col gap-3">
-                <PlayText.Primary
-                  id="agreement-to-terms"
-                  values={{ mark: "1" }}
-                  className="text-base font-bold text-white"
-                />
-                <PlayText.Span
-                  texts={[
-                    { text: "by-accessing-or-using" },
-                    {
-                      content: " PlayBook",
-                      className: "text-white font-semibold",
-                    },
-                    { text: "you-agree-to-be-bound" },
-                  ]}
-                />
-              </section>
-
-              <section className="rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl p-6 shadow-xl flex flex-col gap-3">
-                <PlayText.Primary
-                  id="user-accounts"
-                  values={{ mark: "2" }}
-                  className="text-base font-bold text-white"
-                />
-                <PlayText.Primary id="user-accounts-description-1" />
-                <PlayText.Primary id="user-accounts-description-2" />
-              </section>
-
-              <section className="rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl p-6 shadow-xl flex flex-col gap-3">
-                <PlayText.Primary
-                  id="user-conduct"
-                  values={{ mark: "3" }}
-                  className="text-base font-bold text-white"
-                />
-                <PlayText.Primary id="user-conduct-description" />
-                <ul className="list-disc list-inside space-y-1 pl-2 text-slate-400">
-                  {userConductRules.map((rule) => (
-                    <li key={rule}>{t(rule)}</li>
-                  ))}
-                </ul>
-              </section>
-
-              <section className="rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl p-6 shadow-xl flex flex-col gap-3">
-                <PlayText.Primary
-                  id="changes-to-terms"
-                  values={{ mark: "4" }}
-                  className="text-base font-bold text-white"
-                />
-                <PlayText.Primary id="changes-to-terms-description" />
-              </section>
-
-              <section className="rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl p-6 shadow-xl flex flex-col gap-3">
-                <PlayText.Primary
-                  id="contact-us"
-                  values={{ mark: "5" }}
-                  className="text-base font-bold text-white"
-                />
-                <PlayText.Span
-                  texts={[
-                    { text: "terms-contact-description" },
-                    {
-                      content: "+212631205288",
-                      className: "text-sky-400 font-medium",
-                    },
-                  ]}
-                />
-              </section>
-            </div>
-          </div>
-        </div>
-      </main>
-    </div>
+      <LegalSection titleId="contact-us" mark="5" index={4}>
+        <PlayText.Span
+          texts={[
+            { text: "terms-contact-description" },
+            {
+              content: "+212631205288",
+              className: "font-semibold text-amber-200",
+            },
+          ]}
+        />
+      </LegalSection>
+    </LegalPage>
   );
 };
 
