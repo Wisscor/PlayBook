@@ -528,6 +528,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@fontsource-variable/roboto@npm:^5.3.0":
+  version: 5.3.0
+  resolution: "@fontsource-variable/roboto@npm:5.3.0"
+  checksum: 10c0/22c7b705afc0acd44c4d80ceac3151d2005b90a7c61709ad61cf07446bdcb7fd2b1ce91b634c4bbfca590eea68e2b33ad931bd51007d175e2fe38bb3ce8ab101
+  languageName: node
+  linkType: hard
+
 "@formatjs/fast-memoize@npm:3.1.7, @formatjs/fast-memoize@npm:^3.1.0":
   version: 3.1.7
   resolution: "@formatjs/fast-memoize@npm:3.1.7"
@@ -4693,6 +4700,7 @@ __metadata:
   dependencies:
     "@emotion/react": "npm:^11.14.0"
     "@emotion/styled": "npm:^11.14.1"
+    "@fontsource-variable/roboto": "npm:^5.3.0"
     "@mui/icons-material": "npm:^9.5.0"
     "@mui/material": "npm:^9.5.0"
     "@tailwindcss/postcss": "npm:^4"

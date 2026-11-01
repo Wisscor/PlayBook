@@ -1,52 +1,72 @@
 import { PlayButton } from "@/components/ui/Button";
 import { PlayText } from "@/components/ui/Text";
 import { useNavigation } from "@/hooks/useNavigation";
-import { UserSummary } from "@/types/user";
+import { User, UserSummary } from "@/types/user";
 import React from "react";
 
-export const UserCard: React.FC<{ user: UserSummary }> = ({ user }) => {
-  const { goUserProfile } = useNavigation();
+export const UserCard: React.FC<{
+  user: UserSummary;
+  connectedUser?: User;
+}> = ({ user, connectedUser }) => {
+  const { goUserProfile, goProfile } = useNavigation();
+  const isMe = user.id == connectedUser?.id;
+
   return (
     <div
       key={user.id}
-      className="rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl p-6 shadow-xl flex flex-col justify-between gap-4 hover:bg-white/10 transition-all"
+      className={`group relative flex h-full flex-col justify-between gap-5 overflow-hidden rounded-3xl border p-6 shadow-xl shadow-black/30 backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-primary/15 ${
+        isMe
+          ? "border-primary/60 bg-primary/10"
+          : "border-white/10 bg-secondary/20 hover:border-primary/50 hover:bg-primary/10"
+      }`}
     >
-      <div className="flex items-center gap-4">
-        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-linear-to-tr from-indigo-950 to-indigo-600 font-bold text-base text-white shadow-md">
-          {user.avatar ? (
-            <img
-              src={`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}/${user.avatar}`}
-              alt="Avatar"
-              className="w-full h-full rounded-full object-cover"
-            />
-          ) : (
-            <div>
-              {user.firstname.charAt(0)}
-              {user.lastname.charAt(0)}
-            </div>
-          )}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -inset-e-12 -top-12 h-32 w-32 rounded-full bg-primary/20 blur-3xl transition-opacity duration-500 group-hover:opacity-100 md:opacity-60"
+      />
+
+      <div className="relative flex min-w-0 items-center gap-4 rounded-xl text-start">
+        <div className="shrink-0 rounded-full bg-linear-to-tr from-primary via-amber-200/60 to-extra p-0.5 transition-transform duration-300 group-hover:scale-105">
+          <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-linear-to-tr from-extra to-primary text-base font-bold text-white shadow-md">
+            {user.avatar ? (
+              <img
+                src={`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}/${user.avatar}`}
+                alt="Avatar"
+                className="h-full w-full rounded-full object-cover"
+              />
+            ) : (
+              <div className="min-w-0">
+                {user.firstname.charAt(0)}
+                {user.lastname.charAt(0)}
+              </div>
+            )}
+          </div>
         </div>
-        <div>
+        <div className="min-w-0">
           <PlayText.Primary
             content={`${user.firstname} ${user.lastname}`}
-            className="font-bold text-base text-white"
+            className="truncate text-base font-bold text-stone-100 transition-colors duration-300 group-hover:text-amber-100"
           />
           <PlayText.Primary
             content={`@${user.username}`}
-            className="text-xs text-slate-400"
+            className="truncate text-xs text-amber-200/70"
           />
         </div>
       </div>
 
-      <div className="pt-2 flex justify-end">
-        <PlayButton.Primary
+      <div className="relative flex justify-end border-t border-white/10 pt-4">
+        <PlayButton.Secondary
           onClick={() => {
+            if (user.id == connectedUser?.id) {
+              goProfile();
+              return;
+            }
             goUserProfile(user.id);
           }}
           textClassName="text-xs font-semibold text-white"
           title="view-profile"
           type="button"
-          className="rounded-xl border border-white/10 bg-white/10 px-4 py-2  transition-all hover:bg-white/20 active:scale-95 cursor-pointer shadow-md"
+          className="rounded-xl px-4 py-2"
         />
       </div>
     </div>

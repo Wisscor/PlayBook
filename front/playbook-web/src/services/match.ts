@@ -1,12 +1,14 @@
+import { useAuth } from "@/hooks/contexts/authContext";
 import {
-  MatchAnnouncementRequestData,
+  ApiError,
   MatchAnnouncement,
   MatchAnnouncementPaginated,
+  MatchAnnouncementRequestData,
   Sport,
+  UpdatedMatchRequest,
 } from "@/types/api";
-import { api } from "./api";
 import React from "react";
-import { useAuth } from "@/hooks/contexts/authContext";
+import { api } from "./api";
 
 export const useMatchController = () => {
   const [sports, setSports] = React.useState<Sport[]>([]);
@@ -35,7 +37,10 @@ export const useMatchController = () => {
       });
   };
 
-  const getSports = async (onSuccess: () => void, onError: () => void) => {
+  const getSports = async (
+    onSuccess: () => void,
+    onError: (error?: string) => void,
+  ) => {
     await api
       .get<Sport[]>("/sports")
       .then((res) => {
@@ -44,9 +49,8 @@ export const useMatchController = () => {
           onSuccess();
         }
       })
-      .catch((error) => {
-        onError();
-        console.error("Error fetching sports >>>>", error);
+      .catch((error: ApiError) => {
+        onError(error.errorCode);
       });
   };
 
@@ -54,7 +58,7 @@ export const useMatchController = () => {
     userId?: string,
     page?: number,
     size?: number,
-    onError?: () => void,
+    onError?: (error?: string) => void,
     additionalFilters?: {
       field: string;
       value: string;
@@ -80,53 +84,79 @@ export const useMatchController = () => {
           setTotal(res.data.total);
         }
       })
-      .catch((error) => {
-        console.error("Error fetching matches >>>>", error);
-        onError?.();
+      .catch((error: ApiError) => {
+        onError?.(error.errorCode);
       })
       .finally(() => {
         setIsLoading(false);
       });
   };
 
-  const deleteMatch = async (
+  const deleteMatch = async (id: string, onSuccess: () => void) => {
+    await api.delete(`/match-announcements/${id}`).then((res) => {
+      if (res.status === 204) {
+        onSuccess();
+      }
+    });
+  };
+
+  const getMatch = async (
     id: string,
-    onSuccess: () => void,
-    onError: () => void,
+    onSuccess: (match: MatchAnnouncement) => void,
+    onError: (error?: string) => void,
   ) => {
     await api
-      .delete(`/match-announcements/${id}`)
+      .get<MatchAnnouncement>(`/match-announcements/${id}`)
       .then((res) => {
-        if (res.status === 204) {
-          onSuccess();
+        if (res.status === 200) {
+          onSuccess(res.data);
         }
       })
-      .catch((error) => {
-        console.error("Error deleting match >>>>", error);
-        onError();
+      .catch((error: ApiError) => {
+        onError(error.errorCode);
       });
   };
 
   const updateMatch = async (
     id: string,
-    payload: MatchAnnouncementRequestData,
-    status: string,
+    payload: UpdatedMatchRequest,
     onSuccess: () => void,
-    onError: () => void,
   ) => {
     await api
-      .patch<MatchAnnouncement>(`/match-announcements/${id}`, {
-        ...payload,
-        match_status: status,
-      })
+      .patch<MatchAnnouncement>(`/match-announcements/${id}`, payload)
       .then((res) => {
         if (res.status === 200) {
           onSuccess();
         }
+      });
+  };
+
+  const decide = async (requestId: string, status: "accepted" | "declined") => {
+    await api
+      .patch(`/play-requests/${requestId}`, {
+        status: status,
+      })
+      .then((res) => {
+        if (res.status == 200) {
+          window.location.reload();
+        }
+      });
+  };
+
+  const requestToJoinMatch = async (
+    announcementId: string,
+    onSuccess: () => void,
+    onError: (error: unknown) => void,
+  ) => {
+    await api
+      .post(`/match-announcements/${announcementId}/play-requests`)
+      .then((response) => {
+        if (response.status === 200 || response.status === 201) {
+          onSuccess();
+        }
       })
       .catch((error) => {
-        console.error("Error updating match");
-        onError();
+        onError(error);
       });
   };
 
@@ -139,7 +169,10 @@ export const useMatchController = () => {
     pageNumber,
     deleteMatch,
     updateMatch,
+    requestToJoinMatch,
     pages,
     total,
+    decide,
+    getMatch,
   };
 };

@@ -1,16 +1,26 @@
 "use client";
 
 import { api } from "@/services/api";
-import { RealtimeMessage } from "@/types/api";
+import { ChatConversation, RealtimeMessage } from "@/types/api";
 import { useAuth } from "./authContext";
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { sortMessages } from "@/lib/utils";
 
-export interface ChatConversation {
+interface ChatNotification {
   id: string;
-  peer_id: string;
-  peer_username: string;
-  unread_count: number;
-  peer_last_read_message_id: string | null;
+  event_type: string;
+  actor_username: string;
+  read_at: string | null;
+  created_at: string;
+  match_time: string | null;
 }
 
 type ChatContextValue = {
@@ -20,10 +30,14 @@ type ChatContextValue = {
   onlineUserIds: string[];
   connected: boolean;
   timeoutRemaining: number;
-  createConversation: (peerId: string) => Promise<string>;
-  loadMessages: (conversationId: string) => Promise<void>;
+  notifications: ChatNotification[];
   sendMessage: (conversationId: string, body: string) => boolean;
   markRead: (conversationId: string, messageId: string) => boolean;
+  setNotifications: React.Dispatch<React.SetStateAction<ChatNotification[]>>;
+  loadConversations: () => Promise<void>;
+  setMessages: React.Dispatch<
+    React.SetStateAction<Record<string, RealtimeMessage[]>>
+  >;
 };
 
 const ChatContext = createContext<ChatContextValue | undefined>(undefined);
@@ -31,14 +45,6 @@ const ChatContext = createContext<ChatContextValue | undefined>(undefined);
 function getWebSocketUrl() {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
   return `${apiUrl.replace(/^http/, "ws")}/ws`;
-}
-
-function sortMessages(messages: RealtimeMessage[]) {
-  return [...messages].sort((a, b) => {
-    const timeDifference =
-      new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
-    return timeDifference || a.id.localeCompare(b.id);
-  });
 }
 
 export function ChatProvider({
@@ -50,73 +56,46 @@ export function ChatProvider({
     {},
   );
   const [onlineUserIds, setOnlineUserIds] = useState<string[]>([]);
+  const [notifications, setNotifications] = useState<ChatNotification[]>([]);
+
   const [connected, setConnected] = useState(false);
   const [timeoutRemaining, setTimeoutRemaining] = useState(0);
   const timeoutDeadlineRef = useRef(0);
   const socketRef = useRef<WebSocket | null>(null);
-  const readyRef = useRef(false);
   const reconnectRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const attemptRef = useRef(0);
   const receivedMessageIdsRef = useRef(new Set<string>());
 
   const loadConversations = useCallback(async () => {
-    const response = await api.get<ChatConversation[]>("/realtime/conversations");
-    setConversations(response.data);
-  }, []);
-
-  const createConversation = useCallback(
-    async (peerId: string) => {
-      const response = await api.post<{ id: string }>(
-        "/realtime/conversations",
-        { peer_id: peerId },
-      );
-      await loadConversations();
-      return response.data.id;
-    },
-    [loadConversations],
-  );
-
-  const loadMessages = useCallback(async (conversationId: string) => {
-    const response = await api.get<{
-      items: RealtimeMessage[];
-      next_cursor: string | null;
-    }>(`/realtime/conversations/${conversationId}/messages`);
-    setMessages((current) => ({
-      ...current,
-      [conversationId]: sortMessages([
-        ...(current[conversationId] ?? []),
-        ...response.data.items,
-      ].filter(
-        (message, index, all) =>
-          all.findIndex((item) => item.id === message.id) === index,
-      )),
-    }));
-  }, []);
+    await api.get<ChatConversation[]>("/realtime/conversations").then((res) => {
+      if (res.status == 200) {
+        setConversations(res.data);
+      }
+    });
+  }, [connectedUser?.id]);
 
   useEffect(() => {
     if (isLoading || !connectedUser?.id) return;
 
     let disposed = false;
-    let timeoutTimer: ReturnType<typeof setInterval> | null = null;
-    const updateTimeout = () => {
-      const seconds = Math.max(
+    const timeoutTimer = setInterval(() => {
+      const remaining = Math.max(
         0,
         Math.ceil((timeoutDeadlineRef.current - performance.now()) / 1000),
       );
-      setTimeoutRemaining(seconds);
-      if (seconds === 0 && timeoutTimer !== null) {
-        clearInterval(timeoutTimer);
-        timeoutTimer = null;
-      }
-    };
+      setTimeoutRemaining(remaining);
+      if (remaining === 0) timeoutDeadlineRef.current = 0;
+    }, 250);
     const connect = () => {
       if (disposed) return;
       const socket = new WebSocket(getWebSocketUrl());
       socketRef.current = socket;
-      readyRef.current = false;
 
+      socket.onopen = () => {
+        attemptRef.current = 0;
+        setConnected(true);
+      };
       socket.onmessage = (event) => {
-        if (disposed) return;
         let frame: {
           type?: string;
           reason?: string;
@@ -133,31 +112,28 @@ export function ChatProvider({
           peer_last_read_message_id?: string | null;
           message_id?: string;
           online?: boolean | string[];
+          event_type?: string;
+          actor_id?: string;
+          actor_username?: string;
+          read_at?: string | null;
+          match_time?: string | null;
         };
         try {
           frame = JSON.parse(event.data) as typeof frame;
         } catch {
-          console.error("Received invalid chat WebSocket frame");
           return;
         }
 
         if (
-          (frame.type === "ready" ||
-            (frame.type === "error" && frame.reason === "timed_out")) &&
+          frame.type === "error" &&
+          frame.reason === "timed_out" &&
           typeof frame.retry_after === "number" &&
           Number.isFinite(frame.retry_after) &&
           frame.retry_after >= 0
         ) {
-          if (frame.type === "ready") {
-            attemptRef.current = 0;
-            readyRef.current = true;
-            setConnected(true);
-          }
-          timeoutDeadlineRef.current = performance.now() + frame.retry_after * 1000;
-          updateTimeout();
-          if (frame.retry_after > 0 && timeoutTimer === null) {
-            timeoutTimer = setInterval(updateTimeout, 250);
-          }
+          timeoutDeadlineRef.current =
+            performance.now() + frame.retry_after * 1000;
+          setTimeoutRemaining(Math.ceil(frame.retry_after));
           return;
         }
 
@@ -231,6 +207,28 @@ export function ChatProvider({
                 ],
           );
         } else if (
+          frame.type === "notification" &&
+          frame.id &&
+          frame.event_type &&
+          frame.actor_username &&
+          frame.created_at
+        ) {
+          setNotifications((current) =>
+            current.some((notification) => notification.id === frame.id)
+              ? current
+              : [
+                  {
+                    id: frame.id!,
+                    event_type: frame.event_type!,
+                    actor_username: frame.actor_username!,
+                    read_at: frame.read_at ?? null,
+                    created_at: frame.created_at!,
+                    match_time: frame.match_time ?? null,
+                  },
+                  ...current,
+                ],
+          );
+        } else if (
           frame.type === "presence.snapshot" &&
           Array.isArray(frame.online)
         ) {
@@ -250,6 +248,8 @@ export function ChatProvider({
       socket.onclose = () => {
         socketRef.current = null;
         setConnected(false);
+        timeoutDeadlineRef.current = 0;
+        setTimeoutRemaining(0);
         if (!disposed) {
           const delay = Math.min(1000 * 2 ** attemptRef.current, 10000);
           attemptRef.current += 1;
@@ -260,20 +260,27 @@ export function ChatProvider({
     };
 
     const loadTimer = setTimeout(() => {
-      void loadConversations().catch((error) => {
-        console.error("Unable to load conversations:", error);
-      });
+      void loadConversations();
     }, 0);
     connect();
+    const notificationsTimer = setTimeout(() => {
+      void api
+        .get<{ items: ChatNotification[] }>("/realtime/notifications")
+        .then((response) => setNotifications(response.data.items));
+    }, 0);
+    const heartbeatTimer = setInterval(() => {
+      if (socketRef.current?.readyState === WebSocket.OPEN) {
+        socketRef.current.send(JSON.stringify({ type: "ping" }));
+      }
+    }, 30_000);
 
     return () => {
       disposed = true;
       clearTimeout(loadTimer);
+      clearTimeout(notificationsTimer);
+      clearInterval(heartbeatTimer);
+      clearInterval(timeoutTimer);
       if (reconnectRef.current) clearTimeout(reconnectRef.current);
-      if (timeoutTimer !== null) clearInterval(timeoutTimer);
-      readyRef.current = false;
-      timeoutDeadlineRef.current = 0;
-      setTimeoutRemaining(0);
       socketRef.current?.close();
       socketRef.current = null;
       setConnected(false);
@@ -281,9 +288,8 @@ export function ChatProvider({
   }, [connectedUser?.id, isLoading, loadConversations]);
 
   const sendMessage = useCallback((conversationId: string, body: string) => {
-    if (!readyRef.current || performance.now() < timeoutDeadlineRef.current) return false;
     const socket = socketRef.current;
-    if (!socket || socket.readyState !== WebSocket.OPEN) return false;
+    if (socket?.readyState !== WebSocket.OPEN) return false;
     socket.send(
       JSON.stringify({
         type: "message.send",
@@ -296,7 +302,7 @@ export function ChatProvider({
 
   const markRead = useCallback((conversationId: string, messageId: string) => {
     const socket = socketRef.current;
-    if (!socket || socket.readyState !== WebSocket.OPEN) return false;
+    if (socket?.readyState !== WebSocket.OPEN) return false;
     socket.send(
       JSON.stringify({
         type: "read",
@@ -327,10 +333,12 @@ export function ChatProvider({
       onlineUserIds,
       connected,
       timeoutRemaining,
-      createConversation,
-      loadMessages,
+      notifications,
       sendMessage,
       markRead,
+      setNotifications,
+      loadConversations,
+      setMessages,
     }),
     [
       conversations,
@@ -339,10 +347,12 @@ export function ChatProvider({
       onlineUserIds,
       connected,
       timeoutRemaining,
-      createConversation,
-      loadMessages,
+      notifications,
       sendMessage,
       markRead,
+      setNotifications,
+      loadConversations,
+      setMessages,
     ],
   );
 

@@ -13,7 +13,7 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { Info } from "./components/info";
 
-export const EditProfilePage = () => {
+const EditProfilePage = () => {
   const t = useTranslations();
   const { connectedUser, setConnectedUser, isLoading } = useAuth();
   const { updateProfile, fetchUser } = useProfileController();
@@ -33,7 +33,7 @@ export const EditProfilePage = () => {
     bio: false,
   });
 
-  const [error, setError] = useState("");
+  const [error, setError] = useState<string | undefined>(undefined);
 
   const isSomethingChanged = () => {
     if (!connectedUser) return false;
@@ -80,217 +80,308 @@ export const EditProfilePage = () => {
   }, [connectedUser]);
 
   if (isLoading) {
-    return <div className="py-12 text-center text-slate-300">Loading...</div>;
+    return (
+      <div className="flex min-h-[calc(100vh-140px)] items-center justify-center">
+        <PlayText.Primary
+          id="loading"
+          className="animate-pulse text-center text-stone-300"
+        />
+      </div>
+    );
   }
 
   if (!connectedUser) {
     return (
-      <div className="flex flex-col min-h-[calc(100vh-140px)] justify-center items-center py-8">
+      <div className="flex flex-col min-h-[calc(100vh-140px)] justify-center items-center gap-3 py-8">
         <PlayText.Primary
           id="login-to-see"
-          className="text-lg font-medium text-slate-300 text-center"
+          className="text-lg font-medium text-stone-300 text-center"
         />
-        {error && <p className="text-sm text-rose-400">{error}</p>}
+        {error && (
+          <PlayText.Primary id={error} className="text-sm text-rose-300" />
+        )}
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col min-h-[calc(100vh-140px)] bg-slate-950 p-4 sm:p-8 lg:px-30 justify-center items-center py-8 sm:py-12 gap-8 text-white">
-      <div className="relative flex flex-col gap-8 rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl shadow-2xl w-full max-w-2xl px-4 sm:px-10 py-8 overflow-hidden">
-        <div className="absolute top-0 left-0 right-0 h-24 bg-linear-to-r from-secondary/40 via-extra/30 to-primary/40 backdrop-blur-md" />
+    <div className="flex min-h-[calc(100vh-140px)] flex-col items-center justify-start px-4 py-8 text-stone-100 sm:px-8 sm:py-12">
+      <style>{`
+        @keyframes ep-in {
+          from { opacity: 0; transform: translateY(20px) scale(0.98); }
+          to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes ep-save-in {
+          from { opacity: 0; transform: translateY(24px) scale(0.9); }
+          to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes ep-glow {
+          0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-primary) 55%, transparent); }
+          50%      { box-shadow: 0 0 0 12px color-mix(in srgb, var(--color-primary) 0%, transparent); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .ep-anim { animation: none !important; }
+        }
+      `}</style>
 
-        <div className="relative z-10 flex flex-col gap-4 items-center pt-8">
-          <div className="flex h-36 w-36 shrink--0 overflow-hidden flex-col items-center justify-center rounded-full border-4 border-slate-950 bg-white/10 p--5 shadow-xl backdrop-blur-md">
-            {connectedUser.avatar ? (
-              <img
-                src={`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}/${connectedUser.avatar}`}
-                alt="Avatar"
-                className="w-full h-full rounded-full object-cover"
-              />
-            ) : (
-              <PlayText.Primary
-                className="text-2xl font-extrabold text-white"
-                content={`${connectedUser.firstname?.charAt(0).toUpperCase()}${connectedUser.lastname?.charAt(0).toUpperCase()}`}
-              />
-            )}
-          </div>
+      <div className="grid w-full max-w-5xl grid-cols-1 gap-6 lg:grid-cols-[20rem_1fr] lg:gap-8">
+        <div className="ep-anim relative flex flex-col items-center gap-5 self-start overflow-hidden rounded-3xl border border-primary/25 bg-secondary/20 px-6 pb-8 pt-16 shadow-2xl shadow-black/40 backdrop-blur-xl animate-[ep-in_0.7s_cubic-bezier(0.22,1,0.36,1)_backwards] lg:sticky lg:top-24">
+          <div className="absolute inset-x-0 top-0 h-28 bg-linear-to-r from-primary/70 via-extra/60 to-secondary/70" />
 
-          <div className="flex items-center justify-center gap-2.5 w-full max-w-xs">
-            <div className="flex-1 min-w-0 text-center">
-              {editing.username ? (
-                <PlayLabel.Primary>
-                  <PlayInput.Primary
-                    onChange={(e) =>
-                      setUpdatedInfos({
-                        ...updatedInfos,
-                        username: e.target.value,
-                      })
-                    }
-                    placeholder="username"
-                    value={updatedInfos.username ?? ""}
-                    className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-white backdrop-blur-md focus:border-white/30 focus:outline-none"
-                  />
-                </PlayLabel.Primary>
+          <div className="relative z-10 mt-2">
+            <div
+              aria-hidden
+              className="absolute inset-0 rounded-full bg-primary/40 blur-2xl"
+            />
+            <div className="relative flex h-36 w-36 shrink-0 flex-col items-center justify-center overflow-hidden rounded-full border-4 border-neutral-950 bg-linear-to-tr from-extra to-primary shadow-xl shadow-primary/30">
+              {connectedUser.avatar ? (
+                <img
+                  src={`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}/${connectedUser.avatar}`}
+                  alt="Avatar"
+                  className="w-full h-full rounded-full object-cover"
+                />
               ) : (
                 <PlayText.Primary
-                  className="text-lg sm:text-xl font-bold text-white tracking-tight truncate"
-                  content={`@${updatedInfos.username}`}
+                  className="text-3xl font-extrabold text-white"
+                  content={`${connectedUser.firstname?.charAt(0).toUpperCase()}${connectedUser.lastname?.charAt(0).toUpperCase()}`}
                 />
               )}
             </div>
-
-            <button
-              type="button"
-              onClick={() => {
-                if (editing.username && updatedInfos.username?.trim() === "") {
-                  alert("Username cannot be empty.");
-                  return;
-                }
-                setEditing({ ...editing, username: !editing.username });
-              }}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white transition-all cursor-pointer active:scale-95"
-            >
-              <Image
-                alt="edit"
-                src="/icons/edit.png"
-                width={16}
-                height={16}
-                className="opacity-80 invert shrink-0"
-              />
-            </button>
           </div>
 
-          <div className="flex items-center justify-center gap-2.5 w-full max-w-xs">
-            <div className="flex-1 min-w-0 text-center">
-              {editing.email ? (
-                <PlayLabel.Primary>
-                  <PlayInput.Primary
-                    onChange={(e) =>
-                      setUpdatedInfos({
-                        ...updatedInfos,
-                        email: e.target.value,
-                      })
-                    }
-                    placeholder="email"
-                    value={updatedInfos.email ?? ""}
-                    className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-white backdrop-blur-md focus:border-white/30 focus:outline-none"
+          <div className="relative z-10 flex w-full flex-col gap-3">
+            <div className="flex w-full items-center justify-center gap-2.5 rounded-2xl border border-white/10 bg-neutral-950/30 px-3 py-2.5">
+              <div className="flex-1 min-w-0 text-center">
+                {editing.username ? (
+                  <PlayLabel.Primary>
+                    <PlayInput.Primary
+                      onChange={(e) =>
+                        setUpdatedInfos({
+                          ...updatedInfos,
+                          username: e.target.value,
+                        })
+                      }
+                      placeholder="username"
+                      value={updatedInfos.username ?? ""}
+                      className="w-full rounded-xl px-3 py-1.5 text-sm"
+                    />
+                  </PlayLabel.Primary>
+                ) : (
+                  <PlayText.Primary
+                    className="text-lg font-bold text-stone-100 tracking-tight truncate"
+                    content={`@${updatedInfos.username}`}
                   />
-                </PlayLabel.Primary>
-              ) : (
-                <PlayText.Primary
-                  className={`text-xs sm:text-sm font-medium truncate ${
-                    updatedInfos.email?.length !== 0
-                      ? "text-slate-300"
-                      : "text-amber-400"
-                  }`}
-                  content={
-                    updatedInfos.email ? updatedInfos.email : t("not-set")
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (
+                    editing.username &&
+                    updatedInfos.username?.trim() === ""
+                  ) {
+                    alert("Username cannot be empty.");
+                    return;
                   }
+                  setEditing({ ...editing, username: !editing.username });
+                }}
+                className={`group flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-xl border transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/60 hover:bg-primary/20 active:translate-y-0 active:scale-90 ${
+                  editing.username
+                    ? "border-primary bg-primary/30 shadow-lg shadow-primary/20"
+                    : "border-white/10 bg-secondary/30"
+                }`}
+              >
+                <Image
+                  alt="edit"
+                  src="/icons/edit.png"
+                  width={16}
+                  height={16}
+                  className="opacity-80 invert shrink-0 transition-transform duration-300 group-hover:scale-110 group-hover:opacity-100"
                 />
-              )}
+              </button>
             </div>
 
-            <button
-              type="button"
-              onClick={() => {
-                if (editing.email) {
-                  if (updatedInfos.email?.trim() === "") {
-                    alert("Email cannot be empty.");
-                    return;
+            <div className="flex w-full items-center justify-center gap-2.5 rounded-2xl border border-white/10 bg-neutral-950/30 px-3 py-2.5">
+              <div className="flex-1 min-w-0 text-center">
+                {editing.email ? (
+                  <PlayLabel.Primary>
+                    <PlayInput.Primary
+                      onChange={(e) =>
+                        setUpdatedInfos({
+                          ...updatedInfos,
+                          email: e.target.value,
+                        })
+                      }
+                      placeholder="email"
+                      value={updatedInfos.email ?? ""}
+                      className="w-full rounded-xl px-3 py-1.5 text-sm"
+                    />
+                  </PlayLabel.Primary>
+                ) : (
+                  <PlayText.Primary
+                    className={`text-sm font-medium truncate ${
+                      updatedInfos.email?.length !== 0
+                        ? "text-stone-300"
+                        : "text-amber-300"
+                    }`}
+                    content={
+                      updatedInfos.email ? updatedInfos.email : t("not-set")
+                    }
+                  />
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (editing.email) {
+                    if (updatedInfos.email?.trim() === "") {
+                      alert("Email cannot be empty.");
+                      return;
+                    }
+                    if (!isEmailValid(updatedInfos.email?.trim() ?? "")) {
+                      alert("Email Invalid.");
+                      return;
+                    }
                   }
-                  if (!isEmailValid(updatedInfos.email?.trim() ?? "")) {
-                    alert("Email Invalid.");
-                    return;
-                  }
-                }
-                setEditing({ ...editing, email: !editing.email });
-              }}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white transition-all cursor-pointer active:scale-95"
-            >
-              <Image
-                alt="edit"
-                src="/icons/edit.png"
-                width={16}
-                height={16}
-                className="opacity-80 invert shrink-0"
-              />
-            </button>
+                  setEditing({ ...editing, email: !editing.email });
+                }}
+                className={`group flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-xl border transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/60 hover:bg-primary/20 active:translate-y-0 active:scale-90 ${
+                  editing.email
+                    ? "border-primary bg-primary/30 shadow-lg shadow-primary/20"
+                    : "border-white/10 bg-secondary/30"
+                }`}
+              >
+                <Image
+                  alt="edit"
+                  src="/icons/edit.png"
+                  width={16}
+                  height={16}
+                  className="opacity-80 invert shrink-0 transition-transform duration-300 group-hover:scale-110 group-hover:opacity-100"
+                />
+              </button>
+            </div>
           </div>
         </div>
 
-        <div className="relative z-10 w-full flex flex-col gap-4 pt-4 border-t border-white/10">
-          <Info
-            placeholder="firstname"
-            isEditing={editing.firstname}
-            updateValue={(v) =>
-              setUpdatedInfos({ ...updatedInfos, firstname: v })
-            }
-            label="firstname-label"
-            value={updatedInfos.firstname}
-            onClick={() => {
-              if (editing.firstname && updatedInfos.firstname?.trim() === "") {
-                alert("Firstname cannot be empty.");
-                return;
+        <div className="ep-anim flex flex-col gap-6 rounded-3xl border border-white/10 bg-secondary/20 p-6 shadow-2xl shadow-black/40 backdrop-blur-xl animate-[ep-in_0.7s_cubic-bezier(0.22,1,0.36,1)_0.12s_backwards] sm:p-8">
+          <div className="flex items-center gap-3 border-b border-white/10 pb-4">
+            <span
+              aria-hidden
+              className="h-6 w-1 rounded-full bg-linear-to-b from-primary to-extra"
+            />
+            <PlayText.Primary
+              id="details"
+              className="text-lg font-bold tracking-wide text-stone-100"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <Info
+              isEditing={editing.firstname}
+              label="firstname-label"
+              value={updatedInfos.firstname}
+              onClick={() => {
+                if (
+                  editing.firstname &&
+                  updatedInfos.firstname?.trim() === ""
+                ) {
+                  alert("Firstname cannot be empty.");
+                  return;
+                }
+                setEditing({ ...editing, firstname: !editing.firstname });
+              }}
+              input={
+                <PlayInput.Primary
+                  onChange={(e) =>
+                    setUpdatedInfos({
+                      ...updatedInfos,
+                      firstname: e.target.value,
+                    })
+                  }
+                  placeholder={"firstname"}
+                  value={updatedInfos.firstname ?? ""}
+                  className="w-full rounded-xl px-3.5 py-2 text-sm"
+                />
               }
-              setEditing({ ...editing, firstname: !editing.firstname });
-            }}
-          />
-          <Info
-            placeholder="lastname"
-            isEditing={editing.lastname}
-            updateValue={(v) =>
-              setUpdatedInfos({ ...updatedInfos, lastname: v })
-            }
-            label="lastname-label"
-            value={updatedInfos.lastname}
-            onClick={() => {
-              if (editing.lastname && updatedInfos.lastname?.trim() === "") {
-                alert("Lastname cannot be empty.");
-                return;
+            />
+            <Info
+              isEditing={editing.lastname}
+              label="lastname-label"
+              value={updatedInfos.lastname}
+              onClick={() => {
+                if (editing.lastname && updatedInfos.lastname?.trim() === "") {
+                  alert("Lastname cannot be empty.");
+                  return;
+                }
+                setEditing({ ...editing, lastname: !editing.lastname });
+              }}
+              input={
+                <PlayInput.Primary
+                  onChange={(e) =>
+                    setUpdatedInfos({
+                      ...updatedInfos,
+                      lastname: e.target.value,
+                    })
+                  }
+                  placeholder={"lastname"}
+                  value={updatedInfos.lastname ?? ""}
+                  className="w-full rounded-xl px-3.5 py-2 text-sm"
+                />
               }
-              setEditing({ ...editing, lastname: !editing.lastname });
-            }}
-          />
+            />
+          </div>
+
           <Info
-            placeholder="bio"
             isEditing={editing.bio}
-            updateValue={(v) => setUpdatedInfos({ ...updatedInfos, bio: v })}
             label="bio-label"
             value={updatedInfos.bio}
             onClick={() => setEditing({ ...editing, bio: !editing.bio })}
+            input={
+              <PlayInput.Area
+                onChange={(e) =>
+                  setUpdatedInfos({ ...updatedInfos, bio: e.target.value })
+                }
+                placeholder={"bio"}
+                value={updatedInfos.bio ?? ""}
+                className="w-full rounded-xl px-3.5 py-2 text-sm"
+              />
+            }
           />
         </div>
       </div>
 
       {isSomethingChanged() && (
-        <div className="fixed bottom-6 z-40 animate-bounce">
-          <PlayButton.Primary
-            title="update-infos"
-            className="rounded-2xl bg-white px-8 py-3.5 shadow-2xl shadow-white/20 hover:bg-slate-100 transition-all font-semibold text-slate-950 cursor-pointer"
-            onClick={() => {
-              if (checkIfAnyFieldIsEmptyOrInvalid(updatedInfos)) {
-                return;
-              }
+        <div className="pointer-events-none fixed inset-x-0 bottom-24 z-40 flex justify-center lg:bottom-6">
+          <div className="ep-anim pointer-events-auto rounded-2xl animate-[ep-save-in_0.5s_cubic-bezier(0.22,1,0.36,1)_backwards,ep-glow_2.4s_ease-in-out_0.6s_infinite]">
+            <PlayButton.Primary
+              title="update-infos"
+              className="px-8 py-3.5"
+              onClick={() => {
+                if (checkIfAnyFieldIsEmptyOrInvalid(updatedInfos)) {
+                  return;
+                }
 
-              void updateProfile(
-                updatedInfos,
-                (newUser) => {
-                  setConnectedUser(newUser);
-                  setEditing({
-                    username: false,
-                    email: false,
-                    firstname: false,
-                    lastname: false,
-                    bio: false,
-                  });
-                },
-                () => {
-                  setError("Unable to update your profile");
-                },
-              );
-            }}
-          />
+                void updateProfile(
+                  updatedInfos,
+                  (newUser) => {
+                    setConnectedUser(newUser);
+                    setEditing({
+                      username: false,
+                      email: false,
+                      firstname: false,
+                      lastname: false,
+                      bio: false,
+                    });
+                  },
+                  (error) => {
+                    setError(error);
+                  },
+                );
+              }}
+            />
+          </div>
         </div>
       )}
     </div>

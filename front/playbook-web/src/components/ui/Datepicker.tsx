@@ -97,10 +97,10 @@ export const DateTimeRangePicker: React.FC<{
   const endError = isEndError();
 
   const inputClass = (invalid: boolean) =>
-    `w-full rounded-2xl border px-4 py-3 text-sm text-white backdrop-blur-md outline-none transition-all [color-scheme:dark] ${
+    `w-full cursor-pointer rounded-2xl border px-4 py-3 text-sm text-stone-100 backdrop-blur-md outline-none transition-all duration-300 [color-scheme:dark] ${
       invalid
         ? "border-rose-500/50 bg-rose-500/10 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20"
-        : "border-white/10 bg-white/5 focus:border-white/30 focus:bg-white/10 focus:ring-2 focus:ring-white/20"
+        : "border-white/10 bg-secondary/30 hover:border-primary/40 focus:border-primary focus:bg-secondary/40 focus:shadow-lg focus:shadow-primary/10 focus:ring-2 focus:ring-primary/30"
     }`;
 
   useEffect(() => {
@@ -111,10 +111,20 @@ export const DateTimeRangePicker: React.FC<{
 
   return (
     <div className="flex flex-col gap-4">
-      <label className="flex flex-col gap-2">
+      <style>{`
+        @keyframes dp-in {
+          from { opacity: 0; transform: translateY(8px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .dp-anim { animation: none !important; }
+        }
+      `}</style>
+
+      <label className="group flex flex-col gap-2">
         <PlayText.Primary
           id="choose-date"
-          className="text-xs font-semibold uppercase tracking-wider text-slate-300"
+          className="text-xs font-semibold uppercase tracking-wider text-amber-200/70 transition-colors group-focus-within:text-amber-200"
         />
 
         <input
@@ -127,19 +137,21 @@ export const DateTimeRangePicker: React.FC<{
         />
 
         {dateError && (
-          <PlayText.Primary
-            id={dateError}
-            className="text-xs font-medium text-rose-400"
-          />
+          <div className="dp-anim animate-[dp-in_0.3s_ease-out_both]">
+            <PlayText.Primary
+              id={dateError}
+              className="text-xs font-medium text-rose-300"
+            />
+          </div>
         )}
       </label>
 
       {showTimeFields && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <label className="flex flex-col gap-2">
+        <div className="dp-anim grid grid-cols-1 gap-4 animate-[dp-in_0.4s_cubic-bezier(0.22,1,0.36,1)_both] sm:grid-cols-2">
+          <label className="group flex flex-col gap-2">
             <PlayText.Primary
               id="start-time"
-              className="text-xs font-semibold uppercase tracking-wider text-slate-300"
+              className="text-xs font-semibold uppercase tracking-wider text-amber-200/70 transition-colors group-focus-within:text-amber-200"
             />
 
             <input
@@ -151,17 +163,19 @@ export const DateTimeRangePicker: React.FC<{
             />
 
             {startError && (
-              <PlayText.Primary
-                id={startError}
-                className="text-xs font-medium text-rose-400"
-              />
+              <div className="dp-anim animate-[dp-in_0.3s_ease-out_both]">
+                <PlayText.Primary
+                  id={startError}
+                  className="text-xs font-medium text-rose-300"
+                />
+              </div>
             )}
           </label>
 
-          <label className="flex flex-col gap-2">
+          <label className="group flex flex-col gap-2">
             <PlayText.Primary
               id="end-time"
-              className="text-xs font-semibold uppercase tracking-wider text-slate-300"
+              className="text-xs font-semibold uppercase tracking-wider text-amber-200/70 transition-colors group-focus-within:text-amber-200"
             />
 
             <input
@@ -174,10 +188,12 @@ export const DateTimeRangePicker: React.FC<{
             />
 
             {endError && (
-              <PlayText.Primary
-                id={endError}
-                className="text-xs font-medium text-rose-400"
-              />
+              <div className="dp-anim animate-[dp-in_0.3s_ease-out_both]">
+                <PlayText.Primary
+                  id={endError}
+                  className="text-xs font-medium text-rose-300"
+                />
+              </div>
             )}
           </label>
         </div>

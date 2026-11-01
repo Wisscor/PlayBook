@@ -1,45 +1,44 @@
 "use client";
 
-import { PlayInput } from "@/components/ui/Input";
 import { PlayLabel } from "@/components/ui/Label";
 import { PlayText } from "@/components/ui/Text";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
-import React from "react";
+import React, { JSX } from "react";
 
 export const Info: React.FC<{
   label: string;
   value?: string;
   onClick: () => void;
   isEditing: boolean;
-  updateValue: (value: string) => void;
-  placeholder: string;
-}> = ({ label, value, onClick, isEditing, updateValue, placeholder }) => {
+  input: JSX.Element;
+}> = ({ label, value, onClick, isEditing, input }) => {
   const t = useTranslations();
 
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between w-full gap-3 sm:gap-4 rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-md transition-all">
+    <div
+      className={`group flex w-full min-w-0 flex-col gap-2.5 rounded-2xl border p-4 backdrop-blur-md transition-all duration-300 ${
+        isEditing
+          ? "border-primary/60 bg-primary/10 shadow-lg shadow-primary/10"
+          : "border-white/10 bg-neutral-950/30 hover:border-primary/30"
+      }`}
+    >
       <PlayText.Primary
         id={label}
-        className="text-xs font-semibold uppercase tracking-wider text-slate-400 sm:min-w-27.5"
+        className={`text-xs font-semibold uppercase tracking-wider transition-colors duration-300 ${
+          isEditing ? "text-amber-200" : "text-amber-200/70"
+        }`}
       />
 
-      <div className="flex items-center justify-between gap-3 flex-1 w-full">
-        <div className="flex-1 min-w-0">
+      <div className="flex w-full flex-1 items-start justify-between gap-3">
+        <div className="min-w-0 flex-1 self-center">
           {isEditing ? (
-            <PlayLabel.Primary>
-              <PlayInput.Primary
-                onChange={(e) => updateValue(e.target.value)}
-                placeholder={placeholder}
-                value={value ?? ""}
-                className="w-full rounded-xl border border-white/10 bg-white/5 px-3.5 py-2 text-sm text-white placeholder-slate-400 backdrop-blur-md focus:border-white/30 focus:outline-none"
-              />
-            </PlayLabel.Primary>
+            <PlayLabel.Primary>{input}</PlayLabel.Primary>
           ) : (
             <PlayText.Primary
               content={value || t("not-set")}
-              className={`text-sm font-medium truncate ${
-                value ? "text-slate-200" : "text-amber-400"
+              className={`line-clamp-3 text-sm font-medium wrap-break-word ${
+                value ? "text-stone-100" : "text-amber-300"
               }`}
             />
           )}
@@ -48,7 +47,11 @@ export const Info: React.FC<{
         <button
           type="button"
           onClick={onClick}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-slate-300 transition-all hover:bg-white/10 hover:text-white cursor-pointer active:scale-95"
+          className={`group/btn flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-xl border transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/60 hover:bg-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 active:translate-y-0 active:scale-90 ${
+            isEditing
+              ? "border-primary bg-primary/30 shadow-lg shadow-primary/20"
+              : "border-white/10 bg-secondary/30"
+          }`}
           aria-label="Edit info"
         >
           <Image
@@ -56,7 +59,7 @@ export const Info: React.FC<{
             src="/icons/edit.png"
             width={16}
             height={16}
-            className="opacity-80 invert shrink-0"
+            className="shrink-0 opacity-80 invert transition-transform duration-300 group-hover/btn:scale-110 group-hover/btn:opacity-100"
           />
         </button>
       </div>

@@ -2,11 +2,11 @@ import { useAuth } from "@/hooks/contexts/authContext";
 import { useNavigation } from "@/hooks/useNavigation";
 import { ApiError, SignInData, SignUpData } from "@/types/api";
 import { User } from "@/types/user";
-import { api } from "./api";
 import React from "react";
+import { api } from "./api";
 
 export const useAuthController = () => {
-  const { connectedUser, setConnectedUser } = useAuth();
+  const { setConnectedUser } = useAuth();
   const { goSignIn } = useNavigation();
   const [isWaiting, setIsWaiting] = React.useState(false);
 
@@ -42,16 +42,17 @@ export const useAuthController = () => {
         }
       })
       .catch((error) => {
-        const apiError = error as ApiError;
-
-        onError(apiError.message);
+        onError(error.errorCode);
       })
       .finally(() => {
         setIsWaiting(false);
       });
   };
 
-  const signOut = async (onSuccess: () => void, onFailed?: () => void) => {
+  const signOut = async (
+    onSuccess: () => void,
+    onFailed?: (error?: string) => void,
+  ) => {
     await api
       .post("/auth/logout")
       .then((res) => {
@@ -61,15 +62,13 @@ export const useAuthController = () => {
           goSignIn();
         }
       })
-      .catch((error) => {
-        console.error("error >>>>", error);
-        onFailed?.();
+      .catch((error: ApiError) => {
+        onFailed?.(error.errorCode);
       });
   };
 
   return {
     signIn,
-    connectedUser,
     signUp,
     signOut,
     isWaiting,

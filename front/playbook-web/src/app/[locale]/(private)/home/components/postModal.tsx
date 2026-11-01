@@ -30,14 +30,23 @@ export const PostModal: React.FC<{
         close();
       },
       (requestError) => {
-        console.error("Unable to create post:", requestError);
-        setError("Unable to create your post");
+        setError(requestError);
       },
     );
   };
 
   return (
     <PlayModal.Primary isOpen={isOpen} close={close} title="create-post">
+      <style>{`
+        @keyframes pm-in {
+          from { opacity: 0; transform: translateY(10px) scale(0.98); }
+          to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .pm-anim { animation: none !important; }
+        }
+      `}</style>
+
       <div className="flex flex-col gap-6 pt-1">
         <div className="relative flex flex-col gap-2">
           <PlayLabel.Primary>
@@ -45,7 +54,7 @@ export const PostModal: React.FC<{
               onChange={(e) => setPostText(e.target.value)}
               placeholder="your-post"
               value={postText}
-              className="w-full min-h-35 rounded-2xl border border-white/10 bg-white/5 p-4 text-base text-white placeholder-slate-400 backdrop-blur-md focus:border-white/30 focus:outline-none transition-all resize-none"
+              className="min-h-35 w-full resize-none p-4"
             />
           </PlayLabel.Primary>
 
@@ -53,22 +62,28 @@ export const PostModal: React.FC<{
             <PlayText.Span
               texts={[
                 {
-                  content: `${postText.length} characters`,
-                  className: "text-xs text-slate-400",
+                  text: `characters`,
+                  values: { characters: postText.length },
+                  className:
+                    "text-xs tabular-nums text-stone-400 transition-colors duration-300",
                 },
               ]}
             />
           </div>
         </div>
 
-        {error && <p className="text-sm text-rose-400">{error}</p>}
+        {error && (
+          <div className="pm-anim rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 animate-[pm-in_0.3s_ease-out_both]">
+            <PlayText.Primary id={error} className="text-sm text-rose-300" />
+          </div>
+        )}
 
         {postText.trim().length > 0 && (
-          <div className="pt-2">
+          <div className="pm-anim pt-2 animate-[pm-in_0.4s_cubic-bezier(0.22,1,0.36,1)_both]">
             <PlayButton.Primary
               onClick={handleCreatePost}
               title={isLoading ? "creating-post" : "create-post"}
-              className="w-full rounded-2xl bg-white py-3.5 shadow-lg shadow-white/5 hover:bg-slate-100 transition-all font-semibold text-slate-950"
+              className="w-full py-3.5"
             />
           </div>
         )}

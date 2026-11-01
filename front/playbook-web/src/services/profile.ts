@@ -1,6 +1,7 @@
 import { User } from "@/types/user";
 import { api } from "./api";
 import { useAuth } from "@/hooks/contexts/authContext";
+import { ApiError } from "@/types/api";
 
 export const useProfileController = () => {
   const { setConnectedUser, setIsLoading } = useAuth();
@@ -8,7 +9,7 @@ export const useProfileController = () => {
   const updateProfile = async (
     updatedInfos: User,
     onSuccess: (newUser: User) => void,
-    onError: () => void,
+    onError: (errorCode?: string) => void,
   ) => {
     await api
       .patch<User>("/users/me", updatedInfos)
@@ -17,9 +18,8 @@ export const useProfileController = () => {
           onSuccess(response.data);
         }
       })
-      .catch((requestError) => {
-        onError();
-        console.error("Unable to update profile:", requestError);
+      .catch((requestError: ApiError) => {
+        onError(requestError.errorCode);
       });
   };
 
@@ -48,9 +48,7 @@ export const useProfileController = () => {
         setConnectedUser(res.data);
         onSuccess?.();
       })
-      .catch((error) => {
-        console.error("error loadin user >>>", error);
-
+      .catch(() => {
         setConnectedUser(undefined);
       })
       .finally(() => {
@@ -58,9 +56,19 @@ export const useProfileController = () => {
       });
   };
 
+  const deleteUser = async () => {
+    await api.delete("/users/me").then((res) => {
+      if (res.status === 204) {
+        setConnectedUser(undefined);
+        window.location.reload();
+      }
+    });
+  };
+
   return {
     updateProfile,
     uploadAvatar,
     fetchUser,
+    deleteUser,
   };
 };
