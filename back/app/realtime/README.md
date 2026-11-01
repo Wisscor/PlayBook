@@ -146,6 +146,12 @@ Notification event types currently emitted are `follow`, `post_created`, `play_r
 | `conversation_not_found` | The user is not authorized for the conversation or the referenced message is not in it. |
 | `rate_limited` | Message-send rate limit exceeded; slow down. Repeated strikes block message sending for 30 seconds. |
 | `timed_out` | This user is temporarily blocked from sending chat messages; keep the connection open; `retry_after` gives remaining seconds (rounded to one decimal place). |
+| `internal_error` | An unexpected handler failure occurred. The connection stays open if the error frame can be sent. The operation may have partially completed; reconcile history/state before retrying instead of automatically resending. |
+
+Unexpected WebSocket handler and background notification failures are logged with
+the operation, user IDs, and exception type. Logs and error frames omit message
+bodies and SQL parameters. Notification failures remain isolated from the HTTP
+action that scheduled them; they are logged without automatic retry.
 
 The server also closes sockets with these codes:
 

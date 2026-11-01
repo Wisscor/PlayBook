@@ -5,13 +5,14 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
     async_sessionmaker,
 )
+from ..core.config import settings
 
 # ? The engine will connect with database using the provided credentials.
 
 # * Engine = the actual connection pool to Postgres. One per app.
 engine = create_async_engine(
     settings.database_url,
-    # echo=True,
+    echo=settings.debug,
 )
 
 # * Session =  a factory that produces a new AsyncSession (a "conversation"
@@ -21,7 +22,6 @@ session_maker = async_sessionmaker(
     class_=AsyncSession,
     expire_on_commit=False,
 )
-
 
 
 # Create a new async session for each request

@@ -2,9 +2,13 @@ import uuid
 from collections.abc import Iterable
 from datetime import datetime
 
+import structlog
+
 from ..database.database import session_maker
 from ..models.user import User
 from . import registry, service
+
+logger = structlog.get_logger(__name__)
 
 async def emit_notification(
     event_type: str,
@@ -32,8 +36,15 @@ async def emit_notification(
             )
             if await registry.send_to_user(target_user_id, payload) > 0:
                 await service.mark_delivered(db, [notif.id])
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.error(
+            "Notification delivery failed",
+            error_type=type(exc).__name__,
+            event_type=event_type,
+            actor_id=str(actor_id),
+            target_user_id=str(target_user_id),
+            target_id=str(target_id) if target_id is not None else None,
+        )
 
 
 async def emit_notifications(
