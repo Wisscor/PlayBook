@@ -7,7 +7,9 @@ from typing import Optional
 class UserBase(BaseModel):
     firstname: str = Field(..., min_length=3, max_length=20)
     lastname: str = Field(..., min_length=3, max_length=20)
-    username: str = Field(..., min_length=3, max_length=20)
+    username: str = Field(
+        ..., min_length=3, max_length=20, pattern=r"^\S+$"
+    )
     email: EmailStr
 
 
@@ -44,7 +46,9 @@ class UserLogin(BaseModel):
 class UserUpdate(BaseModel):
     firstname: Optional[str] = Field(default=None, min_length=3, max_length=20)
     lastname: Optional[str] = Field(default=None, min_length=3, max_length=20)
-    username: Optional[str] = Field(default=None, min_length=3, max_length=20)
+    username: Optional[str] = Field(
+        default=None, min_length=3, max_length=20, pattern=r"^\S+$"
+    )
     email: Optional[EmailStr] = None
     bio: str = Field(default="", max_length=500)
 

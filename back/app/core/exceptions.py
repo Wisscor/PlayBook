@@ -23,6 +23,16 @@ DEFAULT_MESSAGES = {
     ErrorCode.INVALID_CREDENTIALS: "The provided credentials are invalid.",
     ErrorCode.INTERNAL_SERVER_ERROR: "An internal server error occurred.",
     ErrorCode.INVALID_SESSION_ID_FORMAT: "The session ID format is invalid.",
+    ErrorCode.CANNOT_FOLLOW_SELF: "You cannot follow yourself.",
+    ErrorCode.ALREADY_FOLLOWING: "You are already following this user.",
+    ErrorCode.CANNOT_UNFOLLOW_SELF: "You cannot unfollow yourself.",
+    ErrorCode.ANNOUNCEMENT_NOT_ACCEPTING_REQUESTS: (
+        "This announcement is not accepting play requests."
+    ),
+    ErrorCode.ANNOUNCEMENT_FULL: "This announcement has no open player slots.",
+    ErrorCode.REQUEST_ALREADY_SENT: "You already sent a request for this announcement.",
+    ErrorCode.REQUEST_ALREADY_DECIDED: "This play request has already been decided.",
+    ErrorCode.ANNOUNCEMENT_ALREADY_FINISHED: "This announcement is already finished.",
 }
 
 

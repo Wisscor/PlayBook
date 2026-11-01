@@ -9,6 +9,7 @@ from fastapi import (
     Request,
 )
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from http import HTTPStatus
 from fastapi_pagination import Page
@@ -23,6 +24,7 @@ from ..realtime.notify import emit_notification
 from app.core.limiter import limiter
 from app.core.exceptions import ApiException
 from app.core.error_codes import ErrorCode
+from app.services.user_service import get_user_by_id
 
 router = APIRouter(
     prefix="/users",
@@ -45,35 +47,31 @@ async def follow_user(
 ):
     """Follow another user."""
     if curr_user.id == user_id:
-        raise ApiException(code=ErrorCode.BAD_REQUEST, field="user_id")
+        raise ApiException(code=ErrorCode.CANNOT_FOLLOW_SELF, field="user_id")
 
-    # Check if target user exists
-    target_user = await db.scalar(select(User).where(User.id == user_id))
+    target_user = await get_user_by_id(db, user_id)
     if not target_user:
         raise ApiException(code=ErrorCode.USER_NOT_FOUND)
 
-    # Check if already following
     existing = await db.scalar(
         select(Follower).where(
             Follower.follower_id == curr_user.id,
             Follower.following_id == user_id,
-        )
+            )
     )
     if existing:
-        raise ApiException(code=ErrorCode.RESOURCE_CONFLICT)
+        raise ApiException(code=ErrorCode.ALREADY_FOLLOWING)
 
     new_follower = Follower(
         follower_id=curr_user.id,
         following_id=user_id,
     )
     db.add(new_follower)
-    await db.commit()
-    background_tasks.add_task(
-        emit_notification,
-        event_type="follow",
-        actor_id=curr_user.id,
-        target_user_id=user_id,
-    )
+    try:
+        await db.commit()
+    except IntegrityError:  # concurrent requests can violate the composite PK
+        await db.rollback()
+        raise ApiException(code=ErrorCode.ALREADY_FOLLOWING)
     background_tasks.add_task(
         emit_notification,
         event_type="follow",
@@ -97,7 +95,10 @@ async def unfollow_user(
 ):
     """Unfollow another user."""
     if curr_user.id == user_id:
-        raise ApiException(code=ErrorCode.BAD_REQUEST, field="user_id")
+        raise ApiException(
+            code=ErrorCode.CANNOT_UNFOLLOW_SELF,
+            field="user_id",
+        )
 
     follower_edge = await db.scalar(
         select(Follower).where(
@@ -127,7 +128,7 @@ async def get_user_followers(
     _: User = Depends(get_curr_user),
 ):
     """List a user's followers."""
-    target_user = await db.scalar(select(User).where(User.id == user_id))
+    target_user = await get_user_by_id(db, user_id)
     if not target_user:
         raise ApiException(code=ErrorCode.USER_NOT_FOUND)
 
@@ -159,7 +160,7 @@ async def get_user_following(
     _: User = Depends(get_curr_user),
 ):
     """List users followed by a user."""
-    target_user = await db.scalar(select(User).where(User.id == user_id))
+    target_user = await get_user_by_id(db, user_id)
     if not target_user:
         raise ApiException(code=ErrorCode.USER_NOT_FOUND)
 

@@ -1,5 +1,5 @@
 from uuid import UUID
-from . import registry
+from . import frames, registry
 from .service import SentMessage, conversation_new_payload, message_payload
 
 
@@ -23,6 +23,14 @@ async def deliver_message(result: SentMessage) -> list[UUID]:
                 conversation_new_payload(
                     result.conversation_id, peer_id, peer_username
                 ),
+            )
+            await registry.send_to_user(
+                pid,
+                {
+                    "type": frames.PRESENCE,
+                    "user_id": str(peer_id),
+                    "online": bool(registry.connections_for(peer_id)),
+                },
             )
 
     unreached = []

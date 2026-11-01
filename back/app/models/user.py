@@ -15,15 +15,15 @@ class User(Base):
         default=uuid.uuid4,
     )
     firstname: Mapped[str] = mapped_column(
-        String(50),
+        String(20),
         nullable=True,
     )
     lastname: Mapped[str] = mapped_column(
-        String(50),
+        String(20),
         nullable=True,
     )
     username: Mapped[str] = mapped_column(
-        String(50),
+        String(20),
         unique=True,
         nullable=False,
     )
