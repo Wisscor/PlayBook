@@ -1,4 +1,10 @@
 {
+  "auth-title": "Connexion",
+  "title-home": "Accueil",
+  "title-community": "Communauté",
+  "title-search": "Trouver des joueurs",
+  "title-history": "Historique",
+  "title-user-profile": "Profil du joueur",
   "english": "Anglais",
   "french": "Français",
   "arabic": "Arabe",

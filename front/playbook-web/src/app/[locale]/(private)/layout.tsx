@@ -9,11 +9,11 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import React, { useEffect, useRef, useState } from "react";
 import { Link } from "../../../../i18n/navigation";
-import { BurgerMenu } from "./components/burgerMenu";
-import { NotificationPopUp } from "./notificationPopUp";
 import { useAuthController } from "@/services/auth";
 import { useChat } from "@/hooks/contexts/chatContext";
 import { useRealtimeController } from "@/services/realtime";
+import { NotificationPopUp } from "../notificationPopUp";
+import { BurgerMenu } from "../burgerMenu";
 
 export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
   const { signOut } = useAuthController();
