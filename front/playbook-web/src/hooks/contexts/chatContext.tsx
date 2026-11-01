@@ -1,7 +1,7 @@
 "use client";
 
 import { api } from "@/services/api";
-import { RealtimeMessage } from "@/types/api";
+import { ChatConversation, RealtimeMessage } from "@/types/api";
 import { useAuth } from "./authContext";
 import React, {
   createContext,
@@ -14,15 +14,7 @@ import React, {
 } from "react";
 import { sortMessages } from "@/lib/utils";
 
-export interface ChatConversation {
-  id: string;
-  peer_id: string;
-  peer_username: string;
-  unread_count: number;
-  peer_last_read_message_id: string | null;
-}
-
-export interface ChatNotification {
+interface ChatNotification {
   id: string;
   event_type: string;
   actor_username: string;

@@ -181,3 +181,11 @@ export type ApiError = {
   detail?: unknown;
   data?: unknown;
 };
+
+export interface ChatConversation {
+  id: string;
+  peer_id: string;
+  peer_username: string;
+  unread_count: number;
+  peer_last_read_message_id: string | null;
+}

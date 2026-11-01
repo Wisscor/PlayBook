@@ -1,6 +1,7 @@
 import { PlayInput } from "@/components/ui/Input";
 import { PlayText } from "@/components/ui/Text";
 import { Contact } from "@/types/api";
+import Image from "next/image";
 import React, { useState } from "react";
 import { useNavigation } from "@/hooks/useNavigation";
 
@@ -19,26 +20,48 @@ export const ContactsList: React.FC<{
   );
 
   return (
-    <div className="h-full min-h-0 rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl p-4 sm:p-5 shadow-xl flex flex-col gap-4 overflow-hidden">
+    <div className="flex h-full min-h-0 flex-col gap-4 overflow-hidden p-4 sm:p-5">
       <div className="flex flex-col gap-3 border-b border-white/10 pb-4">
-        <PlayText.Primary
-          id="messages"
-          className="text-lg font-bold text-white tracking-tight"
-        />
+        <div className="flex items-center gap-3">
+          <span
+            aria-hidden
+            className="h-6 w-1 rounded-full bg-linear-to-b from-primary to-extra"
+          />
+          <PlayText.Primary
+            id="messages"
+            className="text-lg font-bold tracking-tight text-stone-100"
+          />
+          {contacts.length > 0 && (
+            <PlayText.Primary
+              content={contacts.length.toString()}
+              className="rounded-full border border-primary/40 bg-primary/15 px-2.5 py-0.5 text-[11px] font-bold tabular-nums text-amber-200"
+            />
+          )}
+        </div>
 
-        <PlayInput.Primary
-          type="text"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="search-contacts"
-          className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-slate-400 focus:border-white/30 focus:outline-none backdrop-blur-md"
-        />
+        <div className="group relative">
+          <Image
+            alt=""
+            aria-hidden
+            src={"/icons/search.png"}
+            width={16}
+            height={16}
+            className="pointer-events-none absolute inset-s-4 top-1/2 z-10 -translate-y-1/2 opacity-50 transition-opacity duration-300 group-focus-within:opacity-100"
+          />
+          <PlayInput.Primary
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="search-contacts"
+            className="w-full rounded-2xl py-2.5 ps-10 pe-4 text-sm"
+          />
+        </div>
       </div>
-      <div className="min-h-0 flex flex-1 flex-col gap-2 overflow-y-auto pr-1">
+      <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto pe-1 [scrollbar-color:var(--color-primary)_transparent] scrollbar-thin">
         {filteredContacts.length === 0 ? (
           <PlayText.Primary
             id="no-contacts"
-            className="text-xs text-slate-400 text-center py-8"
+            className="py-8 text-center text-xs text-stone-400"
           />
         ) : (
           filteredContacts.map((contact) => {
@@ -55,12 +78,19 @@ export const ContactsList: React.FC<{
                 }}
                 role="button"
                 tabIndex={0}
-                className={`flex items-center gap-3 p-3 rounded-2xl border transition-all cursor-pointer text-left w-full ${
+                className={`group/row relative flex w-full cursor-pointer items-center gap-3 overflow-hidden rounded-2xl border p-3 text-start transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 active:scale-[0.98] ${
                   isSelected
-                    ? "border-white/20 bg-white/10 shadow-lg"
-                    : "border-white/5 bg-white/5 hover:bg-white/10 text-slate-300"
+                    ? "border-primary/60 bg-linear-to-r from-primary/25 to-extra/10 shadow-lg shadow-primary/15"
+                    : "border-white/5 bg-white/5 text-stone-300 hover:border-primary/30 hover:bg-primary/10"
                 }`}
               >
+                <span
+                  aria-hidden
+                  className={`absolute inset-y-2 inset-s-0 w-1 rounded-full bg-linear-to-b from-primary to-extra transition-transform duration-300 ${
+                    isSelected ? "scale-y-100" : "scale-y-0"
+                  }`}
+                />
+
                 <div className="relative shrink-0">
                   <button
                     type="button"
@@ -69,7 +99,7 @@ export const ContactsList: React.FC<{
                       goUserProfile(contact.profileId);
                     }}
                     aria-label={`View ${contact.name}'s profile`}
-                    className="flex h-11 w-11 items-center justify-center rounded-full bg-linear-to-tr from-indigo-950 to-indigo-600 font-bold text-sm text-white shadow-md cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+                    className="flex h-11 w-11 cursor-pointer items-center justify-center overflow-hidden rounded-full bg-linear-to-tr from-extra to-primary text-sm font-bold text-white shadow-md ring-2 ring-white/10 transition-all duration-300 hover:ring-primary/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200/70"
                   >
                     {contact.avatarUrl ? (
                       <img
@@ -83,30 +113,41 @@ export const ContactsList: React.FC<{
                   </button>
                   <span
                     aria-label={contact.online ? "Online" : "Offline"}
-                    className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-slate-950 ${
-                      contact.online ? "bg-emerald-500" : "bg-slate-500"
+                    className={`absolute bottom-0 inset-e-0 h-3 w-3 rounded-full border-2 border-neutral-950 ${
+                      contact.online ? "bg-emerald-400" : "bg-stone-500"
                     }`}
-                  />
+                  >
+                    {contact.online && (
+                      <span
+                        aria-hidden
+                        className="absolute inset-0 animate-ping rounded-full bg-emerald-400/60"
+                      />
+                    )}
+                  </span>
                 </div>
-                <div className="flex flex-col flex-1 min-w-0">
-                  <div className="flex justify-between items-center">
+                <div className="flex min-w-0 flex-1 flex-col">
+                  <div className="flex items-center justify-between">
                     <button
                       type="button"
                       onClick={(event) => {
                         event.stopPropagation();
                         goUserProfile(contact.profileId);
                       }}
-                      className="text-left cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 rounded"
+                      className="min-w-0 cursor-pointer rounded text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
                     >
                       <PlayText.Primary
                         content={contact.name}
-                        className="font-bold text-sm text-white truncate"
+                        className={`truncate text-sm font-bold transition-colors duration-300 ${
+                          isSelected
+                            ? "text-white"
+                            : "text-stone-100 group-hover/row:text-amber-100"
+                        }`}
                       />
                     </button>
                   </div>
                   <PlayText.Primary
                     content={contact.lastMessage}
-                    className="text-xs text-slate-400 truncate mt-0.5"
+                    className="mt-0.5 truncate text-xs text-stone-400"
                   />
                 </div>
               </div>

@@ -1,9 +1,8 @@
-import { Roboto } from "next/font/google";
+import localFont from "next/font/local";
 
-export const roboto = Roboto({
-  subsets: ["latin", "latin-ext", "cyrillic", "cyrillic-ext", "vietnamese"],
-  weight: ["200", "300", "400", "500", "600", "700"],
+export const roboto = localFont({
+  src: "./fonts/roboto-latin-ext-wght-normal.woff2",
   variable: "--font-roboto",
+  weight: "100 900",
   display: "swap",
-  preload: true,
 });

@@ -115,14 +115,24 @@ export const MatchModal: React.FC<MatchModalProps> = ({
       isOpen={isOpen}
       close={close}
     >
-      <div className="flex flex-col gap-5 p-1">
+      <style>{`
+        @keyframes mm-in {
+          from { opacity: 0; transform: translateY(10px) scale(0.98); }
+          to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .mm-anim { animation: none !important; }
+        }
+      `}</style>
+
+      <div className="flex flex-col gap-6 p-1">
         <div className="space-y-4">
           <PlayLabel.Primary>
             <PlayInput.Primary
               onChange={(e) => setForm({ ...form, title: e.target.value })}
               placeholder="match-name"
               value={form.title}
-              className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-slate-400 backdrop-blur-md focus:border-white/30 focus:outline-none transition-all"
+              className="w-full rounded-2xl border border-white/10 bg-secondary/30 px-4 py-3 text-sm text-stone-100 placeholder-stone-400 backdrop-blur-md transition-all duration-300 hover:border-primary/40 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
           </PlayLabel.Primary>
 
@@ -148,34 +158,36 @@ export const MatchModal: React.FC<MatchModalProps> = ({
           />
 
           {form.sport_id && (
-            <PlayList.Primary
-              toggle={() => setPlayerNbrOpen(!playerNbrOpen)}
-              isOpen={playerNbrOpen}
-              items={Array.from(
-                {
-                  length:
-                    sports.find((type) => type.id === form.sport_id)
-                      ?.max_players ?? 5,
-                },
-                (_, index) => index + 1,
-              )}
-              text={
-                form.remaining_player_slots > 0
-                  ? form.remaining_player_slots.toString()
-                  : t("select-player-number")
-              }
-              choseItem={(item) => {
-                setForm({
-                  ...form,
-                  remaining_player_slots: item,
-                });
-                setPlayerNbrOpen(false);
-              }}
-            />
+            <div className="mm-anim animate-[mm-in_0.4s_cubic-bezier(0.22,1,0.36,1)_both]">
+              <PlayList.Primary
+                toggle={() => setPlayerNbrOpen(!playerNbrOpen)}
+                isOpen={playerNbrOpen}
+                items={Array.from(
+                  {
+                    length:
+                      sports.find((type) => type.id === form.sport_id)
+                        ?.max_players ?? 5,
+                  },
+                  (_, index) => index + 1,
+                )}
+                text={
+                  form.remaining_player_slots > 0
+                    ? form.remaining_player_slots.toString()
+                    : t("select-player-number")
+                }
+                choseItem={(item) => {
+                  setForm({
+                    ...form,
+                    remaining_player_slots: item,
+                  });
+                  setPlayerNbrOpen(false);
+                }}
+              />
+            </div>
           )}
 
           {form.remaining_player_slots > 0 && (
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-md">
+            <div className="mm-anim rounded-2xl border border-white/10 bg-secondary/25 p-4 shadow-inner shadow-black/20 backdrop-blur-md transition-colors duration-300 animate-[mm-in_0.4s_cubic-bezier(0.22,1,0.36,1)_both] hover:border-primary/40">
               <DateTimeRangePicker
                 onError={(err) => setError(err)}
                 date={date.split("T")[0]}
@@ -199,11 +211,11 @@ export const MatchModal: React.FC<MatchModalProps> = ({
         </div>
 
         {isFormComplete && (
-          <div className="pt-2">
+          <div className="mm-anim pt-2 animate-[mm-in_0.4s_cubic-bezier(0.22,1,0.36,1)_both]">
             <PlayButton.Primary
               onClick={handleSubmit}
               title={isEditing ? "save-changes" : "create-match"}
-              className="w-full rounded-2xl bg-white py-3.5 shadow-lg shadow-white/5 hover:bg-slate-100 transition-all font-semibold text-slate-950 cursor-pointer"
+              className="w-full cursor-pointer rounded-2xl bg-linear-to-r from-primary to-extra py-3.5 font-semibold text-white shadow-lg shadow-primary/30 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-primary/40 active:translate-y-0 active:scale-[0.98]"
             />
           </div>
         )}

@@ -51,7 +51,7 @@ const Primary: React.FC<InputProps> = ({
       placeholder={placeholder ? t(placeholder) : undefined}
       className={twMerge(
         clsx(
-          "w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-3.5 text-base text-white placeholder:text-slate-400 placeholder:text-sm backdrop-blur-md transition-all outline-none focus:border-white/30 focus:bg-white/10 focus:ring-2 focus:ring-white/20",
+          "w-full rounded-2xl border border-white/10 bg-secondary/30 px-5 py-3.5 text-base text-stone-100 placeholder:text-stone-400 placeholder:text-sm backdrop-blur-md transition-all duration-300 outline-none hover:border-primary/40 focus:border-primary focus:bg-secondary/40 focus:shadow-lg focus:shadow-primary/10 focus:ring-2 focus:ring-primary/30",
           className,
         ),
       )}
@@ -77,7 +77,7 @@ const Area: React.FC<AreaProps> = ({
       placeholder={placeholder ? t(placeholder) : undefined}
       className={twMerge(
         clsx(
-          "w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-3.5 text-base text-white placeholder:text-slate-400 placeholder:text-sm backdrop-blur-md transition-all outline-none focus:border-white/30 focus:bg-white/10 focus:ring-2 focus:ring-white/20 resize-y min-h-30",
+          "w-full rounded-2xl border border-white/10 bg-secondary/30 px-5 py-3.5 text-base text-stone-100 placeholder:text-stone-400 placeholder:text-sm backdrop-blur-md transition-all duration-300 outline-none hover:border-primary/40 focus:border-primary focus:bg-secondary/40 focus:shadow-lg focus:shadow-primary/10 focus:ring-2 focus:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-50 resize-y min-h-30",
           className,
         ),
       )}
@@ -112,7 +112,7 @@ const Password: React.FC<PasswordProps> = ({
         placeholder={placeholder ? t(placeholder) : undefined}
         className={twMerge(
           clsx(
-            "w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-3.5 text-base text-white placeholder:text-slate-400 placeholder:text-sm backdrop-blur-md transition-all outline-none focus:border-white/30 focus:bg-white/10 focus:ring-2 focus:ring-white/20 pr-12",
+            "w-full rounded-2xl border border-white/10 bg-secondary/30 px-5 py-3.5 text-base text-stone-100 placeholder:text-stone-400 placeholder:text-sm backdrop-blur-md transition-all duration-300 outline-none hover:border-primary/40 focus:border-primary focus:bg-secondary/40 focus:shadow-lg focus:shadow-primary/10 focus:ring-2 focus:ring-primary/30 pr-12",
             className,
           ),
         )}
@@ -120,8 +120,8 @@ const Password: React.FC<PasswordProps> = ({
       <button
         type="button"
         onClick={onClick}
-        className={`absolute top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-white transition-colors ${
-          locale === "ar" ? "left-4" : "right-4"
+        className={`absolute top-1/2 -translate-y-1/2 cursor-pointer rounded-lg p-1 text-stone-400 transition-all duration-300 hover:scale-110 hover:text-amber-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-90 ${
+          locale === "ar" ? "left-3" : "right-3"
         }`}
       >
         <Image
@@ -130,7 +130,7 @@ const Password: React.FC<PasswordProps> = ({
           src={!isHidden ? "/icons/view.png" : "/icons/hide.png"}
           width={20}
           height={20}
-          className="opacity-70 hover:opacity-100 transition-opacity"
+          className="opacity-70 transition-opacity hover:opacity-100"
         />
       </button>
     </div>

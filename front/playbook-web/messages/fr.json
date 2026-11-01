@@ -2,6 +2,8 @@
   "english": "Anglais",
   "french": "Français",
   "arabic": "Arabe",
+  "home-title": "Prenez du temps pour un bon jeu",
+  "home-subtitle": "Choisissez votre sport, rassemblez des gens et profitez du jeu. PlayBook est votre plateforme de prédilection pour vous connecter avec d'autres passionnés de sports, créer des salons de match et partager votre amour pour les sports.",
   "welcome": "Bienvenue",
   "slogan": "Connectez-vous, publiez, trouvez votre prochain match",
   "signup": "S'inscrire",
@@ -112,8 +114,8 @@
   "notifications": "Notifications",
   "unread": "Non lues",
   "no-notifications": "Aucune notification pour le moment.",
-  "search-title": "Rechercher des utilisateurs",
-  "search-description": "Trouvez et connectez-vous avec d'autres joueurs, développeurs et organisateurs du réseau.",
+  "search-title": "Trouvez votre prochain coéquipier",
+  "search-description": "Recherchez des joueurs par nom ou nom d'utilisateur, suivez-les et commencez à jouer.",
   "no-users-found": "Aucun utilisateur trouvé",
   "search-name-username": "Rechercher par nom ou nom d'utilisateur...",
   "messages": "Messages",
@@ -235,5 +237,23 @@
   "unable-to-save-match": "Impossible d'enregistrer le match",
   "unable-to-create-post": "Impossible de créer votre publication",
   "unable-to-load-user": "Impossible de charger le profil utilisateur",
-  "unable-to-load-sports": "Impossible de charger les sports"
+  "unable-to-load-sports": "Impossible de charger les sports",
+  "unable-to-load-match": "Impossible de charger le match",
+
+  "delete-account": "Supprimer votre compte ?",
+  "delete-account-warning": "Cette action est irréversible. Toutes vos données, y compris les publications, les matchs et les messages, seront définitivement supprimées.",
+  "confirm-delete-account": "Oui, supprimer mon compte",
+  "cancel": "Annuler",
+
+  "delete-post": "Supprimer cette publication ?",
+  "delete-post-warning": "Cette publication sera définitivement supprimée. Cette action ne peut pas être annulée.",
+  "confirm-delete-post": "Oui, supprimer cette publication",
+
+  "delete-match": "Supprimer ce match ?",
+  "delete-match-warning": "Ce match sera définitivement supprimé. Cette action ne peut pas être annulée.",
+  "confirm-delete-match": "Oui, supprimer ce match",
+
+  "community-title": "Votre communauté, un match à l'horizon",
+  "community-subtitle": "Trouvez un match, rencontrez de nouveaux joueurs et voyez ce que tout le monde publie",
+  "latest-posts": "Dernières publications"
 }

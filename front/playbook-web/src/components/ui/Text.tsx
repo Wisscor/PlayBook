@@ -32,7 +32,7 @@ const Primary: React.FC<PrimaryTextProps> = ({
 }) => {
   const t = useTranslations();
   return (
-    <p className={twMerge(clsx("text-white font-medium", className))}>
+    <p className={twMerge(clsx("text-stone-100 font-medium", className))}>
       {id ? t(id, values) : content}
     </p>
   );
@@ -54,11 +54,15 @@ const Span: React.FC<SpanTextProps> = ({ texts, className }) => {
 
         if (item.path) {
           return (
-            <Link key={key} href={item.path}>
+            <Link
+              key={key}
+              href={item.path}
+              className="rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+            >
               <span
                 className={twMerge(
                   clsx(
-                    "text-white font-semibold underline underline-offset-4 transition-colors hover:text-slate-200",
+                    "text-amber-200 font-semibold underline decoration-primary decoration-2 underline-offset-4 transition-all duration-300 hover:text-amber-100 hover:decoration-amber-200",
                     item.className,
                   ),
                 )}
@@ -72,7 +76,9 @@ const Span: React.FC<SpanTextProps> = ({ texts, className }) => {
         return (
           <span
             key={key}
-            className={twMerge(clsx("text-white font-medium", item.className))}
+            className={twMerge(
+              clsx("text-stone-100 font-medium", item.className),
+            )}
           >
             {textContent}
           </span>

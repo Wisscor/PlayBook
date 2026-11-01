@@ -65,8 +65,8 @@ export const FilterMatchModal: React.FC<{
       }}
       title="filter-matches"
     >
-      <div className="w-full rounded-3xl border border-white/10 bg-slate-950 p-6 sm:p-8 shadow-2xl flex flex-col self-center gap-6">
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-md">
+      <div className="flex w-full flex-col gap-4 pt-1">
+        <div className="rounded-2xl border border-white/10 bg-secondary/20 p-3 backdrop-blur-md transition-colors duration-300 hover:border-primary/40">
           <PlayList.Primary
             value="name"
             toggle={() => setMatchStatusOpen(!matchStatusOpen)}
@@ -79,7 +79,7 @@ export const FilterMatchModal: React.FC<{
             }}
           />
         </div>
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-md">
+        <div className="rounded-2xl border border-white/10 bg-secondary/20 p-3 backdrop-blur-md transition-colors duration-300 hover:border-primary/40">
           <PlayList.Primary
             value="name"
             toggle={() => setMatchTypeOpen(!matchTypeOpen)}
@@ -96,13 +96,16 @@ export const FilterMatchModal: React.FC<{
             }}
           />
         </div>
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-md">
+        <div className="rounded-2xl border border-white/10 bg-secondary/20 p-4 backdrop-blur-md transition-colors duration-300 hover:border-primary/40">
           <DateTimeRangePicker
             onError={(err) => setHasError(err !== undefined)}
             date={filterDate}
             startTime={filterStartTime}
             endTime={filterEndTime}
-            changeDate={(date) => setFilterDate(date)}
+            changeDate={(date) => {
+              setHasError(false);
+              setFilterDate(date);
+            }}
             changeStartTime={(startTime) => {
               setHasError(false);
               setFilterStartTime(startTime);
@@ -114,28 +117,24 @@ export const FilterMatchModal: React.FC<{
           />
         </div>
 
-        <div className="flex gap-3 pt-2">
-          <PlayButton.Primary
+        <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row">
+          <PlayButton.Secondary
             title="reset"
-            textClassName="text-sm font-semibold text-slate-300"
+            textClassName="text-sm font-semibold text-stone-200"
             type="button"
             onClick={handleClearFilters}
-            className="flex-1 rounded-2xl border border-white/10 bg-white/5 py-3  hover:bg-white/10 transition-all cursor-pointer text-sm"
+            className="w-full py-3"
           />
 
           <PlayButton.Primary
             title="apply-filter"
             type="button"
-            textClassName={`text-sm font-semibold ${hasError ? "text-slate-400" : "text-slate-950"}`}
+            textClassName="text-sm font-semibold text-white"
             disabled={hasError}
             onClick={() => {
               if (!hasError) close();
             }}
-            className={`flex-1 rounded-2xl py-3 font-semibold transition-all text-sm ${
-              hasError
-                ? "bg-white/20 cursor-not-allowed"
-                : "bg-white hover:bg-slate-100 cursor-pointer shadow-lg"
-            }`}
+            className="w-full py-3"
           />
         </div>
       </div>

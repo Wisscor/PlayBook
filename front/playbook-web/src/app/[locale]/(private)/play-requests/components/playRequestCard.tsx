@@ -11,12 +11,61 @@ export const PlayRequestCard: React.FC<{
   const [match, setMatch] = React.useState<MatchAnnouncement | undefined>(
     undefined,
   );
+  const [hasFailed, setHasFailed] = React.useState(false);
 
   React.useEffect(() => {
-    void getMatch(request.announcement_id, (match) => {
-      setMatch(match);
-    });
+    setMatch(undefined);
+    setHasFailed(false);
+    void getMatch(
+      request.announcement_id,
+      (match) => {
+        setMatch(match);
+      },
+      () => {
+        setHasFailed(true);
+      },
+    );
   }, [request.id]);
+
+  if (hasFailed) {
+    return (
+      <div className="flex flex-col items-start justify-between gap-3 rounded-3xl border border-rose-500/30 bg-rose-500/10 p-5 backdrop-blur-xl sm:flex-row sm:items-center sm:p-6">
+        <div className="flex flex-col gap-1">
+          <PlayText.Primary
+            id="unable-to-load-match"
+            className="text-sm font-semibold text-rose-200"
+          />
+          <PlayText.Primary
+            id="ago"
+            values={{ date: getDateDifference(request.created_at) }}
+            className="text-[10px] text-stone-500"
+          />
+        </div>
+        <PlayText.Span
+          texts={[
+            {
+              text: `${request.status}`,
+              className:
+                "rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-semibold text-stone-300",
+            },
+          ]}
+        />
+      </div>
+    );
+  }
+
+  if (!match) {
+    return (
+      <div className="flex animate-pulse items-center gap-4 rounded-3xl border border-white/10 bg-secondary/20 p-5 sm:p-6">
+        <div className="h-12 w-12 shrink-0 rounded-full bg-secondary/50" />
+        <div className="flex flex-1 flex-col gap-2">
+          <div className="h-3 w-1/3 rounded-full bg-secondary/50" />
+          <div className="h-3 w-2/3 rounded-full bg-secondary/30" />
+          <div className="h-3 w-1/2 rounded-full bg-secondary/30" />
+        </div>
+      </div>
+    );
+  }
 
   if (match) {
     return (

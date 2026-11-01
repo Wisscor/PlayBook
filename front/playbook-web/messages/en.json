@@ -2,6 +2,8 @@
   "english": "English",
   "french": "French",
   "arabic": "Arabic",
+  "home-title": "Make time for a good game",
+  "home-subtitle": "Choose your sport, bring people together, and enjoy the game. PlayBook is your go-to platform for connecting with fellow sports enthusiasts, creating match rooms, and sharing your passion for sports.",
   "welcome": "Welcome",
   "slogan": "Connect, Post, find you next match",
   "signup": "Signup",
@@ -112,8 +114,8 @@
   "notifications": "Notifications",
   "unread": "Unread",
   "no-notifications": "No notifications yet.",
-  "search-title": "Search Community Users",
-  "search-description": "Find and connect with other players, developers, and organizers in the network.",
+  "search-title": "Find your next teammate",
+  "search-description": "Search players by name or username, follow them, and get the game started.",
   "no-users-found": "No users found",
   "search-name-username": "Search by name or username...",
   "messages": "Messages",
@@ -235,5 +237,23 @@
   "unable-to-save-match": "Unable to save match",
   "unable-to-create-post": "Unable to create your post",
   "unable-to-load-user": "Unable to load user profile",
-  "unable-to-load-sports": "Unable to load sports"
+  "unable-to-load-sports": "Unable to load sports",
+  "unable-to-load-match": "Unable to load match",
+
+  "delete-account": "Delete your account?",
+  "delete-account-warning": "This action is irreversible. All your data, including posts, matches, and messages, will be permanently deleted.",
+  "confirm-delete-account": "Yes, delete my account",
+  "cancel": "Cancel",
+
+  "delete-post": "Delete this post?",
+  "delete-post-warning": "This post will be permanently deleted. This can’t be undone.",
+  "confirm-delete-post": "Yes, delete this post",
+
+  "delete-match": "Delete this match?",
+  "delete-match-warning": "This match will be permanently deleted. This can’t be undone.",
+  "confirm-delete-match": "Yes, delete this match",
+
+  "community-title": "Your community, one game away",
+  "community-subtitle": "Find a match, meet new players and see what everyone is posting",
+  "latest-posts": "Latest Posts"
 }

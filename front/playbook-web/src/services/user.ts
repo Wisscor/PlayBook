@@ -3,8 +3,7 @@ import { api } from "./api";
 import { pageSize } from "@/lib/constants";
 import React from "react";
 import { useAuth } from "@/hooks/contexts/authContext";
-import { ApiError } from "@/types/api";
-import { ChatConversation } from "@/hooks/contexts/chatContext";
+import { ApiError, ChatConversation } from "@/types/api";
 
 export const useUserController = () => {
   const { setIsLoading } = useAuth();

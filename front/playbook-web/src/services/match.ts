@@ -103,6 +103,7 @@ export const useMatchController = () => {
   const getMatch = async (
     id: string,
     onSuccess: (match: MatchAnnouncement) => void,
+    onError: (error?: string) => void,
   ) => {
     await api
       .get<MatchAnnouncement>(`/match-announcements/${id}`)
@@ -110,6 +111,9 @@ export const useMatchController = () => {
         if (res.status === 200) {
           onSuccess(res.data);
         }
+      })
+      .catch((error: ApiError) => {
+        onError(error.errorCode);
       });
   };
 

@@ -15,8 +15,9 @@
 
   --color-warning: #f59e0b;
 
-
   --color-text: #0f172a;
+  --font-sans: var(--font-roboto), ui-sans-serif, system-ui, sans-serif;
+
 }
 
 @media (prefers-color-scheme: dark) {

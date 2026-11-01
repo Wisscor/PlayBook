@@ -24,12 +24,22 @@ const Primary: React.FC<LabelProps> = ({
     <label
       className={twMerge(
         clsx(
-          "flex flex-col gap-2 text-xs font-semibold uppercase tracking-wider text-slate-300",
+          "group flex flex-col gap-2 text-xs font-semibold uppercase tracking-wider text-amber-200/70",
           className,
         ),
       )}
     >
-      {textContent && <PlayText.Span texts={[{ content: textContent }]} />}
+      {textContent && (
+        <PlayText.Span
+          texts={[
+            {
+              content: textContent,
+              className:
+                "font-semibold text-amber-200/70 transition-colors duration-300 group-focus-within:text-amber-200",
+            },
+          ]}
+        />
+      )}
       {children}
     </label>
   );

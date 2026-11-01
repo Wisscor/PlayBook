@@ -1,5 +1,5 @@
-import { PlayInput } from "@/components/ui/Input";
 import { PlayModal } from "@/components/ui/Modal";
+import { PlayText } from "@/components/ui/Text";
 import React from "react";
 
 export const PostDetail: React.FC<{
@@ -10,12 +10,19 @@ export const PostDetail: React.FC<{
   if (!postText) return null;
   return (
     <PlayModal.Primary isOpen={isOpen} close={close} title="post">
-      <div className="flex flex-col gap-6 pt-1 ">
-        <PlayInput.Area
-          value={postText}
-          disabled={true}
-          className="w-full rounded-2xl border border-white/10 bg-white/5 p-4 text-base text-white placeholder-slate-400 backdrop-blur-md focus:border-white/30 focus:outline-none transition-all scrollbar-none"
-        />
+      <div className="flex flex-col gap-6 pt-1">
+        <div className="relative max-h-[60vh] overflow-y-auto rounded-2xl border border-white/10 bg-neutral-950/40 p-5 pe-6 [scrollbar-color:var(--color-primary)_transparent] scrollbar-thin">
+          <span
+            aria-hidden
+            className="pointer-events-none absolute inset-e-4 top-1 select-none font-serif text-7xl leading-none text-primary/25"
+          >
+            &rdquo;
+          </span>
+          <PlayText.Primary
+            content={postText}
+            className="relative whitespace-pre-wrap text-base font-normal leading-relaxed text-stone-100 wrap-break-word"
+          />
+        </div>
       </div>
     </PlayModal.Primary>
   );
