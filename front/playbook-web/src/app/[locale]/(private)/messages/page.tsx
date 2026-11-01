@@ -77,9 +77,11 @@ const MessagesPage = () => {
 
   useEffect(() => {
     const conversationId = selectedConversationId;
-    if (!conversationId || messages[conversationId]) return;
-    void loadMessages(conversationId);
-  }, [loadMessages, messages, selectedConversationId]);
+    if (!conversationId) return;
+    void loadMessages(conversationId).catch((error) => {
+      console.error("Unable to load conversation history:", error);
+    });
+  }, [loadMessages, selectedConversationId]);
 
   useEffect(() => {
     const conversationId = selectedConversationId;
