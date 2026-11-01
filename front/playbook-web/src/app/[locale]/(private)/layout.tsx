@@ -14,6 +14,7 @@ import { useChat } from "@/hooks/contexts/chatContext";
 import { useRealtimeController } from "@/services/realtime";
 import { NotificationPopUp } from "../notificationPopUp";
 import { BurgerMenu } from "../burgerMenu";
+import { useDismiss } from "@/hooks/useDismiss";
 
 export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
   const { signOut } = useAuthController();
@@ -24,25 +25,12 @@ export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
   const [logoutError, setLogoutError] = useState<string | undefined>(undefined);
   const { goMessages, goSearch } = useNavigation();
   const { unreadMessages, notifications } = useChat();
+  useDismiss(isExpanded, () => setIsExpanded(false), { outsideClick: false });
 
   const { markAllNotificationsRead, markNotificationRead } =
     useRealtimeController();
 
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
-  const notificationRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        notificationRef.current &&
-        !notificationRef.current.contains(event.target as Node)
-      ) {
-        setIsNotificationsOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   const menu = [
     {
@@ -101,6 +89,22 @@ export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
     time: new Date(notification.created_at).toLocaleString(),
     read: Boolean(notification.read_at),
   }));
+
+  const desktopNotifRef = useRef<HTMLDivElement>(null);
+  const mobileNotifRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node;
+      const inside =
+        desktopNotifRef.current?.contains(target) ||
+        mobileNotifRef.current?.contains(target);
+      if (!inside) setIsNotificationsOpen(false);
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   return (
     <div className="relative flex min-h-screen flex-col overflow-x-hidden bg-neutral-950 text-stone-100 selection:bg-primary/40">
       <style>{`
@@ -149,8 +153,7 @@ export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
               alt="app-logo"
               src="/logos/app-logo.png"
               fill
-              loading="eager"
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              sizes="128px"
               className="object-contain"
             />
           </Link>
@@ -217,14 +220,14 @@ export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
                       ? {
                           content: unreadMessages.toString(),
                           className:
-                            "absolute -top-1.5 -right-1.5 flex min-h-4 min-w-4 animate-pulse items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-white shadow-md shadow-primary/50 ring-2 ring-neutral-950",
+                            "absolute -top-1.5 -end-1.5 flex min-h-4 min-w-4 animate-pulse items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-white shadow-md shadow-primary/50 ring-2 ring-neutral-950",
                         }
                       : {},
                   ]}
                 />
               </PlayButton.Complexe>
 
-              <div className="relative block" ref={notificationRef}>
+              <div className="relative block" ref={mobileNotifRef}>
                 <PlayButton.Complexe
                   type="button"
                   onClick={toggleNotifications}
@@ -245,7 +248,7 @@ export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
                         ? {
                             content: unreadCount.toString(),
                             className:
-                              "absolute -top-1.5 -right-1.5 flex h-4 w-4 animate-pulse items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white shadow-md shadow-primary/50 ring-2 ring-neutral-950",
+                              "absolute -top-1.5 -end-1.5 flex h-4 w-4 animate-pulse items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white shadow-md shadow-primary/50 ring-2 ring-neutral-950",
                           }
                         : {},
                     ]}
@@ -276,6 +279,7 @@ export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
 
             <button
               type="button"
+              aria-expanded={isExpanded}
               onClick={() => setIsExpanded(!isExpanded)}
               className={`rounded-xl border p-2.5 backdrop-blur-md transition-all duration-300 active:scale-90 lg:hidden ${
                 isExpanded
@@ -339,14 +343,14 @@ export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
                         ? {
                             content: unreadMessages.toString(),
                             className:
-                              "absolute -top-1.5 -right-1.5 flex min-h-4 min-w-4 animate-pulse items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-white shadow-md shadow-primary/50 ring-2 ring-neutral-950",
+                              "absolute -top-1.5 -end-1.5 flex min-h-4 min-w-4 animate-pulse items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-white shadow-md shadow-primary/50 ring-2 ring-neutral-950",
                           }
                         : {},
                     ]}
                   />
                 </PlayButton.Complexe>
 
-                <div className="relative block" ref={notificationRef}>
+                <div className="relative block" ref={desktopNotifRef}>
                   <PlayButton.Complexe
                     type="button"
                     onClick={toggleNotifications}
@@ -367,7 +371,7 @@ export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
                           ? {
                               content: unreadCount.toString(),
                               className:
-                                "absolute -top-1.5 -right-1.5 flex h-4 w-4 animate-pulse items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white shadow-md shadow-primary/50 ring-2 ring-neutral-950",
+                                "absolute -top-1.5 -end-1.5 flex h-4 w-4 animate-pulse items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white shadow-md shadow-primary/50 ring-2 ring-neutral-950",
                             }
                           : {},
                       ]}
@@ -401,7 +405,7 @@ export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
         {logoutError && (
           <PlayText.Primary
             id={logoutError}
-            className="px-6 pb-2 text-right text-sm text-rose-300 md:px-12 lg:px-20"
+            className="px-6 pb-2 text-end text-sm text-rose-300 md:px-12 lg:px-20"
           />
         )}
       </header>
