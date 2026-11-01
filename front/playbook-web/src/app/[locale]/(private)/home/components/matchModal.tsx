@@ -52,6 +52,7 @@ export const MatchModal: React.FC<MatchModalProps> = ({
     if (!isOpen) return;
     const timer = window.setTimeout(() => {
       setForm(initialData?.match ? toForm(initialData.match) : emptyForm);
+      setSelectedSport(initialData?.match?.sport ?? null);
       setDate(
         initialData?.match
           ? new Date(initialData.match.start_time).toISOString().split("T")[0]
@@ -60,8 +61,8 @@ export const MatchModal: React.FC<MatchModalProps> = ({
       setError(undefined);
       void getSports(
         () => {},
-        () => {
-          setError("Unable to load sports");
+        (error) => {
+          setError(error);
         },
       );
     }, 0);
@@ -73,7 +74,9 @@ export const MatchModal: React.FC<MatchModalProps> = ({
       !form.title.trim() ||
       !form.sport_id ||
       !form.start_time ||
-      !form.end_time
+      !form.end_time ||
+      form.remaining_player_slots <= 0 ||
+      !date
     ) {
       setError("Please fill in every field");
       return;
@@ -92,15 +95,17 @@ export const MatchModal: React.FC<MatchModalProps> = ({
       };
       onSave(newForm);
       close();
-    } catch (requestError) {
-      console.error("Unable to save match:", requestError);
-      setError("Unable to save match");
+    } catch {
+      setError("unable-to-create-match");
     } finally {
       setError(undefined);
     }
   };
 
-  const isFormComplete = !Object.values(form).includes("") && !error;
+  const isFormComplete =
+    !Object.values(form).includes("") &&
+    !error &&
+    form.remaining_player_slots > 0;
 
   const isEditing = Boolean(initialData?.id !== undefined);
 
@@ -206,5 +211,3 @@ export const MatchModal: React.FC<MatchModalProps> = ({
     </PlayModal.Primary>
   );
 };
-
-export default MatchModal;

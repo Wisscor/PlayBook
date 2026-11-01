@@ -1,15 +1,16 @@
-import { PlayText } from "@/components/ui/Text";
-import React from "react";
-import { Link } from "../../../../../../i18n/navigation";
-import { COMING_FROM, ROUTES } from "@/lib/constants";
 import { PlayButton } from "@/components/ui/Button";
+import { PlayText } from "@/components/ui/Text";
+import { useChat } from "@/hooks/contexts/chatContext";
+import { useNavigation } from "@/hooks/useNavigation";
+import { COMING_FROM, ROUTES } from "@/lib/constants";
+import { useFollowerController } from "@/services/follower";
+import { useProfileController } from "@/services/profile";
+import { ApiError } from "@/types/api";
 import { User } from "@/types/user";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
-import { useNavigation } from "@/hooks/useNavigation";
-import { api } from "@/services/api";
-import { useChat } from "@/hooks/contexts/chatContext";
-import { ApiError } from "@/types/api";
+import React from "react";
+import { Link } from "../../../../../../i18n/navigation";
 
 export const MainDetails: React.FC<{ user: User; comingFrom: COMING_FROM }> = ({
   user,
@@ -18,26 +19,27 @@ export const MainDetails: React.FC<{ user: User; comingFrom: COMING_FROM }> = ({
   const t = useTranslations();
   const { goMessages } = useNavigation();
   const { createConversation } = useChat();
+  const { deleteUser } = useProfileController();
+  const { follow, unfollow } = useFollowerController();
   const [isFollowing, setIsFollowing] = React.useState(
     user.is_following ?? false,
   );
   const [isFollowPending, setIsFollowPending] = React.useState(false);
   const [conversationError, setConversationError] = React.useState("");
 
-  const toggleFollow = async () => {
+  const toggleFollow = () => {
     if (!user.id || isFollowPending) return;
     setIsFollowPending(true);
-    try {
-      if (isFollowing) {
-        await api.delete(`/users/${user.id}/follow`);
-      } else {
-        await api.post(`/users/${user.id}/follow`);
-      }
-      setIsFollowing(!isFollowing);
-    } catch (error) {
-      console.error("Unable to update follow relationship:", error);
-    } finally {
-      setIsFollowPending(false);
+    if (isFollowing) {
+      void unfollow(user.id, () => {
+        setIsFollowing(false);
+        setIsFollowPending(false);
+      });
+    } else {
+      void follow(user.id, () => {
+        setIsFollowing(true);
+        setIsFollowPending(false);
+      });
     }
   };
 
@@ -100,18 +102,33 @@ export const MainDetails: React.FC<{ user: User; comingFrom: COMING_FROM }> = ({
 
       <div className="pt-2">
         {comingFrom == COMING_FROM.ME ? (
-          <Link href={ROUTES.EDIT_PROFILE}>
-            <PlayButton.Primary
-              textClassName="text-sm font-semibold text-white"
-              title="edit-profile"
-              type="button"
-              className="w-full rounded-xl border border-white/20 bg-white/10 py-2.5 backdrop-blur-md transition-all hover:bg-white/20 active:scale-95 cursor-pointer shadow-md text-center"
-            />
-          </Link>
+          <div className="flex items-stretch space-x-4">
+            <Link href={ROUTES.EDIT_PROFILE} className="w-full">
+              <PlayButton.Primary
+                textClassName="text-sm font-semibold text-white"
+                title="edit-profile"
+                type="button"
+                className="w-full rounded-xl border border-white/20 bg-white/10 py-2.5 backdrop-blur-md transition-all hover:bg-white/20 active:scale-95 cursor-pointer shadow-md text-center"
+              />
+            </Link>
+            <button
+              onClick={() => {
+                void deleteUser();
+              }}
+              className=" rounded-xl border border-white/20 bg-white/10 p-2.5 backdrop-blur-md transition-all hover:bg-white/20 active:scale-95 cursor-pointer shadow-md text-center"
+            >
+              <Image
+                alt="delete"
+                src={"/icons/trash-can.png"}
+                width={20}
+                height={20}
+              />
+            </button>
+          </div>
         ) : (
           <div className="flex items-stretch space-x-4">
             <PlayButton.Primary
-              onClick={() => void toggleFollow()}
+              onClick={() => toggleFollow()}
               disabled={isFollowPending}
               textClassName="text-sm font-semibold text-white"
               title={isFollowing ? "unfollow" : "follow"}

@@ -1,8 +1,8 @@
 "use client";
 
-import { User } from "@/types/user";
 import { api } from "@/services/api";
-import React, { createContext, useContext, useMemo } from "react";
+import { User } from "@/types/user";
+import React, { createContext, useContext, useEffect, useMemo } from "react";
 
 type AuthContextType = {
   connectedUser: User | undefined;
@@ -20,16 +20,26 @@ export function AuthProvider({
     undefined,
   );
 
-  const [isLoading, setIsLoading] = React.useState(true);
-  //Updated authContext.tsx to restore the current user on startup : GET /users/me
-  //which means that the user's session will be restored when the application starts
-  // Fetch the connected user when the component mounts
-  React.useEffect(() => {
-    api
-      .get<User>("/users/me")
-      .then((response) => setConnectedUser(response.data))
-      .catch(() => setConnectedUser(undefined))
-      .finally(() => setIsLoading(false));
+  const [isLoading, setIsLoading] = React.useState(false);
+
+  useEffect(() => {
+    const fetchUser = async (onSuccess?: () => void) => {
+      setIsLoading(true);
+      await api
+        .get<User>("/users/me")
+        .then((res) => {
+          setConnectedUser(res.data);
+          onSuccess?.();
+        })
+        .catch(() => {
+          setConnectedUser(undefined);
+        })
+        .finally(() => {
+          setIsLoading(false);
+        });
+    };
+
+    void fetchUser();
   }, []);
 
   const value = useMemo(

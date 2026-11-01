@@ -13,7 +13,7 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { Info } from "./components/info";
 
-export const EditProfilePage = () => {
+const EditProfilePage = () => {
   const t = useTranslations();
   const { connectedUser, setConnectedUser, isLoading } = useAuth();
   const { updateProfile, fetchUser } = useProfileController();
@@ -33,7 +33,7 @@ export const EditProfilePage = () => {
     bio: false,
   });
 
-  const [error, setError] = useState("");
+  const [error, setError] = useState<string | undefined>(undefined);
 
   const isSomethingChanged = () => {
     if (!connectedUser) return false;
@@ -80,7 +80,12 @@ export const EditProfilePage = () => {
   }, [connectedUser]);
 
   if (isLoading) {
-    return <div className="py-12 text-center text-slate-300">Loading...</div>;
+    return (
+      <PlayText.Primary
+        id="loading"
+        className="py-12 text-center text-slate-300"
+      />
+    );
   }
 
   if (!connectedUser) {
@@ -90,7 +95,9 @@ export const EditProfilePage = () => {
           id="login-to-see"
           className="text-lg font-medium text-slate-300 text-center"
         />
-        {error && <p className="text-sm text-rose-400">{error}</p>}
+        {error && (
+          <PlayText.Primary id={error} className="text-sm text-rose-400" />
+        )}
       </div>
     );
   }
@@ -221,11 +228,7 @@ export const EditProfilePage = () => {
 
         <div className="relative z-10 w-full flex flex-col gap-4 pt-4 border-t border-white/10">
           <Info
-            placeholder="firstname"
             isEditing={editing.firstname}
-            updateValue={(v) =>
-              setUpdatedInfos({ ...updatedInfos, firstname: v })
-            }
             label="firstname-label"
             value={updatedInfos.firstname}
             onClick={() => {
@@ -235,13 +238,22 @@ export const EditProfilePage = () => {
               }
               setEditing({ ...editing, firstname: !editing.firstname });
             }}
+            input={
+              <PlayInput.Primary
+                onChange={(e) =>
+                  setUpdatedInfos({
+                    ...updatedInfos,
+                    firstname: e.target.value,
+                  })
+                }
+                placeholder={"firstname"}
+                value={updatedInfos.firstname ?? ""}
+                className="w-full rounded-xl border border-white/10 bg-white/5 px-3.5 py-2 text-sm text-white placeholder-slate-400 backdrop-blur-md focus:border-white/30 focus:outline-none"
+              />
+            }
           />
           <Info
-            placeholder="lastname"
             isEditing={editing.lastname}
-            updateValue={(v) =>
-              setUpdatedInfos({ ...updatedInfos, lastname: v })
-            }
             label="lastname-label"
             value={updatedInfos.lastname}
             onClick={() => {
@@ -251,14 +263,32 @@ export const EditProfilePage = () => {
               }
               setEditing({ ...editing, lastname: !editing.lastname });
             }}
+            input={
+              <PlayInput.Primary
+                onChange={(e) =>
+                  setUpdatedInfos({ ...updatedInfos, lastname: e.target.value })
+                }
+                placeholder={"lastname"}
+                value={updatedInfos.lastname ?? ""}
+                className="w-full rounded-xl border border-white/10 bg-white/5 px-3.5 py-2 text-sm text-white placeholder-slate-400 backdrop-blur-md focus:border-white/30 focus:outline-none"
+              />
+            }
           />
           <Info
-            placeholder="bio"
             isEditing={editing.bio}
-            updateValue={(v) => setUpdatedInfos({ ...updatedInfos, bio: v })}
             label="bio-label"
             value={updatedInfos.bio}
             onClick={() => setEditing({ ...editing, bio: !editing.bio })}
+            input={
+              <PlayInput.Area
+                onChange={(e) =>
+                  setUpdatedInfos({ ...updatedInfos, bio: e.target.value })
+                }
+                placeholder={"bio"}
+                value={updatedInfos.bio ?? ""}
+                className="w-full rounded-xl border border-white/10 bg-white/5 px-3.5 py-2 text-sm text-white placeholder-slate-400 backdrop-blur-md focus:border-white/30 focus:outline-none"
+              />
+            }
           />
         </div>
       </div>
@@ -285,8 +315,8 @@ export const EditProfilePage = () => {
                     bio: false,
                   });
                 },
-                () => {
-                  setError("Unable to update your profile");
+                (error) => {
+                  setError(error);
                 },
               );
             }}

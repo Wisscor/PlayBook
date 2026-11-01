@@ -1,6 +1,12 @@
 import { useAuth } from "@/hooks/contexts/authContext";
 import { api } from "./api";
-import { Feed, FeedPaginated, PostData, PostPaginated } from "@/types/api";
+import {
+  ApiError,
+  Feed,
+  FeedPaginated,
+  PostData,
+  PostPaginated,
+} from "@/types/api";
 import React from "react";
 import { pageSize } from "@/lib/constants";
 
@@ -22,26 +28,23 @@ export const usePostController = () => {
     onError: (error: any) => void,
   ) => {
     setIsLoading(true);
-    try {
-      await api
-        .post("/posts", { caption: post.trim() })
-        .then((res) => {
-          if (res.status == 201) {
-            onSuccess();
-          }
-        })
-        .catch((error) => {
-          onError(error);
-        });
-    } catch (requestError) {
-    } finally {
-      setIsLoading(false);
-    }
+    await api
+      .post("/posts", { caption: post.trim() })
+      .then((res) => {
+        if (res.status == 201) {
+          onSuccess();
+        }
+      })
+      .catch((error: ApiError) => {
+        onError(error.errorCode || "unable-to-create-post");
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
   };
 
   const loadPosts = async (userId?: string, pageNumber?: number) => {
     if (!userId) {
-      console.error("User ID is undefined. Cannot load posts.");
       return;
     }
     const defaultParams = `page=${pageNumber}&size=${pageSize}`;
@@ -57,9 +60,6 @@ export const usePostController = () => {
           setPostPages(res.data.pages);
           setTotalPosts(res.data.total);
         }
-      })
-      .catch((error) => {
-        console.error("Unable to load posts:", error);
       })
       .finally(() => {
         setIsLoading(false);
@@ -79,25 +79,17 @@ export const usePostController = () => {
           setTotalFeeds(res.data.total);
         }
       })
-      .catch((error) => {
-        console.error("Unable to load feeds:", error);
-      })
       .finally(() => {
         setIsLoading(false);
       });
   };
 
   const deletePost = async (id: string, onSuccess: () => void) => {
-    await api
-      .delete(`/posts/${id}`)
-      .then((res) => {
-        if (res.status == 204) {
-          onSuccess();
-        }
-      })
-      .catch((error) => {
-        console.error("Unable to delete post:", error);
-      });
+    await api.delete(`/posts/${id}`).then((res) => {
+      if (res.status == 204) {
+        onSuccess();
+      }
+    });
   };
 
   return {

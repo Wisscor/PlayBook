@@ -1,156 +1,140 @@
-import { PlayButton } from "@/components/ui/Button";
-import { PlayInput } from "@/components/ui/Input";
-import { PlayText } from "@/components/ui/Text";
-import { MatchAnnouncement } from "@/types/api";
-import { useTranslations } from "next-intl";
-import React, { useEffect } from "react";
+import { useState } from "react";
+import { MatchAnnouncement, PlayRequest, Sport } from "@/types/api";
+import { useCommunityCopy } from "../community-copy";
+import { Icon, MatchFilters, Pagination } from "../community-ui";
+import { MatchCard } from "./matchCard";
+import { MatchFilterSection } from "./matchFilterSection";
+import styles from "../community.module.css";
 
-export const RightSideSection: React.FC<{
+export function RightSideSection({
+  userId,
+  matches,
+  total,
+  pageNumber,
+  pages,
+  scroll,
+  requests,
+  onRequested,
+  openFilters,
+  filters,
+  sports,
+  loading,
+  error,
+  retry,
+  requestsReady,
+  requestsError,
+  retryRequests,
+}: {
+  requestsReady: boolean;
+  requestsError: boolean;
+  retryRequests: () => void;
   userId?: string;
   matches: MatchAnnouncement[];
-  pageSize: number;
   total: number;
   pageNumber: number;
   pages: number;
-  scroll: (pageNumber: number) => void;
-}> = ({ userId, matches, pageSize, total, pageNumber, pages, scroll }) => {
-  const t = useTranslations();
-  const [matchSearchQuery, setMatchSearchQuery] = React.useState<string>("");
-  const [filteredMatches, setFilteredMatches] =
-    React.useState<MatchAnnouncement[]>(matches);
-
-  const filterMatch = () => {
-    setFilteredMatches(
-      matches.filter((match) => {
-        const matchTitle = match.title.toLowerCase();
-        const matchOwner =
-          `${match.owner.firstname} ${match.owner.lastname}`.toLowerCase();
-        const query = matchSearchQuery.toLowerCase();
-        return matchTitle.includes(query) || matchOwner.includes(query);
-      }),
-    );
-  };
-
-  useEffect(() => {
-    filterMatch();
-  }, [matchSearchQuery]);
-
-  useEffect(() => {
-    setFilteredMatches(matches);
-  }, [matches]);
-
-  return (
-    <div className="col-span-1 lg:col-span-1 flex flex-col gap-6">
-      <div className="rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl p-5 sm:p-6 shadow-xl flex flex-col gap-4 sticky top-20">
-        <div className="flex justify-between items-center">
-          <PlayText.Primary
-            id="find-matches"
-            className="text-base font-bold text-white"
-          />
-
-          <PlayText.Span
-            texts={[
-              {
-                content: `${total} ${t("available")}`,
-              },
-            ]}
-            className="text-xs text-slate-400 font-medium"
-          />
-        </div>
-
-        <PlayInput.Primary
-          type="text"
-          value={matchSearchQuery}
-          onChange={(e) => setMatchSearchQuery(e.target.value)}
-          placeholder="search-matches"
-          className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-slate-400 focus:border-white/30 focus:outline-none backdrop-blur-md"
-        />
-
-        <div className="flex flex-col gap-3 mt-2">
-          {filteredMatches.length === 0 ? (
-            <PlayText.Primary
-              id="no-matches"
-              className="text-xs text-slate-400 text-center py-4"
-            />
-          ) : (
-            filteredMatches.map((match) => (
-              <div
-                key={match.id}
-                className="rounded-2xl border border-white/10 bg-white/5 p-4 flex flex-col gap-2 backdrop-blur-md hover:bg-white/10 transition-all"
-              >
-                <div className="flex justify-between items-start">
-                  <PlayText.Primary
-                    content={`${match.title} (${userId === match.owner.id ? t("you") : match.owner.firstname + " " + match.owner.lastname})`}
-                    className="font-bold text-xs text-white"
-                  />
-                  <PlayText.Span
-                    texts={[{ content: match.sport.name }]}
-                    className="text-[10px] font-semibold bg-white/10 px-2 py-0.5 rounded-full text-sky-400"
-                  />
-                </div>
-                <PlayText.Primary
-                  content={`${new Date(match.start_time).toISOString().split("T")[0]} • ${new Date(match.start_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} - ${new Date(match.end_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`}
-                  className="text-[11px] text-slate-400"
-                />
-
-                <div className="flex justify-between items-center pt-2 border-t border-white/5">
-                  <PlayText.Span
-                    texts={[
-                      {
-                        content: `Slotss: ${match.remaining_player_slots} ${match.remaining_player_slots} ${match.remaining_player_slots}`,
-                      },
-                    ]}
-                    className="text-[11px] font-medium text-slate-300"
-                  />
-
-                  {match.owner.id !== userId && (
-                    <PlayButton.Primary
-                      textClassName="text-xs font-semibold text-white"
-                      title="join-match"
-                      className="rounded-lg bg-white/10 px-3 py-1  hover:bg-white/20 transition-all cursor-pointer"
-                    />
-                  )}
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-
-        <div className="flex items-center justify-center my-6 space-x-4">
-          {pageNumber > 1 && (
-            <button
-              onClick={() => {
-                scroll(pageNumber - 1);
-              }}
-              className="cursor-pointer"
-            >
-              <PlayText.Primary
-                id="previous"
-                className="text-sm text-slate-400 hover:text-slate-200 transition-color"
-              />
-            </button>
-          )}
-          <PlayText.Primary
-            content={
-              pages > 0 ? `${pageNumber}/${pages}` : pageNumber.toString()
-            }
-            className="text-sm text-slate-400 font-bold transition-color"
-          />
-          {pageNumber < pages && (
-            <button
-              onClick={() => {
-                scroll(pageNumber + 1);
-              }}
-              className="cursor-pointer"
-            >
-              <PlayText.Primary
-                id="next"
-                className="text-sm text-slate-400 hover:text-slate-200 transition-color"
-              />
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
+  scroll: (page: number) => void;
+  requests: PlayRequest[];
+  onRequested: (request: PlayRequest) => void;
+  openFilters: () => void;
+  filters: MatchFilters;
+  sports: Sport[];
+  loading: boolean;
+  error: boolean;
+  retry: () => void;
+}) {
+  const { copy } = useCommunityCopy();
+  const [search, setSearch] = useState("");
+  const query = search.trim().toLocaleLowerCase();
+  const filtered = matches.filter((match) =>
+    `${match.title} ${match.sport.name} ${match.owner.firstname} ${match.owner.lastname} ${match.owner.username}`
+      .toLocaleLowerCase()
+      .includes(query),
   );
-};
+  return (
+    <section
+      className={styles.gamesPanel}
+      aria-labelledby="community-games-title"
+      aria-busy={loading}
+    >
+      <header className={styles.panelHeading}>
+        <div>
+          <h2 id="community-games-title">{copy.games}</h2>
+          <p>{copy.gamesIntro}</p>
+        </div>
+        <span className={styles.totalBadge}>{total}</span>
+      </header>
+      <label className={styles.search}>
+        <Icon name="search" size={18} />
+        <input
+          type="search"
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder={copy.search}
+          aria-label={copy.search}
+        />
+      </label>
+      <MatchFilterSection
+        open={openFilters}
+        filters={filters}
+        sports={sports}
+      />
+      {requestsError && (
+        <p className={styles.requestError} role="status">
+          {copy.requestError}{" "}
+          <button
+            type="button"
+            className={styles.textButton}
+            onClick={retryRequests}
+          >
+            {copy.retry}
+          </button>
+        </p>
+      )}
+      {loading ? (
+        <div className={styles.matchSkeleton} role="status">
+          <span className={styles.srOnly}>{copy.loading}</span>
+          {[0, 1, 2].map((item) => (
+            <div key={item} />
+          ))}
+        </div>
+      ) : error ? (
+        <div className={styles.emptyState}>
+          <p>{copy.matchError}</p>
+          <button type="button" className={styles.textButton} onClick={retry}>
+            {copy.retry}
+          </button>
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className={styles.emptyState}>
+          <Icon name="calendar" size={30} />
+          <h3>{copy.noGames}</h3>
+          <p>{copy.noGamesBody}</p>
+        </div>
+      ) : (
+        <div>
+          {filtered.map((match) => (
+            <MatchCard
+              requestsReady={requestsReady}
+              key={match.id}
+              match={match}
+              userId={userId}
+              request={requests.find(
+                (request) => request.announcement_id === match.id,
+              )}
+              onRequested={onRequested}
+            />
+          ))}
+        </div>
+      )}
+      <Pagination
+        page={pageNumber}
+        pages={pages}
+        onChange={scroll}
+        previous={copy.previous}
+        next={copy.next}
+        label={copy.games}
+      />
+    </section>
+  );
+}

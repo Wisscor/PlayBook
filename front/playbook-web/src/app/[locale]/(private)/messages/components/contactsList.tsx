@@ -1,84 +1,167 @@
-import { PlayInput } from "@/components/ui/Input";
-import { PlayText } from "@/components/ui/Text";
-import { Contact } from "@/types/api";
-import React, { useState } from "react";
+import { useState } from "react";
+import { useNavigation } from "@/hooks/useNavigation";
+import { Avatar, Icon } from "../../community/community-ui";
+import { ChatContact } from "../chat-types";
+import { useChatCopy } from "../chat-copy";
+import styles from "../chat.module.css";
 
-export const ContactsList: React.FC<{
-  contacts: Contact[];
-  selectedContactId: string;
-  setSelectedContactId: (id: string) => void;
-}> = ({ contacts, selectedContactId, setSelectedContactId }) => {
-  const [searchQuery, setSearchQuery] = useState("");
-
-  const filteredContacts = contacts.filter(
-    (c) =>
-      c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.username.toLowerCase().includes(searchQuery.toLowerCase()),
+export function ContactsList({
+  contacts,
+  selectedId,
+  select,
+  connected,
+  currentUserId,
+}: {
+  contacts: ChatContact[];
+  selectedId: string;
+  select: (id: string) => void;
+  connected: boolean;
+  currentUserId?: string;
+}) {
+  const { copy, locale } = useChatCopy();
+  const { goSearch } = useNavigation();
+  const [search, setSearch] = useState("");
+  const [unreadOnly, setUnreadOnly] = useState(false);
+  const query = search.trim().toLocaleLowerCase();
+  const filtered = contacts.filter(
+    (contact) =>
+      (!unreadOnly || contact.unread > 0) &&
+      `${contact.name} ${contact.username}`.toLocaleLowerCase().includes(query),
   );
-
+  const unread = contacts.reduce((sum, contact) => sum + contact.unread, 0);
   return (
-    <div className="h-full min-h-0 rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl p-4 sm:p-5 shadow-xl flex flex-col gap-4 overflow-hidden">
-      <div className="flex flex-col gap-3 border-b border-white/10 pb-4">
-        <PlayText.Primary
-          id="messages"
-          className="text-lg font-bold text-white tracking-tight"
+    <aside className={styles.sidebar} aria-label={copy.inbox}>
+      <header className={styles.inboxHeader}>
+        <h2>{copy.inbox}</h2>
+        <button
+          type="button"
+          className={styles.iconButton}
+          onClick={goSearch}
+          aria-label={copy.findPlayers}
+        >
+          <Icon name="users" size={19} />
+        </button>
+      </header>
+      <label className={styles.search}>
+        <Icon name="search" size={18} />
+        <input
+          type="search"
+          placeholder={copy.search}
+          aria-label={copy.search}
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
         />
-
-        <PlayInput.Primary
-          type="text"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="search-contacts"
-          className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-slate-400 focus:border-white/30 focus:outline-none backdrop-blur-md"
-        />
+      </label>
+      <div className={styles.listFilters} aria-label={copy.inbox}>
+        <button
+          type="button"
+          aria-pressed={!unreadOnly}
+          onClick={() => setUnreadOnly(false)}
+        >
+          {copy.all}
+        </button>
+        <button
+          type="button"
+          aria-pressed={unreadOnly}
+          onClick={() => setUnreadOnly(true)}
+        >
+          {copy.unread}
+          {unread > 0 && (
+            <span>{new Intl.NumberFormat(locale).format(unread)}</span>
+          )}
+        </button>
       </div>
-      <div className="min-h-0 flex flex-1 flex-col gap-2 overflow-y-auto pr-1">
-        {filteredContacts.length === 0 ? (
-          <PlayText.Primary
-            id="no-contacts"
-            className="text-xs text-slate-400 text-center py-8"
-          />
+      <div className={styles.contactList}>
+        {filtered.length === 0 ? (
+          <div className={styles.listEmpty}>
+            <Icon name={query ? "search" : "chat"} size={27} />
+            <h3>
+              {query
+                ? copy.noResults
+                : unreadOnly
+                  ? copy.noUnread
+                  : copy.noContacts}
+            </h3>
+            <p>
+              {query ? copy.searchAgain : unreadOnly ? "" : copy.noContactsBody}
+            </p>
+            {!query && !unreadOnly && (
+              <button
+                type="button"
+                className={styles.textButton}
+                onClick={goSearch}
+              >
+                {copy.findPlayers}
+              </button>
+            )}
+          </div>
         ) : (
-          filteredContacts.map((contact) => {
-            const isSelected = contact.id === selectedContactId;
+          filtered.map((contact) => {
+            const last = contact.messages.at(-1);
+            const preview = last
+              ? `${last.sender_id === currentUserId ? `${copy.you}: ` : ""}${last.body}`
+              : contact.unread
+                ? `${contact.unread} ${contact.unread === 1 ? copy.unreadMessage : copy.unreadMessages}`
+                : copy.open;
             return (
               <button
-                key={contact.id}
                 type="button"
-                onClick={() => setSelectedContactId(contact.id)}
-                className={`flex items-center gap-3 p-3 rounded-2xl border transition-all cursor-pointer text-left w-full ${
-                  isSelected
-                    ? "border-white/20 bg-white/10 shadow-lg"
-                    : "border-white/5 bg-white/5 hover:bg-white/10 text-slate-300"
-                }`}
+                key={contact.id}
+                className={styles.contact}
+                aria-current={contact.id === selectedId ? "true" : undefined}
+                onClick={() => select(contact.id)}
               >
-                <div className="relative shrink-0">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-full bg-linear-to-tr from-indigo-950 to-indigo-600 font-bold text-sm text-white shadow-md">
-                    {contact.avatar}
-                  </div>
-                  {contact.online && (
-                    <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-emerald-500 border-2 border-slate-950" />
-                  )}
-                </div>
-                <div className="flex flex-col flex-1 min-w-0">
-                  <div className="flex justify-between items-center">
-                    <PlayText.Primary
-                      content={contact.name}
-                      className="font-bold text-sm text-white truncate"
-                    />
-                  </div>
-                  <PlayText.Primary
-                    content={contact.lastMessage}
-                    className="text-xs text-slate-400 truncate mt-0.5"
+                <span className={styles.contactAvatar}>
+                  <Avatar name={contact.name} src={contact.avatar} />
+                  <span
+                    className={styles.presenceDot}
+                    data-online={connected && contact.online}
+                    aria-label={
+                      !connected
+                        ? copy.unavailable
+                        : contact.online
+                          ? copy.online
+                          : copy.offline
+                    }
                   />
-                </div>
+                </span>
+                <span className={styles.contactText}>
+                  <span className={styles.contactTop}>
+                    <strong dir="auto">{contact.name}</strong>
+                    {last && (
+                      <time dateTime={last.created_at}>
+                        {new Date(last.created_at).toLocaleTimeString(locale, {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </time>
+                    )}
+                  </span>
+                  <span className={styles.contactBottom}>
+                    <span>{preview}</span>
+                    {contact.unread > 0 && (
+                      <span
+                        className={styles.unreadBadge}
+                        aria-label={`${contact.unread} ${copy.unreadMessages}`}
+                      >
+                        {contact.unread > 99
+                          ? "99+"
+                          : new Intl.NumberFormat(locale).format(
+                              contact.unread,
+                            )}
+                      </span>
+                    )}
+                  </span>
+                </span>
               </button>
             );
           })
         )}
       </div>
-    </div>
+      <footer className={styles.sidebarFooter}>
+        <span className={styles.connectionDot} data-connected={connected} />
+        {connected ? copy.connected : copy.reconnecting}
+      </footer>
+    </aside>
   );
-};
-
-export default ContactsList;
+}

@@ -8,7 +8,7 @@ import { isEmailValid } from "@/lib/utils";
 import { useAuthController } from "@/services/auth";
 import React, { useState } from "react";
 
-export const SignUp = () => {
+export const SignUp: React.FC = () => {
   const { signUp, isWaiting } = useAuthController();
   const [infos, setInfos] = useState({
     firstName: "",

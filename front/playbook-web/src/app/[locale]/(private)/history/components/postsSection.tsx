@@ -18,14 +18,12 @@ export const PostsSection: React.FC = () => {
     postPages,
     totalPosts,
   } = usePostController();
-  const { connectedUser, isLoading, setIsLoading } = useAuth();
+  const { connectedUser, isLoading } = useAuth();
   const { fetchUser } = useProfileController();
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
       void fetchUser(() => {
-        setIsLoading(true);
-
         if (connectedUser?.id) {
           void loadPosts(connectedUser.id, postPageNumber);
         }
@@ -35,11 +33,14 @@ export const PostsSection: React.FC = () => {
   }, [connectedUser?.id]);
 
   let postsContent: React.ReactNode;
-  if (isLoading) {
+  if (isLoading && totalPosts === 0) {
     postsContent = (
-      <p className="py-12 text-center text-slate-300">Loading...</p>
+      <PlayText.Primary
+        id="loading"
+        className="py-12 text-center text-slate-300"
+      />
     );
-  } else if (totalPosts === 0) {
+  } else if (totalPosts === 0 && !isLoading) {
     postsContent = (
       <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-white/10 p-12 text-center">
         <PlayText.Primary
@@ -51,17 +52,55 @@ export const PostsSection: React.FC = () => {
   } else {
     postsContent = (
       <div className="flex flex-col gap-4">
-        {posts.map((post) => (
-          <Post
-            key={post.id}
-            post={post}
-            onDelete={() => {
-              void deletePost(post.id, () => {
-                window.location.reload();
-              });
-            }}
+        <div className="flex items-center justify-center my-6 space-x-4">
+          {postPageNumber > 1 && (
+            <button
+              onClick={() => {
+                void loadPosts(connectedUser?.id, postPageNumber - 1);
+              }}
+              className="cursor-pointer"
+            >
+              <PlayText.Primary
+                id="previous"
+                className="text-sm text-slate-400 hover:text-slate-200 transition-color"
+              />
+            </button>
+          )}
+          <PlayText.Primary
+            content={
+              postPages > 0
+                ? `${postPageNumber}/${postPages}`
+                : postPageNumber.toString()
+            }
+            className="text-sm text-slate-400 font-bold transition-color"
           />
-        ))}
+          {postPageNumber < postPages && (
+            <button
+              onClick={() => {
+                void loadPosts(connectedUser?.id, postPageNumber + 1);
+              }}
+              className="cursor-pointer"
+            >
+              <PlayText.Primary
+                id="next"
+                className="text-sm text-slate-400 hover:text-slate-200 transition-color"
+              />
+            </button>
+          )}
+        </div>
+        <div className="flex flex-col gap-4">
+          {posts.map((post) => (
+            <Post
+              key={post.id}
+              post={post}
+              onDelete={() => {
+                void deletePost(post.id, () => {
+                  window.location.reload();
+                });
+              }}
+            />
+          ))}
+        </div>
       </div>
     );
   }
@@ -83,42 +122,7 @@ export const PostsSection: React.FC = () => {
           ]}
         />
       </div>
-      <div className="flex items-center justify-center my-6 space-x-4">
-        {postPageNumber > 1 && (
-          <button
-            onClick={() => {
-              void loadPosts(connectedUser?.id, postPageNumber - 1);
-            }}
-            className="cursor-pointer"
-          >
-            <PlayText.Primary
-              id="previous"
-              className="text-sm text-slate-400 hover:text-slate-200 transition-color"
-            />
-          </button>
-        )}
-        <PlayText.Primary
-          content={
-            postPages > 0
-              ? `${postPageNumber}/${postPages}`
-              : postPageNumber.toString()
-          }
-          className="text-sm text-slate-400 font-bold transition-color"
-        />
-        {postPageNumber < postPages && (
-          <button
-            onClick={() => {
-              void loadPosts(connectedUser?.id, postPageNumber + 1);
-            }}
-            className="cursor-pointer"
-          >
-            <PlayText.Primary
-              id="next"
-              className="text-sm text-slate-400 hover:text-slate-200 transition-color"
-            />
-          </button>
-        )}
-      </div>
+
       {postsContent}
     </div>
   );

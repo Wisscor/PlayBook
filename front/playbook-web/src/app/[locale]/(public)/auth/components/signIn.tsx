@@ -9,7 +9,7 @@ import { useAuthController } from "@/services/auth";
 import { SignInData } from "@/types/api";
 import React, { useState } from "react";
 
-export const SignIn = () => {
+export const SignIn: React.FC = () => {
   const { signIn, isWaiting } = useAuthController();
 
   const [infos, setInfos] = useState<SignInData>({

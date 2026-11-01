@@ -1,9 +1,12 @@
+import { UserSummary } from "./user";
+
 export interface PostData {
   id: string;
   caption: string;
   created_at: string;
   updated_at: string;
   author?: {
+    id?: string;
     username: string;
     firstname: string;
     lastname: string;
@@ -52,10 +55,12 @@ export interface Message {
 
 export interface Contact {
   id: string;
+  profileId: string;
   conversationId: string;
   name: string;
   username: string;
   avatar: string;
+  avatarUrl?: string;
   lastMessage: string;
   online: boolean;
   messages: Message[];
@@ -82,12 +87,6 @@ export interface SignUpData {
   password: string;
 }
 
-export interface ApiError {
-  message: string;
-  status: number | null;
-  details?: unknown;
-}
-
 export interface MatchAnnouncementRequestData {
   title: string;
   sport_id: string;
@@ -96,7 +95,7 @@ export interface MatchAnnouncementRequestData {
   end_time: string;
 }
 
-export interface Player {
+interface Player {
   id: string;
   username: string;
   firstname: string;
@@ -130,3 +129,55 @@ export interface MatchAnnouncementPaginated {
   size: number;
   pages: number;
 }
+
+export interface FollowDataPaginated {
+  items: UserSummary[];
+  total: number;
+  page: number;
+  size: number;
+  pages: number;
+}
+
+export interface PlayRequest {
+  id: string;
+  announcement_id: string;
+  sender: UserSummary;
+  status: "pending" | "accepted" | "declined";
+  created_at: string;
+}
+
+export interface PlayRequestPaginated {
+  items: PlayRequest[];
+  total: number;
+  page: number;
+  size: number;
+  pages: number;
+}
+
+export interface MatchOverview {
+  id: string;
+  matchname: string;
+  matchType: string;
+  playerNbr: string | number;
+  date: string;
+  startTime: string;
+  endTime: string;
+  status: string;
+}
+
+export interface UpdatedMatchRequest {
+  title: string;
+  sport_id: string;
+  remaining_player_slots: number;
+  match_status: string;
+  start_time: string;
+  end_time: string;
+}
+
+export type ApiError = {
+  status?: number;
+  errorCode?: string;
+  message?: string;
+  detail?: unknown;
+  data?: unknown;
+};

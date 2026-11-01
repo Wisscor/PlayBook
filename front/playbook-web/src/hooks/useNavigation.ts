@@ -21,9 +21,11 @@ export const useNavigation = () => {
       localStorage.setItem("userId", userId);
       push(`${ROUTES.USER_PROFILE}`);
     },
-    goFollowers: (userId: string) => {
-      localStorage.setItem("userid_of_requested_user_for_followers", userId);
-      push(`${ROUTES.FOLLOWERS}`);
+    goFollowers: (view: "followers" | "following", userId?: string) => {
+      if (userId) {
+        localStorage.setItem("userid_of_requested_user_for_followers", userId);
+      }
+      push(`${ROUTES.FOLLOWERS}?view=${view}`);
     },
   };
 };

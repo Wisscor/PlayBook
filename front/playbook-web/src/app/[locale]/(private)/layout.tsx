@@ -20,33 +20,17 @@ export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
   const pathname = usePathname();
   const [isExpanded, setIsExpanded] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const [logoutError, setLogoutError] = useState("");
+  const [logoutError, setLogoutError] = useState<string | undefined>(undefined);
   const { goMessages, goSearch } = useNavigation();
-  const { unreadMessages } = useChat();
+  const {
+    unreadMessages,
+    notifications,
+    markNotificationRead,
+    markAllNotificationsRead,
+  } = useChat();
 
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const notificationRef = useRef<HTMLDivElement>(null);
-
-  const [notifications, setNotifications] = useState([
-    {
-      id: 1,
-      text: "Alex Johnson invited you to a basketball match.",
-      time: "10m ago",
-      read: false,
-    },
-    {
-      id: 2,
-      text: "Your match 'Weekend Football' starts tomorrow.",
-      time: "1h ago",
-      read: false,
-    },
-    {
-      id: 3,
-      text: "Sarah Connor liked your post.",
-      time: "3h ago",
-      read: true,
-    },
-  ]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -74,6 +58,10 @@ export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
       name: "my-profile",
       route: ROUTES.PROFILE,
     },
+    {
+      name: "my-requests",
+      route: ROUTES.PLAY_REQUESTS,
+    },
   ];
 
   const handleLogout = () => {
@@ -83,25 +71,46 @@ export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
       () => {
         window.location.reload();
       },
-      () => {
-        setLogoutError("Unable to log out");
+      (error) => {
+        setLogoutError(error);
         setIsLoggingOut(false);
       },
     );
   };
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
-
+  const unreadCount = notifications.filter((n) => !n.read_at).length;
+  const toggleNotifications = () => {
+    const willOpen = !isNotificationsOpen;
+    setIsNotificationsOpen(willOpen);
+    if (willOpen) {
+      void markAllNotificationsRead();
+    }
+  };
+  const notificationItems = notifications.map((notification) => ({
+    id: notification.id,
+    text: `${notification.actor_username} ${{
+      follow: "followed you.",
+      post_created: "created a new post.",
+      play_request: "sent you a play request.",
+      play_request_accepted: "accepted your play request.",
+      play_request_rejected: "rejected your play request.",
+      match_updated: "updated a match you joined.",
+      match_cancelled: "cancelled a match you joined.",
+    }[notification.event_type] ?? "triggered a notification."}`,
+    time: new Date(notification.created_at).toLocaleString(),
+    read: Boolean(notification.read_at),
+  }));
   return (
     <div className="flex min-h-screen flex-col bg-slate-950 text-white">
       <header className="sticky top-0 z-50 border-b border-white/10 bg-slate-950/80 backdrop-blur-xl shadow-2xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 md:px-12 lg:px-20">
           <Link href={ROUTES.HOME} className="relative h-8 w-32">
             <Image
-              loading="eager"
               alt="app-logo"
               src="/logos/app-logo.png"
               fill
+              loading="eager"
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               className="object-contain"
             />
           </Link>
@@ -176,7 +185,7 @@ export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
               <div className="relative block" ref={notificationRef}>
                 <PlayButton.Complexe
                   type="button"
-                  onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
+                  onClick={toggleNotifications}
                   className="relative rounded-xl border border-white/10 bg-white/5 p-2.5 backdrop-blur-md transition-all hover:bg-white/10 cursor-pointer flex items-center justify-center"
                   aria-label="Notifications"
                 >
@@ -202,8 +211,8 @@ export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
 
                 {isNotificationsOpen && (
                   <NotificationPopUp
-                    setNotifications={setNotifications}
-                    notifications={notifications}
+                    onRead={markNotificationRead}
+                    notifications={notificationItems}
                     unreadCount={unreadCount}
                   />
                 )}
@@ -292,7 +301,7 @@ export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
                 <div className="relative block" ref={notificationRef}>
                   <PlayButton.Complexe
                     type="button"
-                    onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
+                    onClick={toggleNotifications}
                     className="relative rounded-xl border border-white/10 bg-white/5 p-2.5 backdrop-blur-md transition-all hover:bg-white/10 cursor-pointer flex items-center justify-center"
                     aria-label="Notifications"
                   >
@@ -318,8 +327,8 @@ export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
 
                   {isNotificationsOpen && (
                     <NotificationPopUp
-                      setNotifications={setNotifications}
-                      notifications={notifications}
+                      onRead={markNotificationRead}
+                      notifications={notificationItems}
                       unreadCount={unreadCount}
                     />
                   )}
@@ -341,9 +350,10 @@ export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
           />
         </div>
         {logoutError && (
-          <p className="px-6 pb-2 text-right text-sm text-rose-400 md:px-12 lg:px-20">
-            {logoutError}
-          </p>
+          <PlayText.Primary
+            id={logoutError}
+            className="px-6 pb-2 text-right text-sm text-rose-400 md:px-12 lg:px-20"
+          />
         )}
       </header>
 
@@ -354,7 +364,7 @@ export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
       </main>
 
       <footer className="border-t border-white/10 bg-slate-950/80 backdrop-blur-xl py-6 text-center text-sm text-slate-400">
-        <div className="mx-auto max-w-7xl px-6 md:px-12 lg:px-20">
+        <div className="mx-auto max-w-7xl px-6 md:px-12 lg:px-20 flex items-center justify-center gap-4 flex-col md:flex-row">
           <p>
             &copy; {new Date().getFullYear()} playbook. All rights reserved.
           </p>

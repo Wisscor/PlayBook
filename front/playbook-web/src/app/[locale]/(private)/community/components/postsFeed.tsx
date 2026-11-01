@@ -1,68 +1,72 @@
-import { PlayText } from "@/components/ui/Text";
-import React from "react";
-import { Link } from "../../../../../../i18n/navigation";
-import { ROUTES } from "@/lib/constants";
+import { useEffect, useState } from "react";
 import { Feed } from "@/types/api";
+import { useNavigation } from "@/hooks/useNavigation";
+import { useCommunityCopy } from "../community-copy";
+import { Avatar } from "../community-ui";
+import styles from "../community.module.css";
 
-export const PostsFeed: React.FC<{
-  feeds: Feed[];
-}> = ({ feeds }) => {
-  const getTimeAgo = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-
-    if (diffInSeconds < 60) {
-      return `${diffInSeconds} seconds ago`;
-    } else if (diffInSeconds < 3600) {
-      return `${Math.floor(diffInSeconds / 60)} minutes ago`;
-    } else if (diffInSeconds < 86400) {
-      return `${Math.floor(diffInSeconds / 3600)} hours ago`;
-    } else {
-      return `${Math.floor(diffInSeconds / 86400)} days ago`;
-    }
+export function PostsFeed({ feeds }: { feeds: Feed[] }) {
+  const { locale, copy } = useCommunityCopy();
+  const { goUserProfile } = useNavigation();
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 60_000);
+    return () => clearInterval(timer);
+  }, []);
+  const relative = (value: string) => {
+    const seconds = Math.max(
+      0,
+      Math.floor((now - new Date(value).getTime()) / 1000),
+    );
+    if (!Number.isFinite(seconds)) return "";
+    const [amount, unit] =
+      seconds < 60
+        ? [seconds, "second"]
+        : seconds < 3600
+          ? [Math.floor(seconds / 60), "minute"]
+          : seconds < 86400
+            ? [Math.floor(seconds / 3600), "hour"]
+            : [Math.floor(seconds / 86400), "day"];
+    return new Intl.RelativeTimeFormat(locale, { numeric: "auto" }).format(
+      -Number(amount),
+      unit as Intl.RelativeTimeFormatUnit,
+    );
   };
-
   return (
-    <div className="flex flex-col gap-4">
-      {feeds.map((feed) => (
-        <div
-          key={feed.id}
-          className="rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl p-6 shadow-xl flex flex-col gap-4"
-        >
-          <Link
-            href={ROUTES.USER_PROFILE}
-            className="flex items-center justify-between"
-          >
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-linear-to-tr from-indigo-900 to-indigo-600 font-bold text-sm text-white shadow-md">
-                {feed.author
-                  ? `${feed.author.firstname.charAt(0)}${feed.author.lastname.charAt(0)}`
-                  : "P"}
-              </div>
-              <div>
-                <PlayText.Primary
-                  content={
-                    feed.author
-                      ? `${feed.author.firstname} ${feed.author.lastname}`
-                      : "Feed"
-                  }
-                  className="font-bold text-sm text-white"
-                />
-                <PlayText.Primary
-                  content={`@${feed.author?.username ?? "unknown"} • ${getTimeAgo(feed.created_at)}`}
-                  className="text-xs text-slate-400"
-                />
-              </div>
+    <div className={styles.feedList}>
+      {feeds.map((feed) => {
+        const name =
+          [feed.author?.firstname, feed.author?.lastname]
+            .filter(Boolean)
+            .join(" ") ||
+          feed.author?.username ||
+          copy.community;
+        return (
+          <article key={feed.id} className={styles.postCard}>
+            <div className={styles.postHeader}>
+              <button
+                type="button"
+                className={styles.author}
+                onClick={() => goUserProfile(feed.author.id)}
+                aria-label={`${copy.viewProfile}: ${name}`}
+              >
+                <Avatar name={name} src={feed.author?.avatar} />
+                <span className={styles.authorText}>
+                  <strong>{name}</strong>
+                  <span>@{feed.author?.username}</span>
+                </span>
+              </button>
+              <time
+                dateTime={feed.created_at}
+                title={new Date(feed.created_at).toLocaleString(locale)}
+              >
+                {relative(feed.created_at)}
+              </time>
             </div>
-          </Link>
-
-          <PlayText.Primary
-            content={feed.caption}
-            className="text-sm text-slate-200 leading-relaxed"
-          />
-        </div>
-      ))}
+            <p className={styles.postCaption}>{feed.caption}</p>
+          </article>
+        );
+      })}
     </div>
   );
-};
+}

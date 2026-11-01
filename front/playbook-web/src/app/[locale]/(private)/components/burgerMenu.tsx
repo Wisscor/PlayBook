@@ -57,6 +57,7 @@ export const BurgerMenu: React.FC<{
           onClick={() => {
             void signOut(() => {
               close();
+              window.location.reload();
             });
           }}
           className="flex w-full cursor-pointer rounded-xl px-4 py-2.5 text-left text-rose-300 transition-colors hover:bg-rose-500/10"

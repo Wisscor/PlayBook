@@ -1,17 +1,26 @@
 import { PlayButton } from "@/components/ui/Button";
 import { PlayText } from "@/components/ui/Text";
 import { useNavigation } from "@/hooks/useNavigation";
-import { UserSummary } from "@/types/user";
+import { User, UserSummary } from "@/types/user";
 import React from "react";
 
-export const UserCard: React.FC<{ user: UserSummary }> = ({ user }) => {
-  const { goUserProfile } = useNavigation();
+export const UserCard: React.FC<{
+  user: UserSummary;
+  connectedUser?: User;
+}> = ({ user, connectedUser }) => {
+  const { goUserProfile, goProfile } = useNavigation();
+
   return (
     <div
       key={user.id}
       className="rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl p-6 shadow-xl flex flex-col justify-between gap-4 hover:bg-white/10 transition-all"
     >
-      <div className="flex items-center gap-4">
+      <button
+        type="button"
+        onClick={() => goUserProfile(user.id)}
+        aria-label={`View ${user.firstname} ${user.lastname}'s profile`}
+        className="flex items-center gap-4 rounded-xl text-left cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+      >
         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-linear-to-tr from-indigo-950 to-indigo-600 font-bold text-base text-white shadow-md">
           {user.avatar ? (
             <img
@@ -20,7 +29,7 @@ export const UserCard: React.FC<{ user: UserSummary }> = ({ user }) => {
               className="w-full h-full rounded-full object-cover"
             />
           ) : (
-            <div>
+            <div className="min-w-0">
               {user.firstname.charAt(0)}
               {user.lastname.charAt(0)}
             </div>
@@ -36,11 +45,15 @@ export const UserCard: React.FC<{ user: UserSummary }> = ({ user }) => {
             className="text-xs text-slate-400"
           />
         </div>
-      </div>
+      </button>
 
       <div className="pt-2 flex justify-end">
         <PlayButton.Primary
           onClick={() => {
+            if (user.id == connectedUser?.id) {
+              goProfile();
+              return;
+            }
             goUserProfile(user.id);
           }}
           textClassName="text-xs font-semibold text-white"

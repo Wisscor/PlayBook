@@ -52,10 +52,15 @@ const Primary = <T extends Record<string, any> | string | number>({
         <div className="overflow-hidden">
           <div className="flex flex-col gap-0.5 rounded-b-2xl border border-t-0 border-white/10 bg-slate-950/90 p-2 backdrop-blur-xl shadow-2xl">
             {items.map((item, index) => {
-              const displayContent =
-                value && typeof item === "object" && item !== null
+              let displayContent: string;
+
+              if (typeof item === "object" && item !== null) {
+                displayContent = value
                   ? String(item[value as keyof typeof item])
-                  : String(item);
+                  : JSON.stringify(item);
+              } else {
+                displayContent = String(item);
+              }
 
               return (
                 <button

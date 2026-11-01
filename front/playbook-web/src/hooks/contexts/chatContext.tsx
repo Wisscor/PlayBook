@@ -3,7 +3,15 @@
 import { api } from "@/services/api";
 import { RealtimeMessage } from "@/types/api";
 import { useAuth } from "./authContext";
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 export interface ChatConversation {
   id: string;
@@ -13,6 +21,15 @@ export interface ChatConversation {
   peer_last_read_message_id: string | null;
 }
 
+export interface ChatNotification {
+  id: string;
+  event_type: string;
+  actor_username: string;
+  read_at: string | null;
+  created_at: string;
+  match_time: string | null;
+}
+
 type ChatContextValue = {
   conversations: ChatConversation[];
   unreadMessages: number;
@@ -20,6 +37,9 @@ type ChatContextValue = {
   onlineUserIds: string[];
   connected: boolean;
   timeoutRemaining: number;
+  notifications: ChatNotification[];
+  markNotificationRead: (notificationId: string) => Promise<void>;
+  markAllNotificationsRead: () => Promise<void>;
   createConversation: (peerId: string) => Promise<string>;
   loadMessages: (conversationId: string) => Promise<void>;
   sendMessage: (conversationId: string, body: string) => boolean;
@@ -50,6 +70,64 @@ export function ChatProvider({
     {},
   );
   const [onlineUserIds, setOnlineUserIds] = useState<string[]>([]);
+  const [notifications, setNotifications] = useState<ChatNotification[]>([]);
+  const markAllNotificationsRead = useCallback(async () => {
+    const unreadIds = notifications
+      .filter((notification) => !notification.read_at)
+      .map((notification) => notification.id);
+
+    if (unreadIds.length === 0) return;
+
+    const readAt = new Date().toISOString();
+    setNotifications((current) =>
+      current.map((notification) =>
+        unreadIds.includes(notification.id)
+          ? { ...notification, read_at: readAt }
+          : notification,
+      ),
+    );
+
+    try {
+      await api.post("/realtime/notifications/read", {
+        notification_ids: unreadIds,
+      });
+    } catch (error) {
+      console.error("Unable to mark notifications as read:", error);
+      setNotifications((current) =>
+        current.map((notification) =>
+          unreadIds.includes(notification.id)
+            ? { ...notification, read_at: null }
+            : notification,
+        ),
+      );
+    }
+  }, [notifications]);
+
+  const markNotificationRead = useCallback(async (notificationId: string) => {
+    setNotifications((current) =>
+      current.map((notification) => {
+        if (notification.id !== notificationId || notification.read_at) {
+          return notification;
+        }
+        return { ...notification, read_at: new Date().toISOString() };
+      }),
+    );
+
+    try {
+      await api.post("/realtime/notifications/read", {
+        notification_ids: [notificationId],
+      });
+    } catch (error) {
+      console.error("Unable to mark notification as read:", error);
+      setNotifications((current) =>
+        current.map((notification) =>
+          notification.id === notificationId
+            ? { ...notification, read_at: null }
+            : notification,
+        ),
+      );
+    }
+  }, []);
   const [connected, setConnected] = useState(false);
   const [timeoutRemaining, setTimeoutRemaining] = useState(0);
   const timeoutDeadlineRef = useRef(0);
@@ -60,21 +138,26 @@ export function ChatProvider({
   const receivedMessageIdsRef = useRef(new Set<string>());
 
   const loadConversations = useCallback(async () => {
-    const response = await api.get<ChatConversation[]>("/realtime/conversations");
-    setConversations(response.data);
-  }, []);
-
-  const createConversation = useCallback(
-    async (peerId: string) => {
-      const response = await api.post<{ id: string }>(
+    try {
+      const response = await api.get<ChatConversation[]>(
         "/realtime/conversations",
-        { peer_id: peerId },
       );
-      await loadConversations();
-      return response.data.id;
-    },
-    [loadConversations],
-  );
+
+      console.log("realtime conv are >>>>", response);
+
+      setConversations(response.data);
+    } catch (error) {
+      console.error("Unable to load conversations:", error);
+    }
+  }, [connectedUser?.id]);
+
+  const createConversation = useCallback(async (peerId: string) => {
+    const response = await api.post<{ id: string }>("/realtime/conversations", {
+      peer_id: peerId,
+    });
+    await loadConversations();
+    return response.data.id;
+  }, []);
 
   const loadMessages = useCallback(async (conversationId: string) => {
     const response = await api.get<{
@@ -83,17 +166,22 @@ export function ChatProvider({
     }>(`/realtime/conversations/${conversationId}/messages`);
     setMessages((current) => ({
       ...current,
-      [conversationId]: sortMessages([
-        ...(current[conversationId] ?? []),
-        ...response.data.items,
-      ].filter(
-        (message, index, all) =>
-          all.findIndex((item) => item.id === message.id) === index,
-      )),
+      [conversationId]: sortMessages(
+        [...(current[conversationId] ?? []), ...response.data.items].filter(
+          (message, index, all) =>
+            all.findIndex((item) => item.id === message.id) === index,
+        ),
+      ),
     }));
   }, []);
 
   useEffect(() => {
+    console.log("chat effect:", {
+      isLoading,
+      userId: connectedUser?.id,
+      user: connectedUser,
+    });
+
     if (isLoading || !connectedUser?.id) return;
 
     let disposed = false;
@@ -133,6 +221,11 @@ export function ChatProvider({
           peer_last_read_message_id?: string | null;
           message_id?: string;
           online?: boolean | string[];
+          event_type?: string;
+          actor_id?: string;
+          actor_username?: string;
+          read_at?: string | null;
+          match_time?: string | null;
         };
         try {
           frame = JSON.parse(event.data) as typeof frame;
@@ -153,7 +246,8 @@ export function ChatProvider({
             readyRef.current = true;
             setConnected(true);
           }
-          timeoutDeadlineRef.current = performance.now() + frame.retry_after * 1000;
+          timeoutDeadlineRef.current =
+            performance.now() + frame.retry_after * 1000;
           updateTimeout();
           if (frame.retry_after > 0 && timeoutTimer === null) {
             timeoutTimer = setInterval(updateTimeout, 250);
@@ -231,6 +325,28 @@ export function ChatProvider({
                 ],
           );
         } else if (
+          frame.type === "notification" &&
+          frame.id &&
+          frame.event_type &&
+          frame.actor_username &&
+          frame.created_at
+        ) {
+          setNotifications((current) =>
+            current.some((notification) => notification.id === frame.id)
+              ? current
+              : [
+                  {
+                    id: frame.id!,
+                    event_type: frame.event_type!,
+                    actor_username: frame.actor_username!,
+                    read_at: frame.read_at ?? null,
+                    created_at: frame.created_at!,
+                    match_time: frame.match_time ?? null,
+                  },
+                  ...current,
+                ],
+          );
+        } else if (
           frame.type === "presence.snapshot" &&
           Array.isArray(frame.online)
         ) {
@@ -265,10 +381,25 @@ export function ChatProvider({
       });
     }, 0);
     connect();
+    const notificationsTimer = setTimeout(() => {
+      void api
+        .get<{ items: ChatNotification[] }>("/realtime/notifications")
+        .then((response) => setNotifications(response.data.items))
+        .catch((error) => {
+          console.error("Unable to load notifications:", error);
+        });
+    }, 0);
+    const heartbeatTimer = setInterval(() => {
+      if (socketRef.current?.readyState === WebSocket.OPEN) {
+        socketRef.current.send(JSON.stringify({ type: "ping" }));
+      }
+    }, 30_000);
 
     return () => {
       disposed = true;
       clearTimeout(loadTimer);
+      clearTimeout(notificationsTimer);
+      clearInterval(heartbeatTimer);
       if (reconnectRef.current) clearTimeout(reconnectRef.current);
       if (timeoutTimer !== null) clearInterval(timeoutTimer);
       readyRef.current = false;
@@ -281,9 +412,10 @@ export function ChatProvider({
   }, [connectedUser?.id, isLoading, loadConversations]);
 
   const sendMessage = useCallback((conversationId: string, body: string) => {
-    if (!readyRef.current || performance.now() < timeoutDeadlineRef.current) return false;
+    if (!readyRef.current || performance.now() < timeoutDeadlineRef.current)
+      return false;
     const socket = socketRef.current;
-    if (!socket || socket.readyState !== WebSocket.OPEN) return false;
+    if (socket?.readyState !== WebSocket.OPEN) return false;
     socket.send(
       JSON.stringify({
         type: "message.send",
@@ -296,7 +428,7 @@ export function ChatProvider({
 
   const markRead = useCallback((conversationId: string, messageId: string) => {
     const socket = socketRef.current;
-    if (!socket || socket.readyState !== WebSocket.OPEN) return false;
+    if (socket?.readyState !== WebSocket.OPEN) return false;
     socket.send(
       JSON.stringify({
         type: "read",
@@ -327,6 +459,9 @@ export function ChatProvider({
       onlineUserIds,
       connected,
       timeoutRemaining,
+      notifications,
+      markNotificationRead,
+      markAllNotificationsRead,
       createConversation,
       loadMessages,
       sendMessage,
@@ -339,6 +474,9 @@ export function ChatProvider({
       onlineUserIds,
       connected,
       timeoutRemaining,
+      notifications,
+      markNotificationRead,
+      markAllNotificationsRead,
       createConversation,
       loadMessages,
       sendMessage,

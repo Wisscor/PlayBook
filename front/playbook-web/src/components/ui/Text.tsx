@@ -9,12 +9,14 @@ interface SpanText {
   content?: string;
   className?: string;
   path?: string;
+  values?: Record<string, string | number | Date>;
 }
 
 interface PrimaryTextProps {
   id?: string;
   className?: string;
   content?: string;
+  values?: Record<string, string | number | Date>;
 }
 
 interface SpanTextProps {
@@ -22,11 +24,16 @@ interface SpanTextProps {
   className?: string;
 }
 
-const Primary: React.FC<PrimaryTextProps> = ({ id, className, content }) => {
+const Primary: React.FC<PrimaryTextProps> = ({
+  id,
+  className,
+  content,
+  values,
+}) => {
   const t = useTranslations();
   return (
     <p className={twMerge(clsx("text-white font-medium", className))}>
-      {id ? t(id) : content}
+      {id ? t(id, values) : content}
     </p>
   );
 };
@@ -41,7 +48,8 @@ const Span: React.FC<SpanTextProps> = ({ texts, className }) => {
       )}
     >
       {texts.map((item, index) => {
-        const textContent = item.text ? t(item.text) : item.content;
+        const values = item.values || {};
+        const textContent = item.text ? t(item.text, values) : item.content;
         const key = item.text || item.content || index;
 
         if (item.path) {

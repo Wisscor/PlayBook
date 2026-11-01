@@ -1,72 +1,69 @@
-import { PlayText } from "@/components/ui/Text";
-import { ROUTES } from "@/lib/constants";
-import React from "react";
 import { Link } from "../../../../../../i18n/navigation";
+import { ROUTES } from "@/lib/constants";
 import { User } from "@/types/user";
+import { useNavigation } from "@/hooks/useNavigation";
+import { useCommunityCopy } from "../community-copy";
+import { Avatar, Icon } from "../community-ui";
+import styles from "../community.module.css";
 
-export const LeftSideSection: React.FC<{
-  user?: User;
-}> = ({ user }) => {
+export function LeftSideSection({ user }: { user?: User }) {
+  const { copy } = useCommunityCopy();
+  const { goProfile, goMessages, goFollowers } = useNavigation();
+  const name =
+    [user?.firstname, user?.lastname].filter(Boolean).join(" ") || copy.profile;
   return (
-    <div className="hidden lg:flex flex-col gap-4 col-span-1">
-      <div className="rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl p-5 shadow-xl flex flex-col gap-5 sticky top-20">
-        <div className="flex flex-col items-center text-center gap-3 border-b border-white/10 pb-4">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-white/20 bg-linear-to-tr from-indigo-950 to-indigo-600 font-extrabold text-lg text-white shadow-lg">
-            {user?.avatar ? (
-              <img
-                src={`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}/${user.avatar}`}
-                alt="Avatar"
-                className="w-full h-full rounded-full object-cover"
-              />
-            ) : (
-              <>
-                {user?.firstname.charAt(0).toUpperCase()}{" "}
-                {user?.lastname.charAt(0).toUpperCase()}
-              </>
-            )}
-          </div>
-          <div className="space-y-0.5">
-            <PlayText.Primary
-              content={user?.firstname + " " + user?.lastname}
-              className="font-bold text-base text-white"
-            />
-            <PlayText.Primary
-              content={`@${user?.username}`}
-              className="text-xs text-slate-400"
-            />
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-1.5">
-          <Link
-            href={ROUTES.PROFILE}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-2xl hover:bg-white/10 transition-colors "
-          >
-            <PlayText.Primary
-              id="view-profile"
-              className="text-sm font-semibold text-slate-200"
-            />
-          </Link>
-          <Link
-            href={ROUTES.MATCHES}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-2xl hover:bg-white/10 transition-colors text-sm font-semibold text-slate-300"
-          >
-            <PlayText.Primary
-              id="my-matches"
-              className="text-sm font-semibold text-slate-200"
-            />
-          </Link>
-          <Link
-            href={ROUTES.POSTS}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-2xl hover:bg-white/10 transition-colors text-sm font-semibold text-slate-300"
-          >
-            <PlayText.Primary
-              id="my-posts"
-              className="text-sm font-semibold text-slate-200"
-            />
-          </Link>
-        </div>
+    <aside className={styles.profileRail} aria-label={copy.profile}>
+      <div className={styles.profileIdentity}>
+        <button type="button" onClick={goProfile} aria-label={copy.viewProfile}>
+          <Avatar name={name} src={user?.avatar} large />
+        </button>
+        <button
+          type="button"
+          className={styles.profileName}
+          onClick={goProfile}
+        >
+          {name}
+        </button>
+        {user?.username && (
+          <span className={styles.username}>@{user.username}</span>
+        )}
+        {user?.bio && <p className={styles.bio}>{user.bio}</p>}
       </div>
-    </div>
+      <div className={styles.profileStats}>
+        <button
+          type="button"
+          onClick={() => goFollowers("followers", user?.id)}
+        >
+          <strong>{user?.followers_count ?? 0}</strong>
+          <span>{copy.followers}</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => goFollowers("following", user?.id)}
+        >
+          <strong>{user?.following_count ?? 0}</strong>
+          <span>{copy.following}</span>
+        </button>
+      </div>
+      <nav className={styles.profileLinks} aria-label={copy.profile}>
+        <Link href={ROUTES.MATCHES}>
+          <Icon name="calendar" />
+          {copy.myGames}
+        </Link>
+        <Link href={ROUTES.POSTS}>
+          <Icon name="post" />
+          {copy.myPosts}
+        </Link>
+        <button type="button" onClick={() => goMessages()}>
+          <Icon name="chat" />
+          {copy.messages}
+        </button>
+      </nav>
+      <div className={styles.clubNote}>
+        <Icon name="users" size={24} />
+        <h3>{copy.communityNote}</h3>
+        <p>{copy.communityNoteBody}</p>
+      </div>
+    </aside>
   );
-};
+}

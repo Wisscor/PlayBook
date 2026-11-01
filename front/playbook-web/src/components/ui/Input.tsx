@@ -12,6 +12,7 @@ interface InputProps {
   className?: string;
   onBlur?: React.FocusEventHandler<HTMLInputElement>;
   onInputClick?: React.MouseEventHandler<HTMLInputElement>;
+  max?: number;
 }
 
 interface AreaProps {
@@ -34,11 +35,13 @@ const Primary: React.FC<InputProps> = ({
   className,
   onBlur,
   onInputClick,
+  max,
 }) => {
   const t = useTranslations();
 
   return (
     <input
+      maxLength={max ?? 30}
       onClick={onInputClick}
       onBlur={onBlur}
       value={value}
@@ -65,6 +68,7 @@ const Area: React.FC<AreaProps> = ({
 
   return (
     <textarea
+      maxLength={500}
       value={value}
       onChange={onChange}
       placeholder={placeholder ? t(placeholder) : undefined}
@@ -82,12 +86,13 @@ const Password: React.FC<PasswordProps> = ({
   placeholder,
   value,
   onChange,
-  type,
   isHidden,
   onClick,
   className,
   onInputClick,
   onBlur,
+  max,
+  type,
 }) => {
   const t = useTranslations();
   const locale = useLocale();
@@ -95,11 +100,12 @@ const Password: React.FC<PasswordProps> = ({
   return (
     <div className="relative w-full">
       <input
+        maxLength={max}
         onClick={onInputClick}
         onBlur={onBlur}
         value={value}
         onChange={onChange}
-        type={isHidden ? "password" : "text"}
+        type={type ?? (isHidden ? "password" : "text")}
         placeholder={placeholder ? t(placeholder) : undefined}
         className={twMerge(
           clsx(

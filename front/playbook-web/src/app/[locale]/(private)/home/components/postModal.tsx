@@ -1,78 +1,83 @@
-"use client";
+import { FormEvent, useState } from "react";
+import { api } from "@/services/api";
+import { useHomeCopy } from "../home-copy";
+import { HomeDialog } from "./homeDialog";
+import styles from "../home.module.css";
 
-import { PlayButton } from "@/components/ui/Button";
-import { PlayInput } from "@/components/ui/Input";
-import { PlayLabel } from "@/components/ui/Label";
-import { PlayModal } from "@/components/ui/Modal";
-import { PlayText } from "@/components/ui/Text";
-import { useAuth } from "@/hooks/contexts/authContext";
-import { usePostController } from "@/services/post";
-import React, { useState } from "react";
-
-export const PostModal: React.FC<{
+export function PostModal({
+  close,
+  onCreated,
+}: {
   close: () => void;
-  isOpen: boolean;
-}> = ({ close, isOpen }) => {
-  const { addPost } = usePostController();
-  const { isLoading } = useAuth();
-  const [postText, setPostText] = useState<string>("");
-  const [error, setError] = useState<undefined | string>(undefined);
-
-  const handleCreatePost = () => {
-    if (!postText.trim()) return;
-
-    setError(undefined);
-
-    void addPost(
-      postText,
-      () => {
-        setPostText("");
-        close();
-      },
-      (requestError) => {
-        console.error("Unable to create post:", requestError);
-        setError("Unable to create your post");
-      },
-    );
+  onCreated: () => void;
+}) {
+  const { copy } = useHomeCopy();
+  const [text, setText] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(false);
+  const submit = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!text.trim() || saving) return;
+    setSaving(true);
+    setError(false);
+    try {
+      await api.post("/posts", { caption: text.trim() });
+      onCreated();
+    } catch {
+      setError(true);
+    } finally {
+      setSaving(false);
+    }
   };
-
   return (
-    <PlayModal.Primary isOpen={isOpen} close={close} title="create-post">
-      <div className="flex flex-col gap-6 pt-1">
-        <div className="relative flex flex-col gap-2">
-          <PlayLabel.Primary>
-            <PlayInput.Area
-              onChange={(e) => setPostText(e.target.value)}
-              placeholder="your-post"
-              value={postText}
-              className="w-full min-h-35 rounded-2xl border border-white/10 bg-white/5 p-4 text-base text-white placeholder-slate-400 backdrop-blur-md focus:border-white/30 focus:outline-none transition-all resize-none"
-            />
-          </PlayLabel.Primary>
-
-          <div className="flex justify-end">
-            <PlayText.Span
-              texts={[
-                {
-                  content: `${postText.length} characters`,
-                  className: "text-xs text-slate-400",
-                },
-              ]}
-            />
-          </div>
+    <HomeDialog
+      title={copy.postTitle}
+      description={copy.postIntro}
+      close={close}
+      busy={saving}
+    >
+      <form onSubmit={(event) => void submit(event)}>
+        <div className={styles.dialogFields}>
+          <label className={styles.srOnly} htmlFor="home-post">
+            {copy.postPlaceholder}
+          </label>
+          <textarea
+            id="home-post"
+            required
+            maxLength={2000}
+            rows={6}
+            value={text}
+            onChange={(event) => {
+              setText(event.target.value);
+              setError(false);
+            }}
+            placeholder={copy.postPlaceholder}
+          />
+          <span className={styles.characterCount}>{text.length} / 2000</span>
+          {error && (
+            <p className={styles.error} role="alert">
+              {copy.postError}
+            </p>
+          )}
         </div>
-
-        {error && <p className="text-sm text-rose-400">{error}</p>}
-
-        {postText.trim().length > 0 && (
-          <div className="pt-2">
-            <PlayButton.Primary
-              onClick={handleCreatePost}
-              title={isLoading ? "creating-post" : "create-post"}
-              className="w-full rounded-2xl bg-white py-3.5 shadow-lg shadow-white/5 hover:bg-slate-100 transition-all font-semibold text-slate-950"
-            />
-          </div>
-        )}
-      </div>
-    </PlayModal.Primary>
+        <footer className={styles.dialogFooter}>
+          <button
+            type="button"
+            className={styles.textButton}
+            disabled={saving}
+            onClick={close}
+          >
+            {copy.cancel}
+          </button>
+          <button
+            type="submit"
+            className={styles.primaryButton}
+            disabled={saving || !text.trim()}
+          >
+            {saving ? copy.posting : copy.publish}
+          </button>
+        </footer>
+      </form>
+    </HomeDialog>
   );
-};
+}

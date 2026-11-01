@@ -33,6 +33,9 @@ export const ROUTES = {
   SEARCH: "/search",
   MESSAGES: "/messages",
   FOLLOWERS: "/followers",
+  PLAY_REQUESTS: "/play-requests",
+  PRIVACY_POLICY: "/privacy",
+  TERMS_OF_SERVICE: "/terms",
 } as const;
 
 export enum COMING_FROM {
@@ -40,4 +43,4 @@ export enum COMING_FROM {
   OTHER = "other",
 }
 
-export const pageSize = 1;
+export const pageSize = 10;

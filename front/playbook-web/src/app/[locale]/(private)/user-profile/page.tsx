@@ -2,15 +2,16 @@
 
 import { PlayText } from "@/components/ui/Text";
 import { COMING_FROM } from "@/lib/constants";
-import { api } from "@/services/api";
+import { useUserController } from "@/services/user";
 import { User } from "@/types/user";
 import { useEffect, useState } from "react";
 import { AboutSection } from "../profile/components/aboutSection";
 import { MainDetails } from "../profile/components/mainDetails";
 
-export const UserProfilePage = () => {
+const UserProfilePage = () => {
   const userId = localStorage.getItem("userId");
-  const [user, setUser] = useState<User | null>(null);
+  const { getUser } = useUserController();
+  const [user, setUser] = useState<User | undefined | null>(undefined);
   const [isLoading, setIsLoading] = useState(Boolean(userId));
   const [error, setError] = useState("");
 
@@ -20,22 +21,25 @@ export const UserProfilePage = () => {
     }
 
     const loadUser = async () => {
-      try {
-        const response = await api.get<User>(`/users/${userId}`);
-        setUser(response.data);
-      } catch (requestError) {
-        console.error("Unable to load user profile:", requestError);
-        setError("Unable to load user profile");
-      } finally {
-        setIsLoading(false);
+      const fetchedUser = await getUser(userId);
+      if (!fetchedUser) {
+        setError("unable-to-load-user");
+        return;
       }
+      setUser(fetchedUser);
+      setIsLoading(false);
     };
 
     void loadUser();
   }, [userId]);
 
   if (isLoading) {
-    return <div className="py-12 text-center text-slate-300">Loading...</div>;
+    return (
+      <PlayText.Primary
+        id="loading"
+        className="py-12 text-center text-slate-300"
+      />
+    );
   }
 
   if (!user || error) {
@@ -69,7 +73,9 @@ export const UserProfilePage = () => {
                   className="h-full w-full rounded-full object-cover"
                 />
               ) : (
-                <div className="flex h-full w-full items-center justify-center rounded-full bg-linear-to-tr from-indigo-950 to-indigo-600 text-3xl font-extrabold text-white shadow-inner sm:text-4xl">
+                <div
+                  className={`flex h-full w-full items-center justify-center rounded-full bg-linear-to-tr from-indigo-950 to-indigo-600 text-3xl font-extrabold text-white shadow-inner sm:text-4xl`}
+                >
                   {user.firstname.charAt(0).toUpperCase()}
                   {user.lastname.charAt(0).toUpperCase()}
                 </div>

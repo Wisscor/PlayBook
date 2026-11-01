@@ -16,10 +16,12 @@ const PROTECTED_ROUTES = [
   ROUTES.SEARCH,
   ROUTES.MESSAGES,
   ROUTES.FOLLOWERS,
+  ROUTES.PLAY_REQUESTS,
 ];
-const AUTH_ROUTES = ["/auth"];
 
-export function middleware(request: NextRequest) {
+const GUEST_ONLY_ROUTES = ["/auth", ROUTES.SIGNIN, ROUTES.SIGNUP];
+
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   const pathnameSegments = pathname.split("/");
@@ -28,36 +30,42 @@ export function middleware(request: NextRequest) {
     : DEFAULT_LOCALE;
 
   const pathWithoutLocale = pathname.replace(`/${currentLocale}`, "") || "/";
+  const sessionToken = request.cookies.get("session_id")?.value;
 
-  const isProtectedRoute = PROTECTED_ROUTES.some((route) =>
+  const isGuestOnlyRoute = GUEST_ONLY_ROUTES.some((route) =>
     pathWithoutLocale.startsWith(route.split("?")[0]),
   );
 
-  const sessionToken = request.cookies.get("session_id")?.value;
-
-  const isAuthRoute = AUTH_ROUTES.some((route) =>
-    pathWithoutLocale.startsWith(route),
-  );
-
-  if (isAuthRoute && sessionToken) {
+  if (isGuestOnlyRoute && sessionToken) {
     return NextResponse.redirect(
       new URL(`/${currentLocale}${ROUTES.HOME}`, request.url),
     );
   }
 
+  const isProtectedRoute = PROTECTED_ROUTES.some((route) =>
+    pathWithoutLocale.startsWith(route.split("?")[0]),
+  );
+
   if (isProtectedRoute && !sessionToken) {
     const loginUrl = new URL(`/${currentLocale}${ROUTES.SIGNIN}`, request.url);
-
     loginUrl.searchParams.set("callbackUrl", pathname);
-
     return NextResponse.redirect(loginUrl);
   }
 
-  return NextResponse.next();
+  const response = NextResponse.next();
+
+  if (isProtectedRoute) {
+    response.headers.set(
+      "Cache-Control",
+      "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
+    );
+    response.headers.set("Pragma", "no-cache");
+    response.headers.set("Expires", "0");
+  }
+
+  return response;
 }
 
 export const config = {
-  matcher: [
-    String.raw`/((?!api|_next/static|_next/image|favicon.ico|.*\..*).*)`,
-  ],
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|.*\\..*).*)"],
 };

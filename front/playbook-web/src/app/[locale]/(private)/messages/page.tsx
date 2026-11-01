@@ -1,16 +1,23 @@
 "use client";
 
-import { PlayButton } from "@/components/ui/Button";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/hooks/contexts/authContext";
 import { useChat } from "@/hooks/contexts/chatContext";
-import { Contact, Message } from "@/types/api";
-import { useSearchParams } from "next/navigation";
-import React, { useEffect, useMemo, useState } from "react";
+import { useNavigation } from "@/hooks/useNavigation";
+import { api } from "@/services/api";
+import { User } from "@/types/user";
+import { Icon } from "../community/community-ui";
 import { ContactsList } from "./components/contactsList";
 import { Conversation } from "./components/conversation";
+import { ChatContact } from "./chat-types";
+import { useChatCopy } from "./chat-copy";
+import styles from "./chat.module.css";
 
-export const MessagesPage = () => {
-  const { connectedUser } = useAuth();
+type PeerProfile = { avatar?: string; firstname?: string; lastname?: string };
+
+export default function MessagesPage() {
+  const { connectedUser, setConnectedUser } = useAuth();
   const {
     conversations,
     messages,
@@ -20,136 +27,222 @@ export const MessagesPage = () => {
     markRead,
     connected,
   } = useChat();
-  const searchParams = useSearchParams();
-  const [selectedContactId, setSelectedContactId] = useState(
-    searchParams.get("conversation") ?? "",
-  );
-  const [messageInput, setMessageInput] = useState("");
-  const [mobileView, setMobileView] = useState<"list" | "chat">("list");
-
-  const contacts = useMemo<Contact[]>(
-    () =>
-      conversations.map((conversation) => ({
-        id: conversation.id,
-        conversationId: conversation.id,
-        name: conversation.peer_username,
-        username: conversation.peer_username,
-        avatar: conversation.peer_username.slice(0, 2).toUpperCase(),
-        lastMessage:
-          messages[conversation.id]?.at(-1)?.body ?? "",
-        online: onlineUserIds.includes(conversation.peer_id),
-        messages: (() => {
-          const conversationMessages = messages[conversation.id] ?? [];
-          const lastReadIndex = conversationMessages.findIndex(
-            (message) =>
-              message.id === conversation.peer_last_read_message_id,
-          );
-          return conversationMessages.map<Message>((message, index) => ({
-            id: message.id,
-            sender: message.sender_id === connectedUser?.id ? "me" : "them",
-            text: message.body,
-            time: new Date(message.created_at).toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-            }),
-            seen:
-              message.sender_id === connectedUser?.id &&
-              lastReadIndex >= index,
-          }));
-        })(),
-      })),
-    [connectedUser?.id, conversations, messages, onlineUserIds],
-  );
-
-  const requestedConversationId = searchParams.get("conversation");
-  const selectedConversationId =
-    requestedConversationId &&
-    conversations.some((item) => item.id === requestedConversationId)
-      ? requestedConversationId
-      : selectedContactId;
-  const firstConversationId = contacts[0]?.id;
+  const { goSearch } = useNavigation();
+  const { copy } = useChatCopy();
+  const params = useSearchParams();
+  const urlConversation = params.get("conversation") || "";
+  const [selection, setSelection] = useState<{
+    id: string;
+    url: string;
+  } | null>(null);
+  const selectedId =
+    selection?.url === urlConversation ? selection.id : urlConversation;
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const [profiles, setProfiles] = useState<Record<string, PeerProfile>>({});
+  const [profileError, setProfileError] = useState(false);
+  const [historyRevision, setHistoryRevision] = useState(0);
+  const [historyResult, setHistoryResult] = useState<{
+    id: string;
+    revision: number;
+    error: boolean;
+  } | null>(null);
+  const [sendErrorId, setSendErrorId] = useState("");
+  const peerKey = [
+    ...new Set(conversations.map((conversation) => conversation.peer_id)),
+  ]
+    .sort()
+    .join(",");
 
   useEffect(() => {
-    const conversationId = selectedConversationId || firstConversationId;
-    if (!conversationId || messages[conversationId]) return;
-    void loadMessages(conversationId).catch((error) => {
-      console.error("Unable to load conversation messages:", error);
+    if (connectedUser?.id) return;
+    let active = true;
+    void api
+      .get<User>("/users/me")
+      .then(({ data }) => {
+        if (active) setConnectedUser(data);
+      })
+      .catch(() => {
+        if (active) setProfileError(true);
+      });
+    return () => {
+      active = false;
+    };
+  }, [connectedUser?.id, setConnectedUser]);
+
+  useEffect(() => {
+    if (!peerKey) return;
+    let active = true;
+    void Promise.all(
+      peerKey.split(",").map(async (id) => {
+        try {
+          const { data } = await api.get<PeerProfile>(`/users/${id}`);
+          return [id, data] as const;
+        } catch {
+          return [id, {}] as const;
+        }
+      }),
+    ).then((entries) => {
+      if (active) setProfiles(Object.fromEntries(entries));
     });
-  }, [firstConversationId, loadMessages, messages, selectedConversationId]);
+    return () => {
+      active = false;
+    };
+  }, [peerKey]);
 
+  // Queued WebSocket messages are only part of the history, so always fetch on selection.
   useEffect(() => {
-    const conversationId = selectedConversationId || firstConversationId;
-    const conversationMessages = conversationId
-      ? messages[conversationId]
-      : undefined;
-    const lastMessage = conversationMessages?.at(-1);
+    if (!selectedId) return;
+    let active = true;
+    void loadMessages(selectedId)
+      .then(() => {
+        if (active)
+          setHistoryResult({
+            id: selectedId,
+            revision: historyRevision,
+            error: false,
+          });
+      })
+      .catch(() => {
+        if (active)
+          setHistoryResult({
+            id: selectedId,
+            revision: historyRevision,
+            error: true,
+          });
+      });
+    return () => {
+      active = false;
+    };
+  }, [selectedId, loadMessages, historyRevision]);
+
+  const lastMarked = useRef("");
+  const selectedUnread =
+    conversations.find((conversation) => conversation.id === selectedId)
+      ?.unread_count || 0;
+  const last = messages[selectedId]?.at(-1);
+  useEffect(() => {
     if (
-      !conversationId ||
-      !lastMessage ||
+      !selectedId ||
+      !last?.id ||
       !connected ||
-      lastMessage.sender_id === connectedUser?.id
-    ) {
+      last.sender_id === connectedUser?.id
+    )
       return;
-    }
-    markRead(conversationId, lastMessage.id);
+    if (lastMarked.current === last.id && selectedUnread === 0) return;
+    if (markRead(selectedId, last.id)) lastMarked.current = last.id;
   }, [
-    connectedUser?.id,
+    selectedId,
+    selectedUnread,
+    last?.id,
+    last?.sender_id,
     connected,
-    firstConversationId,
+    connectedUser?.id,
     markRead,
-    messages,
-    selectedConversationId,
   ]);
 
-  const activeContact =
-    contacts.find((contact) => contact.id === selectedConversationId) ??
-    contacts[0];
-
-  const handleSendMessage = (event: React.SubmitEvent) => {
-    event.preventDefault();
-    if (!selectedConversationId || !messageInput.trim()) return;
-    if (sendMessage(selectedConversationId, messageInput)) setMessageInput("");
-  };
-
-  const handleSelectContact = (id: string) => {
-    setSelectedContactId(id);
-    setMobileView("chat");
-    const lastMessage = messages[id]?.at(-1);
-    if (lastMessage) markRead(id, lastMessage.id);
+  const contacts = useMemo<ChatContact[]>(
+    () =>
+      conversations.map((conversation) => {
+        const profile = profiles[conversation.peer_id];
+        return {
+          id: conversation.id,
+          peerId: conversation.peer_id,
+          username: conversation.peer_username,
+          name:
+            [profile?.firstname, profile?.lastname].filter(Boolean).join(" ") ||
+            conversation.peer_username,
+          avatar: profile?.avatar,
+          online: onlineUserIds.includes(conversation.peer_id),
+          unread: conversation.unread_count,
+          readThrough: conversation.peer_last_read_message_id,
+          messages: messages[conversation.id] || [],
+        };
+      }),
+    [conversations, profiles, onlineUserIds, messages],
+  );
+  const active = contacts.find((contact) => contact.id === selectedId);
+  const historyLoading =
+    historyResult?.id !== selectedId ||
+    historyResult?.revision !== historyRevision;
+  const historyError = !historyLoading && !!historyResult?.error;
+  const send = () => {
+    const text = (drafts[selectedId] || "").trim();
+    if (!text || !selectedId) return;
+    try {
+      if (!connected || !sendMessage(selectedId, text)) {
+        setSendErrorId(selectedId);
+        return;
+      }
+      setDrafts((current) => ({ ...current, [selectedId]: "" }));
+      setSendErrorId("");
+    } catch {
+      setSendErrorId(selectedId);
+    }
   };
 
   return (
-    <div className="flex flex-col min-h-[calc(100vh-140px)] bg-slate-950 text-white px-2 sm:px-4 py-4 md:px-12 lg:px-20">
-      <div className="max-w-7xl mx-auto w-full min-h-0 grid grid-cols-1 md:grid-cols-3 gap-6 h-[calc(100vh-170px)] md:h-[calc(100vh-200px)]">
-        <div className={`col-span-1 h-full min-h-0 ${mobileView === "chat" ? "hidden md:flex" : "flex"} flex-col`}>
-          <ContactsList
-            contacts={contacts}
-            selectedContactId={selectedConversationId}
-            setSelectedContactId={handleSelectContact}
+    <div className={styles.root}>
+      <header className={styles.pageHeader}>
+        <div>
+          <h1>{copy.title}</h1>
+          <p>{copy.intro}</p>
+        </div>
+        <span className={styles.connectionBadge}>
+          <span className={styles.connectionDot} data-connected={connected} />
+          {connected ? copy.connected : copy.reconnecting}
+        </span>
+      </header>
+      {profileError && (
+        <p role="alert" className={styles.profileError}>
+          {copy.profileError}
+        </p>
+      )}
+      <div className={styles.workspace} data-open={!!active}>
+        <ContactsList
+          contacts={contacts}
+          selectedId={selectedId}
+          select={(id) => {
+            setSelection({ id, url: urlConversation });
+            setSendErrorId("");
+          }}
+          connected={connected}
+          currentUserId={connectedUser?.id}
+        />
+        {active ? (
+          <Conversation
+            key={active.id}
+            contact={active}
+            currentUserId={connectedUser?.id}
+            connected={connected}
+            input={drafts[selectedId] || ""}
+            setInput={(text) => {
+              setDrafts((current) => ({ ...current, [selectedId]: text }));
+              setSendErrorId("");
+            }}
+            send={send}
+            back={() => setSelection({ id: "", url: urlConversation })}
+            loading={historyLoading}
+            historyError={historyError}
+            retry={() => setHistoryRevision((value) => value + 1)}
+            sendError={sendErrorId === selectedId}
           />
-        </div>
-        <div className={`col-span-1 md:col-span-2 h-full min-h-0 ${mobileView === "list" ? "hidden md:flex" : "flex"} flex-col relative`}>
-          <div className="md:hidden flex items-center pb-3">
-            <PlayButton.Primary
-              textClassName="text-xs font-semibold text-slate-300"
-              title="back-contacts"
+        ) : (
+          <section className={styles.emptyWorkspace}>
+            <span className={styles.emptyIcon}>
+              <Icon name="chat" size={34} />
+            </span>
+            <h2>{copy.choose}</h2>
+            <p>{copy.chooseBody}</p>
+            <button
               type="button"
-              onClick={() => setMobileView("list")}
-              className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 hover:bg-white/10 transition-all cursor-pointer"
-            />
-          </div>
-          {activeContact ? (
-            <Conversation
-              setMessageInput={setMessageInput}
-              activeContact={activeContact}
-              handleSendMessage={handleSendMessage}
-              messageInput={messageInput}
-            />
-          ) : null}
-        </div>
+              className={styles.textButton}
+              onClick={goSearch}
+            >
+              {copy.findPlayers}
+            </button>
+          </section>
+        )}
       </div>
     </div>
   );
-};
-
-export default MessagesPage;
+}
