@@ -18,8 +18,13 @@ RUN uv sync --frozen --no-dev --no-install-project
 # Copy application source code
 COPY ./app /back-end/app
 
+RUN useradd --create-home --uid 10001 appuser \
+	&& chown -R appuser:appuser /back-end
+
 # Place virtual environment executables at front of PATH
 ENV PATH="/back-end/.venv/bin:$PATH"
+
+USER appuser
 
 EXPOSE 8000
 

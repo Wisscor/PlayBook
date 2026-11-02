@@ -36,7 +36,6 @@ back/
 │   ├── routers/
 │   └── schemas/
 ├── tests/
-├── docker-compose.yaml
 ├── Dockerfile.api
 ├── Dockerfile.db
 ├── entrypoint.sh
