@@ -10,6 +10,7 @@ export const NotificationPopUp: React.FC<{
     text: string;
     time: string;
     read: boolean;
+    actor: string
   }[];
   onRead: (id: string) => void;
 }> = ({ unreadCount, notifications, onRead }) => {
@@ -98,7 +99,10 @@ export const NotificationPopUp: React.FC<{
 
               <span className="flex min-w-0 flex-col gap-1">
                 <PlayText.Primary
-                  content={notif.text}
+                  id={notif.text}
+                  values={{
+                    username: notif.actor
+                  }}
                   className={`text-xs leading-snug ${
                     notif.read ? "text-stone-400" : "text-stone-100"
                   }`}

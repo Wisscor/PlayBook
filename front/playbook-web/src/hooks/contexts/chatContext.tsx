@@ -67,11 +67,14 @@ export function ChatProvider({
   const receivedMessageIdsRef = useRef(new Set<string>());
 
   const loadConversations = useCallback(async () => {
-    await api.get<ChatConversation[]>("/realtime/conversations").then((res) => {
-      if (res.status == 200) {
-        setConversations(res.data);
-      }
-    });
+    await api
+      .get<ChatConversation[]>("/realtime/conversations")
+      .then((res) => {
+        if (res.status == 200) {
+          setConversations(res.data);
+        }
+      })
+      .catch(() => {});
   }, [connectedUser?.id]);
 
   useEffect(() => {

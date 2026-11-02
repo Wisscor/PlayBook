@@ -105,7 +105,8 @@ export const useRealtimeController = () => {
             ),
           }));
         }
-      });
+      })
+      .catch(() => {});
   }, []);
 
   return {

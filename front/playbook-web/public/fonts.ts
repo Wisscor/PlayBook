@@ -5,4 +5,5 @@ export const roboto = localFont({
   variable: "--font-roboto",
   weight: "100 900",
   display: "swap",
+  preload: true,
 });

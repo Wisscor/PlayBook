@@ -34,7 +34,8 @@ export const useMatchController = () => {
         if (res.status === 201) {
           onSuccess();
         }
-      });
+      })
+      .catch(() => {});
   };
 
   const getSports = async (
@@ -93,11 +94,14 @@ export const useMatchController = () => {
   };
 
   const deleteMatch = async (id: string, onSuccess: () => void) => {
-    await api.delete(`/match-announcements/${id}`).then((res) => {
-      if (res.status === 204) {
-        onSuccess();
-      }
-    });
+    await api
+      .delete(`/match-announcements/${id}`)
+      .then((res) => {
+        if (res.status === 204) {
+          onSuccess();
+        }
+      })
+      .catch(() => {});
   };
 
   const getMatch = async (
@@ -128,7 +132,8 @@ export const useMatchController = () => {
         if (res.status === 200) {
           onSuccess();
         }
-      });
+      })
+      .catch(() => {});
   };
 
   const decide = async (requestId: string, status: "accepted" | "declined") => {
@@ -140,7 +145,8 @@ export const useMatchController = () => {
         if (res.status == 200) {
           window.location.reload();
         }
-      });
+      })
+      .catch(() => {});
   };
 
   const requestToJoinMatch = async (

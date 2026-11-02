@@ -16,8 +16,11 @@ const ProfilePage = () => {
   const { uploadAvatar, fetchUser } = useProfileController();
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const [error, setError] = React.useState<string | undefined>(undefined);
 
   const handleButtonClick = () => {
+    setError(undefined);
+
     fileInputRef.current?.click();
   };
 
@@ -31,7 +34,9 @@ const ProfilePage = () => {
     try {
       setIsLoading(true);
 
-      await uploadAvatar(file);
+      await uploadAvatar(file, (errorCode) => {
+        setError(errorCode);
+      });
     } finally {
       setIsLoading(false);
 
@@ -146,6 +151,15 @@ const ProfilePage = () => {
                 </button>
               </div>
             </div>
+
+            {error && (
+              <div className="rounded-lg bg-red-100 px-4 py-2 text-sm text-red-700">
+                <PlayText.Primary
+                  id={error}
+                  className="text-sm font-semibold text-red-700"
+                />
+              </div>
+            )}
 
             <div className="flex flex-wrap items-center justify-center gap-3">
               <button

@@ -259,7 +259,20 @@
   "delete-match-warning": "This match will be permanently deleted. This can’t be undone.",
   "confirm-delete-match": "Yes, delete this match",
 
+  "decline-request": "Decline this request?",
+  "decline-request-warning": "This request will be declined and the user will be notified. This can’t be undone.",
+  "confirm-decline-request": "Yes, decline this request",
+
   "community-title": "Your community, one game away",
   "community-subtitle": "Find a match, meet new players and see what everyone is posting",
-  "latest-posts": "Latest Posts"
+  "latest-posts": "Latest Posts",
+
+  "FOLLOW_ALERT": "{username} followed you.",
+  "POST_CREATION_ALERT": "{username} created a new post.",
+  "RECEIVE_REQUEST_ALERT": "{username} sent you a play request.",
+  "REQUEST_ACCEPTED_ALERT": "{username} accepted your play request.",
+  "REQUEST_REJECTED_ALERT": "{username} rejected your play request.",
+  "MATCH_UPDATE_ALERT": "{username} updated a match you joined.",
+  "MATCH_CANCELLED_ALERT": "{username} cancelled a match you joined.",
+  "TRIGGERED_ALERT": "{username} triggered a notification."
 }

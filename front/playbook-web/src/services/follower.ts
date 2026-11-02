@@ -63,19 +63,25 @@ export const useFollowerController = () => {
   };
 
   const unfollow = async (id: string, onSuccess: () => void) => {
-    await api.delete(`/users/${id}/follow`).then((res) => {
-      if (res.status == 204) {
-        onSuccess();
-      }
-    });
+    await api
+      .delete(`/users/${id}/follow`)
+      .then((res) => {
+        if (res.status == 204) {
+          onSuccess();
+        }
+      })
+      .catch(() => {});
   };
 
   const follow = async (id: string, onSuccess: () => void) => {
-    await api.post(`/users/${id}/follow`).then((res) => {
-      if (res.status == 201) {
-        onSuccess();
-      }
-    });
+    await api
+      .post(`/users/${id}/follow`)
+      .then((res) => {
+        if (res.status == 201) {
+          onSuccess();
+        }
+      })
+      .catch(() => {});
   };
 
   return {

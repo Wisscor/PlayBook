@@ -75,16 +75,17 @@ export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
   };
   const notificationItems = notifications.map((notification) => ({
     id: notification.id,
-    text: `${notification.actor_username} ${
+    actor: notification.actor_username,
+    text: `${
       {
-        follow: "followed you.",
-        post_created: "created a new post.",
-        play_request: "sent you a play request.",
-        play_request_accepted: "accepted your play request.",
-        play_request_rejected: "rejected your play request.",
-        match_updated: "updated a match you joined.",
-        match_cancelled: "cancelled a match you joined.",
-      }[notification.event_type] ?? "triggered a notification."
+        follow: "FOLLOW_ALERT",
+        post_created: "POST_CREATION_ALERT",
+        play_request: "RECEIVE_REQUEST_ALERT",
+        play_request_accepted: "REQUEST_ACCEPTED_ALERT",
+        play_request_rejected: "REQUEST_REJECTED_ALERT",
+        match_updated: "MATCH_UPDATE_ALERT",
+        match_cancelled: "MATCH_CANCELLED_ALERT",
+      }[notification.event_type] ?? "TRIGGERED_ALERT"
     }`,
     time: new Date(notification.created_at).toLocaleString(),
     read: Boolean(notification.read_at),

@@ -259,7 +259,20 @@
   "delete-match-warning": "Ce match sera définitivement supprimé. Cette action ne peut pas être annulée.",
   "confirm-delete-match": "Oui, supprimer ce match",
 
+  "decline-request": "Refuser cette demande ?",
+  "decline-request-warning": "Cette demande sera refusée et l'utilisateur sera notifié. Cette action ne peut pas être annulée.",
+  "confirm-decline-request": "Oui, refuser cette demande",
+
   "community-title": "Votre communauté, un match à l'horizon",
   "community-subtitle": "Trouvez un match, rencontrez de nouveaux joueurs et voyez ce que tout le monde publie",
-  "latest-posts": "Dernières publications"
+  "latest-posts": "Dernières publications",
+
+  "FOLLOW_ALERT": "{username} vous a suivi.",
+  "POST_CREATION_ALERT": "{username} a créé une nouvelle publication.",
+  "RECEIVE_REQUEST_ALERT": "{username} vous a envoyé une demande de jeu.",
+  "REQUEST_ACCEPTED_ALERT": "{username} a accepté votre demande de jeu.",
+  "REQUEST_REJECTED_ALERT": "{username} a refusé votre demande de jeu.",
+  "MATCH_UPDATE_ALERT": "{username} a mis à jour un match auquel vous avez participé.",
+  "MATCH_CANCELLED_ALERT": "{username} a annulé un match auquel vous avez participé.",
+  "TRIGGERED_ALERT": "{username} a déclenché une notification."
 }
