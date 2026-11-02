@@ -1,14 +1,13 @@
 COMPOSE = docker compose
 APP = $(COMPOSE) -f docker-compose.yaml
 
-.DEFAULT_GOAL := help
-
-.PHONY: help up down restart status urls app-up app-down app-logs
+.PHONY: help up down clean restart status urls app-up app-down app-logs
 
 help:
 	@printf '%s\n' \
 		'make up             Start the backend and the frontend' \
 		'make down           Stop all services' \
+		'make clean          Stop services and delete volumes (database/uploads)' \
 		'make restart        Restart all services' \
 		'make status         Show container status' \
 		'make app-logs       Follow backend and frontend logs' \
@@ -18,6 +17,9 @@ up: app-up
 	@$(MAKE) --no-print-directory urls
 
 down: app-down
+
+clean:
+	$(APP) down --volumes --remove-orphans
 
 restart: down up
 
