@@ -265,5 +265,14 @@
 
   "community-title": "مجتمعك على بُعد مباراة واحدة",
   "community-subtitle": "ابحث عن مباراة، وتعرّف على لاعبين جدد، وشاهد ما ينشره الجميع",
-  "latest-posts": "أحدث المنشورات"
+  "latest-posts": "أحدث المنشورات",
+
+  "FOLLOW_ALERT": ". تابعك {username}",
+  "POST_CREATION_ALERT": ". أنشأ منشوراً جديداً {username}",
+  "RECEIVE_REQUEST_ALERT": ". أرسل لك طلب لعب {username}",
+  "REQUEST_ACCEPTED_ALERT": ". قبض طلب اللعب {username}",
+  "REQUEST_REJECTED_ALERT": ". رفض طلب اللعب {username}",
+  "MATCH_UPDATE_ALERT": ". حدث مباركة انضممت إليها {username}",
+  "MATCH_CANCELLED_ALERT": ". إلغى مباركة انضممت إليها {username}.",
+  "TRIGGERED_ALERT": ". أطلق إشعار {username}."
 }
