@@ -61,6 +61,7 @@ export const usePostController = () => {
           setTotalPosts(res.data.total);
         }
       })
+      .catch(() => {})
       .finally(() => {
         setIsLoading(false);
       });
@@ -79,17 +80,21 @@ export const usePostController = () => {
           setTotalFeeds(res.data.total);
         }
       })
+      .catch(() => {})
       .finally(() => {
         setIsLoading(false);
       });
   };
 
   const deletePost = async (id: string, onSuccess: () => void) => {
-    await api.delete(`/posts/${id}`).then((res) => {
-      if (res.status == 204) {
-        onSuccess();
-      }
-    });
+    await api
+      .delete(`/posts/${id}`)
+      .then((res) => {
+        if (res.status == 204) {
+          onSuccess();
+        }
+      })
+      .catch(() => {});
   };
 
   return {

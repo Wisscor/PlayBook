@@ -19,6 +19,7 @@ export const usePlayRequestsController = () => {
           onSuccess();
         }
       })
+      .catch(() => {})
       .finally(() => {
         setIsJoining(false);
       });
@@ -46,7 +47,8 @@ export const usePlayRequestsController = () => {
           setRequestsPageNumber(res.data.page);
           setRequestsPages(res.data.pages);
         }
-      });
+      })
+      .catch(() => {});
   };
 
   const loadAnnouncementRequests = async (announcementId: string) => {
@@ -58,7 +60,8 @@ export const usePlayRequestsController = () => {
         if (res.status == 200) {
           setRequests(res.data.items);
         }
-      });
+      })
+      .catch(() => {});
   };
 
   return {

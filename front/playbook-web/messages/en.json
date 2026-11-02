@@ -259,6 +259,10 @@
   "delete-match-warning": "This match will be permanently deleted. This can’t be undone.",
   "confirm-delete-match": "Yes, delete this match",
 
+  "decline-request": "Decline this request?",
+  "decline-request-warning": "This request will be declined and the user will be notified. This can’t be undone.",
+  "confirm-decline-request": "Yes, decline this request",
+
   "community-title": "Your community, one game away",
   "community-subtitle": "Find a match, meet new players and see what everyone is posting",
   "latest-posts": "Latest Posts"

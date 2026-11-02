@@ -259,6 +259,10 @@
   "delete-match-warning": "Ce match sera définitivement supprimé. Cette action ne peut pas être annulée.",
   "confirm-delete-match": "Oui, supprimer ce match",
 
+  "decline-request": "Refuser cette demande ?",
+  "decline-request-warning": "Cette demande sera refusée et l'utilisateur sera notifié. Cette action ne peut pas être annulée.",
+  "confirm-decline-request": "Oui, refuser cette demande",
+
   "community-title": "Votre communauté, un match à l'horizon",
   "community-subtitle": "Trouvez un match, rencontrez de nouveaux joueurs et voyez ce que tout le monde publie",
   "latest-posts": "Dernières publications"

@@ -23,7 +23,10 @@ export const useProfileController = () => {
       });
   };
 
-  const uploadAvatar = async (file: File): Promise<void> => {
+  const uploadAvatar = async (
+    file: File,
+    onError: (errorCode: string) => void,
+  ): Promise<void> => {
     const formData = new FormData();
 
     formData.append("file", file);
@@ -38,6 +41,9 @@ export const useProfileController = () => {
         if (res.status == 200) {
           setConnectedUser(res.data);
         }
+      })
+      .catch((error: ApiError) => {
+        onError(error.errorCode || "PAYLOAD_TOO_LARGE");
       });
   };
   const fetchUser = async (onSuccess?: () => void) => {
@@ -57,12 +63,15 @@ export const useProfileController = () => {
   };
 
   const deleteUser = async () => {
-    await api.delete("/users/me").then((res) => {
-      if (res.status === 204) {
-        setConnectedUser(undefined);
-        window.location.reload();
-      }
-    });
+    await api
+      .delete("/users/me")
+      .then((res) => {
+        if (res.status === 204) {
+          setConnectedUser(undefined);
+          window.location.reload();
+        }
+      })
+      .catch(() => {});
   };
 
   return {
