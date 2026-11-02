@@ -16,7 +16,6 @@ code_by_status = {
     401: ErrorCode.AUTHENTICATION_REQUIRED,
     403: ErrorCode.PERMISSION_DENIED,
     404: ErrorCode.USER_NOT_FOUND,
-    # 429: ErrorCode.RATE_LIMIT_EXCEEDED,
 }
 
 

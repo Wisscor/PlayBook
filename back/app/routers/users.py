@@ -110,7 +110,6 @@ async def upload_avatar(
     old_avatar = curr_user.avatar
     filepath = None
 
-    # Store the file before committing its path to the user record.
     try:
         new_avatar, filepath = await store_avatar(file, UPLOAD_DIR)
         curr_user.avatar = new_avatar
@@ -120,7 +119,6 @@ async def upload_avatar(
         remove_avatar(filepath)
         raise
 
-    # Delete only files inside `uploads` directory.
     if old_avatar and old_avatar.startswith("uploads/"):
         remove_avatar(old_avatar)
 

@@ -154,7 +154,6 @@ async def logout(
             code=ErrorCode.AUTHENTICATION_REQUIRED,
             field="session_id",
         )
-    # Delete the session from the database
     await db.delete(session)
     await db.commit()
     await registry.close_user(session.user_id)

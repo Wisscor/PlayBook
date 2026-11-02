@@ -1,4 +1,3 @@
-# `deps.py` file is for keep reusable dependencies in one place
 from fastapi import (
     Depends,
     Cookie,

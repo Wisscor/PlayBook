@@ -7,5 +7,3 @@ from .play_request import PlayerRequest
 from .sport import Sport
 from .user_sport import UserSport
 
-# from .message import Message
-# from .private_chat import PrivateChat

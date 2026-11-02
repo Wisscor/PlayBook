@@ -30,7 +30,6 @@ class Session(Base):
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),
     )
-    # Relationships
     user: Mapped["User"] = relationship(
         "User",
         back_populates="sessions",

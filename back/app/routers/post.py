@@ -76,8 +76,6 @@ async def create_post(
             target_id=post.id,
         )
 
-    # Re-queries post with relationships
-    # selectinload() == SELECT ... WHERE parent_id IN (...)
     stmt = (
         select(Post).where(Post.id == post.id).options(selectinload(Post.user))
     )

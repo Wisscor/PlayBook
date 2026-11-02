@@ -65,7 +65,6 @@ class PlayerRequest(Base):
         DateTime(timezone=True), default=_utcnow
     )
 
-    # Relationships
     announcement: Mapped["MatchAnnouncement"] = relationship(
         back_populates="play_requests"
     )

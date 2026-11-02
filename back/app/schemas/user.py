@@ -16,7 +16,6 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     password: str = Field(..., min_length=8, max_length=100)
-    #
     model_config = {
         "json_schema_extra": {
             "example": {

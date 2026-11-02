@@ -25,7 +25,6 @@ class Follower(Base):
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
 
-    # Relationships
     follower: Mapped["User"] = relationship(
         foreign_keys=[follower_id],
         back_populates="following",

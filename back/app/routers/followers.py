@@ -25,6 +25,7 @@ from app.core.limiter import limiter
 from app.core.exceptions import ApiException
 from app.core.error_codes import ErrorCode
 from app.services.user_service import get_user_by_id
+from app.services.follower_service import create_follow_relationship, remove_follow_relationship
 
 router = APIRouter(
     prefix="/users",
@@ -53,25 +54,7 @@ async def follow_user(
     if not target_user:
         raise ApiException(code=ErrorCode.USER_NOT_FOUND)
 
-    existing = await db.scalar(
-        select(Follower).where(
-            Follower.follower_id == curr_user.id,
-            Follower.following_id == user_id,
-            )
-    )
-    if existing:
-        raise ApiException(code=ErrorCode.ALREADY_FOLLOWING)
-
-    new_follower = Follower(
-        follower_id=curr_user.id,
-        following_id=user_id,
-    )
-    db.add(new_follower)
-    try:
-        await db.commit()
-    except IntegrityError:  # concurrent requests can violate the composite PK
-        await db.rollback()
-        raise ApiException(code=ErrorCode.ALREADY_FOLLOWING)
+    await create_follow_relationship(db, curr_user.id, user_id)
     background_tasks.add_task(
         emit_notification,
         event_type="follow",
@@ -100,17 +83,7 @@ async def unfollow_user(
             field="user_id",
         )
 
-    follower_edge = await db.scalar(
-        select(Follower).where(
-            Follower.follower_id == curr_user.id,
-            Follower.following_id == user_id,
-        )
-    )
-    if not follower_edge:
-        raise ApiException(code=ErrorCode.FOLLOW_NOT_FOUND)
-
-    await db.delete(follower_edge)
-    await db.commit()
+    await remove_follow_relationship(db, curr_user.id, user_id)
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 

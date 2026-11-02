@@ -1,5 +1,4 @@
 import uuid
-from typing import Optional
 
 from fastapi import (
     APIRouter,
@@ -9,7 +8,6 @@ from fastapi import (
     Request,
 )
 from sqlalchemy import Select, select
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
@@ -33,6 +31,10 @@ from app.realtime.notify import emit_notification
 from app.core.limiter import limiter
 from app.core.exceptions import ApiException
 from app.core.error_codes import ErrorCode
+from app.services.play_request_service import (
+    create_play_request_service,
+    decide_play_request_service,
+)
 
 router = APIRouter(tags=["Play Requests"])
 
@@ -81,45 +83,16 @@ async def send_play_request(
     me: User = Depends(get_curr_user),
 ):
     """Send a play request for an announcement."""
-    announcement = await db.get(MatchAnnouncement, id)
-    if announcement is None:
-        raise ApiException(code=ErrorCode.ANNOUNCEMENT_NOT_FOUND)
-    if announcement.organizer_id == me.id:
-        raise ApiException(code=ErrorCode.PERMISSION_DENIED)
-    if announcement.match_status not in {
-        MatchAnnouncementStatus.upcoming,
-        MatchAnnouncementStatus.live,
-    }:
-        raise ApiException(code=ErrorCode.ANNOUNCEMENT_NOT_ACCEPTING_REQUESTS)
-    if announcement.remaining_player_slots <= 0:
-        raise ApiException(code=ErrorCode.ANNOUNCEMENT_FULL)
-    already_sent = await db.scalar(
-        select(PlayerRequest.id).where(
-            PlayerRequest.announcement_id == id,
-            PlayerRequest.sender_id == me.id,
-        )
-    )
-    if already_sent:
-        raise ApiException(code=ErrorCode.REQUEST_ALREADY_SENT)
-
-    play_request = PlayerRequest(announcement_id=id, sender_id=me.id)
-    db.add(play_request)
-    try:
-        await db.flush()  # assigns the id
-        request_id = play_request.id  # commit expires the object
-        await db.commit()
-    except IntegrityError:  # two parallel requests hit the UNIQUE constraint
-        await db.rollback()
-        raise ApiException(code=ErrorCode.REQUEST_ALREADY_SENT)
+    created_request = await create_play_request_service(db, id, me.id)
     background_tasks.add_task(
         emit_notification,
         event_type="play_request",
         actor_id=me.id,
-        target_user_id=announcement.organizer_id,
-        target_id=announcement.id,
-        match_time=announcement.start_time,
+        target_user_id=created_request.notification.target_user_id,
+        target_id=created_request.notification.target_id,
+        match_time=created_request.notification.match_time,
     )
-    return await _get_request(db, request_id)
+    return await _get_request(db, created_request.request_id)
 
 
 @router.get(
@@ -176,49 +149,7 @@ async def decide_play_request(
     me: User = Depends(get_curr_user),
 ):
     """Accept or reject a pending play request."""
-    play_request = await db.scalar(
-        select(PlayerRequest)
-        .where(PlayerRequest.id == id)
-        .with_for_update()  # lock the row to avoid race conditions
-    )
-
-    if play_request is None:
-        raise ApiException(code=ErrorCode.PLAY_REQUEST_NOT_FOUND)
-
-    # Load and lock the announcement separately
-    announcement = await db.scalar(
-        select(MatchAnnouncement)
-        .where(MatchAnnouncement.id == play_request.announcement_id)
-        .with_for_update()
-    )
-    if announcement is None:
-        raise ApiException(code=ErrorCode.ANNOUNCEMENT_NOT_FOUND)
-
-    if announcement.organizer_id != me.id:
-        raise ApiException(code=ErrorCode.PERMISSION_DENIED)
-
-    if play_request.status != PlayerRequestStatusEnum.pending:
-        raise ApiException(code=ErrorCode.REQUEST_ALREADY_DECIDED)
-
-    if announcement.match_status not in {
-        MatchAnnouncementStatus.upcoming,
-        MatchAnnouncementStatus.live,
-    }:
-        raise ApiException(code=ErrorCode.ANNOUNCEMENT_NOT_ACCEPTING_REQUESTS)
-
-    if (
-        body.status == PlayerRequestStatusEnum.accepted
-        and announcement.remaining_player_slots <= 0
-    ):
-        raise ApiException(code=ErrorCode.ANNOUNCEMENT_FULL)
-    notification_target_user_id = play_request.sender_id
-    notification_target_id = play_request.announcement_id
-    notification_match_time = announcement.start_time
-    play_request.status = PlayerRequestStatusEnum(body.status)
-    if play_request.status == PlayerRequestStatusEnum.accepted:
-        announcement.remaining_player_slots -= 1
-
-    await db.commit()
+    notification = await decide_play_request_service(db, id, body, me.id)
     background_tasks.add_task(
         emit_notification,
         event_type=(
@@ -227,8 +158,8 @@ async def decide_play_request(
             else "play_request_rejected"
         ),
         actor_id=me.id,
-        target_user_id=notification_target_user_id,
-        target_id=notification_target_id,
-        match_time=notification_match_time,
+        target_user_id=notification.target_user_id,
+        target_id=notification.target_id,
+        match_time=notification.match_time,
     )
     return await _get_request(db, id)
