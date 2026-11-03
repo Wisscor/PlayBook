@@ -15,6 +15,7 @@ from sqlalchemy import or_, select
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 from http import HTTPStatus
+from sqlalchemy.exc import IntegrityError
 
 from fastapi_pagination import Page
 from fastapi_pagination.ext.sqlalchemy import apaginate
@@ -83,8 +84,11 @@ async def update(
     for key, value in update_data.items():
         if value is not None:
             setattr(curr_user, key, value)
-
-    await db.commit()
+    try:
+        await db.commit()
+    except IntegrityError:
+        await db.rollback()
+        raise ApiException(code=ErrorCode.USER_UPDATE_FAILED)
     await db.refresh(curr_user)
     return await load_user_profile(db, curr_user, curr_user)
 

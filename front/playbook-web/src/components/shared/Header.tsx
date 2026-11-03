@@ -36,6 +36,7 @@ export const Header: React.FC = () => {
           src="/logos/app-logo.png"
           fill
           sizes="128px"
+          loading="eager"
           className="object-contain"
         />
       </Link>

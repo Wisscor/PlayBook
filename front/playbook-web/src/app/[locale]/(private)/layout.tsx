@@ -154,6 +154,7 @@ export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
               alt="app-logo"
               src="/logos/app-logo.png"
               fill
+              loading="eager"
               sizes="128px"
               className="object-contain"
             />

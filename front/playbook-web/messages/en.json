@@ -239,6 +239,7 @@
   "REQUEST_ALREADY_SENT": "You have already sent a request to join this match.",
   "REQUEST_ALREADY_DECIDED": "This request has already been accepted or declined.",
   "ANNOUNCEMENT_ALREADY_FINISHED": "This match announcement has already finished.",
+  "USER_UPDATE_FAILED": "Failed to update user information .",
 
   "unable-to-save-match": "Unable to save match",
   "unable-to-create-post": "Unable to create your post",

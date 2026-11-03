@@ -149,6 +149,15 @@ const EditProfilePage = () => {
             </div>
           </div>
 
+          {error && (
+            <div className="rounded-lg bg-red-100 px-4 py-2 text-sm text-red-700">
+              <PlayText.Primary
+                id={error}
+                className="text-sm font-semibold text-red-700"
+              />
+            </div>
+          )}
+
           <div className="relative z-10 flex w-full flex-col gap-3">
             <div className="flex w-full items-center justify-center gap-2.5 rounded-2xl border border-white/10 bg-neutral-950/30 px-3 py-2.5">
               <div className="flex-1 min-w-0 text-center">
@@ -359,6 +368,7 @@ const EditProfilePage = () => {
               title="update-infos"
               className="px-8 py-3.5"
               onClick={() => {
+                setError(undefined);
                 if (checkIfAnyFieldIsEmptyOrInvalid(updatedInfos)) {
                   return;
                 }

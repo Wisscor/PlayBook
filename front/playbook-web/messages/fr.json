@@ -239,6 +239,7 @@
   "REQUEST_ALREADY_SENT": "Vous avez déjà envoyé une demande pour ce match.",
   "REQUEST_ALREADY_DECIDED": "Cette demande a déjà été acceptée ou refusée.",
   "ANNOUNCEMENT_ALREADY_FINISHED": "Ce match est déjà terminé.",
+  "USER_UPDATE_FAILED": "Échec de la mise à jour des informations utilisateur.",
 
   "unable-to-save-match": "Impossible d'enregistrer le match",
   "unable-to-create-post": "Impossible de créer votre publication",

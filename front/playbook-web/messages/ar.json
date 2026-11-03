@@ -239,6 +239,7 @@
   "REQUEST_ALREADY_SENT": "لقد أرسلت طلب انضمام إلى هذه المباراة من قبل.",
   "REQUEST_ALREADY_DECIDED": "تم اتخاذ القرار بشأن هذا الطلب بالفعل (مقبول أو مرفوض).",
   "ANNOUNCEMENT_ALREADY_FINISHED": "هذه المباراة انتهت بالفعل.",
+  "USER_UPDATE_FAILED": "فشل تحديث معلومات المستخدم.",
 
   "unable-to-save-match": "تعذر حفظ المباراة",
   "unable-to-create-post": "تعذر إنشاء منشورك",
