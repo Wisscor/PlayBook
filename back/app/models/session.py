@@ -1,6 +1,14 @@
 import uuid
 from datetime import datetime, timezone
-from sqlalchemy import DateTime, ForeignKey, Index
+from typing import Optional
+
+
+from sqlalchemy import (
+    DateTime,
+    ForeignKey,
+    Text,
+    String,
+)
 from sqlalchemy.orm import (
     Mapped,
     mapped_column,
@@ -30,6 +38,14 @@ class Session(Base):
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),
     )
+    ip_address: Mapped[Optional[str]] = mapped_column(
+        String(45),
+        nullable=True,
+    )
+    platform: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    browser: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    user_agent: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+
     # Relationships
     user: Mapped["User"] = relationship(
         "User",

@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta, timezone
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock
 import uuid
 
 import pytest
@@ -52,7 +52,7 @@ async def test_get_current_user_rejects_missing_session(mock_db):
         await get_curr_user(None, mock_db)
 
     assert caught.value.code == ErrorCode.AUTHENTICATION_REQUIRED
-    mock_db.execute.assert_not_awaited()
+    mock_db.scalar.assert_not_awaited()
 
 
 @pytest.mark.asyncio
@@ -64,9 +64,7 @@ async def test_get_current_user_removes_expired_session(
         user_id=user.id,
         expires_at=datetime.now(timezone.utc) - timedelta(seconds=1),
     )
-    result = MagicMock()
-    result.scalar_one_or_none.return_value = session
-    mock_db.execute.return_value = result
+    mock_db.scalar.return_value = session
     close_user = AsyncMock()
     monkeypatch.setattr("app.core.deps.registry.close_user", close_user)
 
@@ -86,10 +84,6 @@ async def test_get_current_user_returns_user_for_valid_session(mock_db, user):
         user_id=user.id,
         expires_at=datetime.now(timezone.utc) + timedelta(days=1),
     )
-    session_result = MagicMock()
-    session_result.scalar_one_or_none.return_value = session
-    user_result = MagicMock()
-    user_result.scalar_one_or_none.return_value = user
-    mock_db.execute.side_effect = [session_result, user_result]
+    mock_db.scalar.side_effect = [session, user]
 
     assert await get_curr_user(session.id, mock_db) is user

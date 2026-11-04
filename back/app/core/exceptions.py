@@ -33,6 +33,7 @@ DEFAULT_MESSAGES = {
     ErrorCode.REQUEST_ALREADY_SENT: "You already sent a request for this announcement.",
     ErrorCode.REQUEST_ALREADY_DECIDED: "This play request has already been decided.",
     ErrorCode.ANNOUNCEMENT_ALREADY_FINISHED: "This announcement is already finished.",
+    ErrorCode.USER_UPDATE_FAILED: "Failed to update user information.",
 }
 
 
