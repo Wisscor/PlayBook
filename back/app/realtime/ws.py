@@ -85,9 +85,10 @@ async def websocket_endpoint(websocket: WebSocket):
     last_seen = time.monotonic()
 
     async with session_maker() as db:
-        user = await authenticate_socket(websocket, db)
-    if user is None:
+        authenticated = await authenticate_socket(websocket, db)
+    if authenticated is None:
         return
+    user, session_id = authenticated
 
     ctx = ConnectionContext(
         websocket=websocket,
@@ -98,7 +99,7 @@ async def websocket_endpoint(websocket: WebSocket):
         strikes=SlidingWindow(60),
     )
     first_socket = not registry.connections_for(user.id)
-    registry.register(user.id, websocket)
+    registry.register(user.id, websocket, session_id)
     try:
         await websocket.send_json(
             {

@@ -30,7 +30,7 @@ async def get_curr_user(
     if session.expires_at <= datetime.now(timezone.utc):
         await db.delete(session)
         await db.commit()
-        await registry.close_user(session.user_id)
+        await registry.close_user(session.user_id, session_id=session.id)
         raise ApiException(code=ErrorCode.AUTHENTICATION_REQUIRED)
 
     user = await db.scalar(select(User).where(User.id == session.user_id))
@@ -57,7 +57,7 @@ async def get_curr_session(
     if session.expires_at <= datetime.now(timezone.utc):
         await db.delete(session)
         await db.commit()
-        await registry.close_user(session.user_id)
+        await registry.close_user(session.user_id, session_id=session.id)
         raise ApiException(code=ErrorCode.AUTHENTICATION_REQUIRED)
 
     return session

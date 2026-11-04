@@ -7,7 +7,7 @@ from fastapi import (
 )
 
 import uuid
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from ..models import Session, User
 from ..database.database import get_db
 from sqlalchemy.exc import IntegrityError
@@ -152,9 +152,9 @@ async def get_all_sessions(
             expires_at=session.expires_at,
             created_at=session.created_at,
             ip_address=session.ip_address,
-            user_agent=session.user_agent,
             platform=session.platform,
             browser=session.browser,
+            user_agent=session.user_agent,
             is_current=session.id == current_session.id,
         )
         for session in sessions
@@ -166,6 +166,7 @@ async def get_all_sessions(
 async def delete_session(
     session_id: uuid.UUID,
     request: Request,
+    response: Response,
     current_session: Session = Depends(get_curr_session),
     db: AsyncSession = Depends(get_db),
 ):
@@ -183,8 +184,12 @@ async def delete_session(
         )
     await db.delete(session)
     await db.commit()
+    await registry.close_user(session.user_id, session_id=session.id)
     if session.id == current_session.id:
-        await registry.close_user(session.user_id)
+        response.delete_cookie(
+            key=settings.session_cookie_name,
+            path="/",
+        )
     return {"message": "Session deleted successfully."}
 
 
@@ -197,12 +202,9 @@ async def delete_all_session(
     db: AsyncSession = Depends(get_db),
 ):
     """Delete all sessions for the current user."""
-    stmt = select(Session).where(
-        Session.user_id == current_session.user_id,
+    await db.execute(
+        delete(Session).where(Session.user_id == current_session.user_id)
     )
-    sessions = await db.scalars(stmt)
-    for session in sessions:
-        await db.delete(session)
     await db.commit()
     await registry.close_user(current_session.user_id)
     response.delete_cookie(
@@ -249,7 +251,7 @@ async def logout(
     # Delete the session from the database
     await db.delete(session)
     await db.commit()
-    await registry.close_user(session.user_id)
+    await registry.close_user(session.user_id, session_id=session.id)
     response.delete_cookie(
         key=settings.session_cookie_name,
     )

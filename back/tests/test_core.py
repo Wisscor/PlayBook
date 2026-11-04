@@ -74,7 +74,7 @@ async def test_get_current_user_removes_expired_session(
     assert caught.value.code == ErrorCode.AUTHENTICATION_REQUIRED
     mock_db.delete.assert_awaited_once_with(session)
     mock_db.commit.assert_awaited_once()
-    close_user.assert_awaited_once_with(user.id)
+    close_user.assert_awaited_once_with(user.id, session_id=session.id)
 
 
 @pytest.mark.asyncio
