@@ -47,7 +47,7 @@ export const Conversation: React.FC<{
           <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-full bg-linear-to-tr from-extra to-primary text-sm font-bold text-white shadow-md ring-2 ring-white/10 transition-all duration-300 hover:ring-primary/60">
             {activeContact.avatarUrl ? (
               <img
-                src={`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}/${activeContact.avatarUrl}`}
+                src={`${process.env.NEXT_PUBLIC_API_URL ?? "https://localhost:8443"}/${activeContact.avatarUrl}`}
                 alt=""
                 className="h-full w-full rounded-full object-cover"
               />

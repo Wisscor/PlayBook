@@ -136,7 +136,7 @@ const EditProfilePage = () => {
             <div className="relative flex h-36 w-36 shrink-0 flex-col items-center justify-center overflow-hidden rounded-full border-4 border-neutral-950 bg-linear-to-tr from-extra to-primary shadow-xl shadow-primary/30">
               {connectedUser.avatar ? (
                 <img
-                  src={`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}/${connectedUser.avatar}`}
+                  src={`${process.env.NEXT_PUBLIC_API_URL ?? "https://localhost:8443"}/${connectedUser.avatar}`}
                   alt="Avatar"
                   className="w-full h-full rounded-full object-cover"
                 />

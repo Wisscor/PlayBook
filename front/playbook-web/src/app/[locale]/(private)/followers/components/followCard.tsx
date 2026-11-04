@@ -37,7 +37,7 @@ export const FollowCard: React.FC<{
           <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-linear-to-tr from-extra to-primary text-sm font-bold text-white">
             {follower?.avatar ? (
               <img
-                src={`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}/${follower.avatar}`}
+                src={`${process.env.NEXT_PUBLIC_API_URL ?? "https://localhost:8443"}/${follower.avatar}`}
                 alt="Avatar"
                 className="h-full w-full rounded-full object-cover"
               />
