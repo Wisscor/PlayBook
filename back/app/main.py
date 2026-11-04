@@ -146,7 +146,6 @@ add_pagination(app)
 
 
 @app.get("/health", status_code=200)
-@limiter.limit("5/minute")
 async def health_check(request: Request):
     """
     Health check endpoint to verify the application's status.
