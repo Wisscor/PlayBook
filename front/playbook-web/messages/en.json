@@ -275,5 +275,17 @@
   "REQUEST_REJECTED_ALERT": "{username} rejected your play request.",
   "MATCH_UPDATE_ALERT": "{username} updated a match you joined.",
   "MATCH_CANCELLED_ALERT": "{username} cancelled a match you joined.",
-  "TRIGGERED_ALERT": "{username} triggered a notification."
+  "TRIGGERED_ALERT": "{username} triggered a notification.",
+
+  "sessions": "Sessions",
+  "sessions-description": "These devices are signed in to your account. Log out of any you don't recognise.",
+  "this-device": "This device",
+  "last-active": "Last active",
+  "no-sessions": "No active sessions found.",
+  "logout-session": "Log out of this device?",
+  "logout-session-warning": "This device will be signed out immediately and will need to log in again.",
+  "confirm-logout-session": "Yes, log out",
+  "unable-to-load-sessions": "Unable to load your sessions",
+  "unable-to-logout-session": "Unable to log out of this session",
+  "retry": "Try again"
 }

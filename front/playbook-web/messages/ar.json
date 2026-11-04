@@ -275,5 +275,17 @@
   "REQUEST_REJECTED_ALERT": ". رفض طلب اللعب {username}",
   "MATCH_UPDATE_ALERT": ". حدث مباركة انضممت إليها {username}",
   "MATCH_CANCELLED_ALERT": ". إلغى مباركة انضممت إليها {username}.",
-  "TRIGGERED_ALERT": ". أطلق إشعار {username}."
+  "TRIGGERED_ALERT": ". أطلق إشعار {username}.",
+
+  "sessions": "الجلسات",
+  "sessions-description": "هذه الأجهزة مسجّل دخولها إلى حسابك. سجّل الخروج من أي جهاز لا تعرفه.",
+  "this-device": "هذا الجهاز",
+  "last-active": "آخر نشاط",
+  "no-sessions": "لا توجد جلسات نشطة.",
+  "logout-session": "تسجيل الخروج من هذا الجهاز؟",
+  "logout-session-warning": "سيتم تسجيل خروج هذا الجهاز فوراً وسيحتاج إلى تسجيل الدخول مرة أخرى.",
+  "confirm-logout-session": "نعم، سجّل الخروج",
+  "unable-to-load-sessions": "تعذر تحميل جلساتك",
+  "unable-to-logout-session": "تعذر تسجيل الخروج من هذه الجلسة",
+  "retry": "حاول مرة أخرى"
 }
