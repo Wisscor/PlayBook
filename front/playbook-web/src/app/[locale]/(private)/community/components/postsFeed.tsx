@@ -64,7 +64,7 @@ export const PostsFeed: React.FC<{
                   <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-linear-to-tr from-extra to-primary text-sm font-bold text-white">
                     {feed.author?.avatar ? (
                       <img
-                        src={`${process.env.NEXT_PUBLIC_API_URL ?? "https://localhost:8443"}/${feed.author.avatar}`}
+                        src={`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}/${feed.author.avatar}`}
                         alt=""
                         className="h-full w-full rounded-full object-cover"
                       />

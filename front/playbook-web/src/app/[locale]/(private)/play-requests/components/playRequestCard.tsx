@@ -77,7 +77,7 @@ export const PlayRequestCard: React.FC<{
           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-linear-to-tr from-indigo-950 to-indigo-600 te shadow-md shrink-0">
             {match.owner.avatar ? (
               <img
-                src={`${process.env.NEXT_PUBLIC_API_URL ?? "https://localhost:8443"}/${match.owner.avatar}`}
+                src={`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}/${match.owner.avatar}`}
                 alt="Avatar"
                 className="w-full h-full rounded-full object-cover"
               />

@@ -14,7 +14,7 @@ from . import frames
 
 async def authenticate_socket(
     websocket: WebSocket, db: AsyncSession
-) -> Optional[User]:
+) -> Optional[tuple[User, UUID]]:
     raw = websocket.cookies.get(settings.session_cookie_name)
     if not raw:
         await websocket.close(code=frames.CLOSE_AUTH_FAILED)
@@ -42,4 +42,4 @@ async def authenticate_socket(
         await websocket.close(code=frames.CLOSE_AUTH_FAILED)
         return None
 
-    return user
+    return user, session.id

@@ -30,7 +30,7 @@ export const UserCard: React.FC<{
           <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-linear-to-tr from-extra to-primary text-base font-bold text-white shadow-md">
             {user.avatar ? (
               <img
-                src={`${process.env.NEXT_PUBLIC_API_URL ?? "https://localhost:8443"}/${user.avatar}`}
+                src={`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}/${user.avatar}`}
                 alt="Avatar"
                 className="h-full w-full rounded-full object-cover"
               />

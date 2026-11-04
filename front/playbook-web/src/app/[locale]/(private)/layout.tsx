@@ -15,7 +15,6 @@ import { useRealtimeController } from "@/services/realtime";
 import { NotificationPopUp } from "../notificationPopUp";
 import { BurgerMenu } from "../burgerMenu";
 import { useDismiss } from "@/hooks/useDismiss";
-import { useResize } from "@/hooks/contexts/resizeContext";
 
 export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
   const { signOut } = useAuthController();
@@ -26,7 +25,6 @@ export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
   const [logoutError, setLogoutError] = useState<string | undefined>(undefined);
   const { goMessages, goSearch } = useNavigation();
   const { unreadMessages, notifications } = useChat();
-  const {windowWidth} = useResize()
   useDismiss(isExpanded, () => setIsExpanded(false), { outsideClick: false });
 
   const { markAllNotificationsRead, markNotificationRead } =
@@ -108,10 +106,6 @@ export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  useEffect(() => {
-    setIsExpanded(false)
-  }, [windowWidth])
-
   return (
     <div className="relative flex min-h-screen flex-col overflow-x-hidden bg-neutral-950 text-stone-100 selection:bg-primary/40">
       <style>{`
@@ -160,6 +154,7 @@ export const PrivateLayout = ({ children }: { children: React.ReactNode }) => {
               alt="app-logo"
               src="/logos/app-logo.png"
               fill
+              loading="eager"
               sizes="128px"
               className="object-contain"
             />

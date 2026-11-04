@@ -239,6 +239,7 @@
   "REQUEST_ALREADY_SENT": "Vous avez déjà envoyé une demande pour ce match.",
   "REQUEST_ALREADY_DECIDED": "Cette demande a déjà été acceptée ou refusée.",
   "ANNOUNCEMENT_ALREADY_FINISHED": "Ce match est déjà terminé.",
+  "USER_UPDATE_FAILED": "Échec de la mise à jour des informations utilisateur.",
 
   "unable-to-save-match": "Impossible d'enregistrer le match",
   "unable-to-create-post": "Impossible de créer votre publication",
@@ -274,5 +275,17 @@
   "REQUEST_REJECTED_ALERT": "{username} a refusé votre demande de jeu.",
   "MATCH_UPDATE_ALERT": "{username} a mis à jour un match auquel vous avez participé.",
   "MATCH_CANCELLED_ALERT": "{username} a annulé un match auquel vous avez participé.",
-  "TRIGGERED_ALERT": "{username} a déclenché une notification."
+  "TRIGGERED_ALERT": "{username} a déclenché une notification.",
+
+  "sessions": "Sessions",
+  "sessions-description": "Ces appareils sont connectés à votre compte. Déconnectez ceux que vous ne reconnaissez pas.",
+  "this-device": "Cet appareil",
+  "last-active": "Dernière activité",
+  "no-sessions": "Aucune session active.",
+  "logout-session": "Déconnecter cet appareil ?",
+  "logout-session-warning": "Cet appareil sera déconnecté immédiatement et devra se reconnecter.",
+  "confirm-logout-session": "Oui, déconnecter",
+  "unable-to-load-sessions": "Impossible de charger vos sessions",
+  "unable-to-logout-session": "Impossible de déconnecter cette session",
+  "retry": "Réessayer"
 }

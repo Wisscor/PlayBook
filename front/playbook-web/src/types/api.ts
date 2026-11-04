@@ -189,3 +189,14 @@ export interface ChatConversation {
   unread_count: number;
   peer_last_read_message_id: string | null;
 }
+
+export type Session = {
+  id: string;
+  device: string;
+  device_type?: "desktop" | "mobile" | "tablet";
+  ip?: string;
+  location?: string;
+  created_at: string;
+  last_active_at: string;
+  is_current: boolean;
+};

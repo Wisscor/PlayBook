@@ -19,7 +19,7 @@ def test_socket_runs_one_lifecycle_and_cleans_up_tasks(monkeypatch, exit_reason)
     monkeypatch.setattr(ws, "session_maker", lambda: AsyncMock())
     user = SimpleNamespace(id=uuid4(), username="alice")
     contacts = {uuid4()}
-    monkeypatch.setattr(ws, "authenticate_socket", AsyncMock(return_value=user))
+    monkeypatch.setattr(ws, "authenticate_socket", AsyncMock(return_value=(user, uuid4())))
     on_connect = AsyncMock(return_value={uuid4()})
     monkeypatch.setattr(connection, "session_maker", lambda: AsyncMock())
     monkeypatch.setattr(connection.service, "get_contact_ids", AsyncMock(return_value=contacts))
@@ -85,14 +85,14 @@ def test_disconnect_refreshes_contacts_and_checks_if_still_offline(monkeypatch, 
     user = SimpleNamespace(id=uuid4())
     socket, replacement, contact_socket = AsyncMock(), AsyncMock(), AsyncMock()
     contact_id = uuid4()
-    registry.register(user.id, socket)
-    registry.register(contact_id, contact_socket)
+    registry.register(user.id, socket, uuid4())
+    registry.register(contact_id, contact_socket, uuid4())
     if state == "other_tab_open":
-        registry.register(user.id, replacement)
+        registry.register(user.id, replacement, uuid4())
 
     async def current_contacts(db, user_id):
         if state == "reconnect_during_query":
-            registry.register(user.id, replacement)
+            registry.register(user.id, replacement, uuid4())
         return {contact_id}
 
     lookup = AsyncMock(side_effect=current_contacts)
@@ -127,7 +127,7 @@ def test_reconnect_reports_remaining_timeout_without_closing(monkeypatch, elapse
     monkeypatch.setattr(ws, "_origin_is_allowed", lambda origin: True)
     monkeypatch.setattr(ws, "session_maker", lambda: AsyncMock())
     user = SimpleNamespace(id=uuid4(), username="alice")
-    monkeypatch.setattr(ws, "authenticate_socket", AsyncMock(return_value=user))
+    monkeypatch.setattr(ws, "authenticate_socket", AsyncMock(return_value=(user, uuid4())))
     monkeypatch.setattr(connection, "on_connect", AsyncMock())
     monkeypatch.setattr(connection, "on_disconnect", AsyncMock())
 

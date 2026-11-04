@@ -6,27 +6,31 @@ import time
 from . import frames
 
 _connections: dict[UUID, set[WebSocket]] = defaultdict(set)
+_socket_sessions: dict[WebSocket, UUID] = {}
 
 _timeouts: dict[UUID, float] = {}
 
-def register(user_id: UUID, ws: WebSocket) -> None:
+def register(user_id: UUID, ws: WebSocket, session_id: UUID) -> None:
     _connections[user_id].add(ws)
+    _socket_sessions[ws] = session_id
 
 def unregister(user_id: UUID, ws: WebSocket) -> None:
+    _socket_sessions.pop(ws, None)
     _connections[user_id].discard(ws)
     if not _connections[user_id]:
         del _connections[user_id]
 
 def connections_for(user_id: UUID) -> set[WebSocket]:
     return set(_connections.get(user_id, ()))
-    return set(_connections.get(user_id, ()))
 
 def online_user_ids() -> set[UUID]:
     return set(_connections.keys())
 
 
-async def close_user(user_id: UUID) -> None:
+async def close_user(user_id: UUID, *, session_id: UUID | None = None) -> None:
     for ws in connections_for(user_id):
+        if session_id is not None and _socket_sessions.get(ws) != session_id:
+            continue
         try:
             await ws.close(
                 code=frames.CLOSE_SESSION_ENDED,

@@ -136,7 +136,7 @@ const EditProfilePage = () => {
             <div className="relative flex h-36 w-36 shrink-0 flex-col items-center justify-center overflow-hidden rounded-full border-4 border-neutral-950 bg-linear-to-tr from-extra to-primary shadow-xl shadow-primary/30">
               {connectedUser.avatar ? (
                 <img
-                  src={`${process.env.NEXT_PUBLIC_API_URL ?? "https://localhost:8443"}/${connectedUser.avatar}`}
+                  src={`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}/${connectedUser.avatar}`}
                   alt="Avatar"
                   className="w-full h-full rounded-full object-cover"
                 />
@@ -148,6 +148,15 @@ const EditProfilePage = () => {
               )}
             </div>
           </div>
+
+          {error && (
+            <div className="rounded-lg bg-red-100 px-4 py-2 text-sm text-red-700">
+              <PlayText.Primary
+                id={error}
+                className="text-sm font-semibold text-red-700"
+              />
+            </div>
+          )}
 
           <div className="relative z-10 flex w-full flex-col gap-3">
             <div className="flex w-full items-center justify-center gap-2.5 rounded-2xl border border-white/10 bg-neutral-950/30 px-3 py-2.5">
@@ -359,6 +368,7 @@ const EditProfilePage = () => {
               title="update-infos"
               className="px-8 py-3.5"
               onClick={() => {
+                setError(undefined);
                 if (checkIfAnyFieldIsEmptyOrInvalid(updatedInfos)) {
                   return;
                 }

@@ -22,10 +22,10 @@ async def test_first_message_updates_new_contact_presence(
     )
     sender_id, peer_id = uuid4(), uuid4()
     sender_socket, peer_socket = AsyncMock(), AsyncMock()
-    registry.register(sender_id, sender_socket)
+    registry.register(sender_id, sender_socket, uuid4())
     await connection._send_online_contacts_snapshot(sender_socket, sender_id)
     if peer_online:
-        registry.register(peer_id, peer_socket)
+        registry.register(peer_id, peer_socket, uuid4())
         await connection._send_online_contacts_snapshot(peer_socket, peer_id)
 
     message = SentMessage(

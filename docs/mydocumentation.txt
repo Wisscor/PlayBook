@@ -954,3 +954,19 @@ Connect message sending.
 Add presence and read receipts.
 Add notifications afterward.
 So, yes, the frontend messaging UI can be connected to the backend without changing the backend protocol. The main work is replacing the mock state with HTTP data and adding one shared native browser WebSocket connection.
+
+
+
+
+
+
+
+
+
+
+
+
+question : now check the notification system and ,let me now what notifications we can work on
+
+answer:
+check video explanation in playbook videos
