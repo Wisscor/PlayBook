@@ -13,6 +13,7 @@ import Image from "next/image";
 import React from "react";
 import { createPortal } from "react-dom";
 import { Link } from "../../../../../../i18n/navigation";
+import { SessionsModal } from "./sessionModal";
 
 export const MainDetails: React.FC<{ user: User; comingFrom: COMING_FROM }> = ({
   user,
@@ -29,6 +30,7 @@ export const MainDetails: React.FC<{ user: User; comingFrom: COMING_FROM }> = ({
   const [isFollowPending, setIsFollowPending] = React.useState(false);
   const [conversationError, setConversationError] = React.useState("");
   const [isDeleteOpen, setIsDeleteOpen] = React.useState(false);
+  const [isSessionOpen, setIsSessionOpen] = React.useState(false);
 
   const toggleFollow = () => {
     if (!user.id || isFollowPending) return;
@@ -118,28 +120,53 @@ export const MainDetails: React.FC<{ user: User; comingFrom: COMING_FROM }> = ({
 
       <div className="relative pt-2">
         {comingFrom == COMING_FROM.ME ? (
-          <div className="flex items-stretch gap-3">
-            <Link href={ROUTES.EDIT_PROFILE} className="w-full">
-              <PlayButton.Primary
-                textClassName="text-sm font-semibold text-white"
-                title="edit-profile"
-                type="button"
-                className="w-full py-2.5 text-center"
-              />
-            </Link>
+          <>
+            <div className="flex items-stretch gap-3">
+              <Link href={ROUTES.EDIT_PROFILE} className="w-full">
+                <PlayButton.Primary
+                  textClassName="text-sm font-semibold text-white"
+                  title="edit-profile"
+                  type="button"
+                  className="w-full py-2.5 text-center"
+                />
+              </Link>
+              <button
+                onClick={() => setIsDeleteOpen(true)}
+                aria-label="Delete account"
+                className="cursor-pointer rounded-xl border border-rose-500/30 bg-rose-500/10 p-2.5 text-center shadow-md backdrop-blur-md transition-all duration-300 hover:-translate-y-0.5 hover:border-rose-500/60 hover:bg-rose-500/25 active:translate-y-0 active:scale-95"
+              >
+                <Image
+                  alt="delete"
+                  src={"/icons/trash-can.png"}
+                  width={20}
+                  height={20}
+                />
+              </button>
+            </div>
             <button
-              onClick={() => setIsDeleteOpen(true)}
-              aria-label="Delete account"
-              className="cursor-pointer rounded-xl border border-rose-500/30 bg-rose-500/10 p-2.5 text-center shadow-md backdrop-blur-md transition-all duration-300 hover:-translate-y-0.5 hover:border-rose-500/60 hover:bg-rose-500/25 active:translate-y-0 active:scale-95"
+              type="button"
+              onClick={() => setIsSessionOpen(true)}
+              className="group mt-3 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-white/10 bg-secondary/30 px-4 py-2.5 text-sm font-semibold text-stone-200 backdrop-blur-md transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/60 hover:bg-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 active:translate-y-0 active:scale-95"
             >
-              <Image
-                alt="delete"
-                src={"/icons/trash-can.png"}
-                width={20}
-                height={20}
+              <svg
+                aria-hidden
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-4 w-4 text-amber-200 transition-transform duration-300 group-hover:scale-110"
+              >
+                <path d="M12 2l8 3v6c0 5-3.4 9.3-8 11-4.6-1.7-8-6-8-11V5l8-3z" />
+                <path d="M9 12l2 2 4-4" />
+              </svg>
+              <PlayText.Primary
+                id="sessions"
+                className="text-sm font-semibold"
               />
             </button>
-          </div>
+          </>
         ) : (
           <div className="flex items-stretch gap-3">
             <PlayButton.Primary
@@ -236,6 +263,10 @@ export const MainDetails: React.FC<{ user: User; comingFrom: COMING_FROM }> = ({
           </PlayModal.Primary>,
           document.body,
         )}
+      <SessionsModal
+        isOpen={isSessionOpen}
+        close={() => setIsSessionOpen(false)}
+      />
     </div>
   );
 };
