@@ -3,6 +3,8 @@
 import { PlayButton } from "@/components/ui/Button";
 import { PlayModal } from "@/components/ui/Modal";
 import { PlayText } from "@/components/ui/Text";
+import { useAuth } from "@/hooks/contexts/authContext";
+import { useNavigation } from "@/hooks/useNavigation";
 import { useSession } from "@/services/session";
 import { Session } from "@/types/api";
 import { useLocale } from "next-intl";
@@ -25,7 +27,21 @@ const timeAgo = (iso: string, locale: string) => {
   return rtf.format(0, "second");
 };
 
-const DeviceIcon: React.FC<{ type: Session["device_type"] }> = ({ type }) => (
+const getDeviceType = (platform: string | null) => {
+  const normalizedPlatform = platform?.toLowerCase() ?? "";
+  return /android|ios|iphone|ipad|mobile|tablet/.test(normalizedPlatform)
+    ? "mobile"
+    : "desktop";
+};
+
+const getDeviceName = (session: Session) =>
+  [session.browser, session.platform].filter(Boolean).join(" on ") ||
+  session.user_agent ||
+  "Unknown device";
+
+const DeviceIcon: React.FC<{ type: ReturnType<typeof getDeviceType> }> = ({
+  type,
+}) => (
   <svg
     aria-hidden
     viewBox="0 0 24 24"
@@ -57,7 +73,7 @@ const SessionRow: React.FC<{
   isRevoking: boolean;
   onLogout: () => void;
 }> = ({ session, locale, index, isRevoking, onLogout }) => {
-  const meta = [session.ip, session.location].filter(Boolean).join(" · ");
+  const meta = session.ip_address;
 
   return (
     <li
@@ -70,13 +86,13 @@ const SessionRow: React.FC<{
     >
       <div className="flex min-w-0 flex-1 items-center gap-4">
         <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-white/15 bg-linear-to-br from-primary to-extra shadow-lg shadow-primary/25">
-          <DeviceIcon type={session.device_type} />
+          <DeviceIcon type={getDeviceType(session.platform)} />
         </div>
 
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <PlayText.Primary
-              content={session.device}
+              content={getDeviceName(session)}
               className="truncate text-sm font-bold text-stone-100"
             />
             {session.is_current && (
@@ -95,9 +111,19 @@ const SessionRow: React.FC<{
           <PlayText.Span
             className="mt-1 block text-[11px]"
             texts={[
-              { text: "last-active", className: "text-amber-200/70" },
+              { text: "signed-in", className: "text-amber-200/70" },
               {
-                content: ` ${timeAgo(session.last_active_at, locale)}`,
+                content: ` ${timeAgo(session.created_at, locale)}`,
+                className: "font-medium text-stone-300",
+              },
+            ]}
+          />
+          <PlayText.Span
+            className="block text-[11px]"
+            texts={[
+              { text: "expires", className: "text-amber-200/70" },
+              {
+                content: ` ${timeAgo(session.expires_at, locale)}`,
                 className: "font-medium text-stone-300",
               },
             ]}
@@ -127,9 +153,20 @@ export const SessionsModal: React.FC<{
   close: () => void;
 }> = ({ isOpen, close }) => {
   const locale = useLocale();
-  const { sessions, isLoading, error, revokingId, reload, revoke } =
-    useSession(isOpen);
+  const {
+    sessions,
+    isLoading,
+    error,
+    revokingId,
+    isRevokingAll,
+    reload,
+    revoke,
+    revokeAll,
+  } = useSession(isOpen);
+  const { setConnectedUser } = useAuth();
+  const { goSignIn } = useNavigation();
   const [toLogout, setToLogout] = useState<Session | undefined>(undefined);
+  const [confirmLogoutAll, setConfirmLogoutAll] = useState(false);
 
   if (!isOpen) return null;
 
@@ -151,6 +188,15 @@ export const SessionsModal: React.FC<{
             id="sessions-description"
             className="text-sm leading-relaxed text-stone-400"
           />
+
+          {sessions.length > 0 && !isLoading && (
+            <PlayButton.Secondary
+              title="logout-all-sessions"
+              onClick={() => setConfirmLogoutAll(true)}
+              disabled={isRevokingAll || revokingId !== undefined}
+              className="w-full border-rose-500/30 text-rose-200 hover:border-rose-500/60 hover:bg-rose-500/10"
+            />
+          )}
 
           {error && (
             <div
@@ -217,7 +263,7 @@ export const SessionsModal: React.FC<{
           <div className="flex flex-col gap-6 pt-1">
             <div className="flex flex-col gap-2 rounded-2xl border border-rose-500/30 bg-rose-500/10 p-4">
               <PlayText.Primary
-                content={toLogout.device}
+                content={getDeviceName(toLogout)}
                 className="text-sm font-bold text-rose-100"
               />
               <PlayText.Primary
@@ -240,6 +286,46 @@ export const SessionsModal: React.FC<{
                   revoke(id);
                 }}
                 className="w-full from-rose-600 to-rose-700 py-3 shadow-rose-600/30 hover:shadow-rose-600/40"
+              />
+            </div>
+          </div>
+        </PlayModal.Primary>
+      )}
+
+      {confirmLogoutAll && (
+        <PlayModal.Primary
+          isOpen
+          close={() => setConfirmLogoutAll(false)}
+          title="logout-all-sessions-title"
+        >
+          <div className="flex flex-col gap-6 pt-1">
+            <PlayText.Primary
+              id="logout-all-sessions-warning"
+              className="text-sm leading-relaxed text-stone-300"
+            />
+            {error === "unable-to-logout-all-sessions" && (
+              <PlayText.Primary
+                id={error}
+                className="text-sm text-rose-200"
+              />
+            )}
+            <div className="flex flex-col-reverse gap-3 sm:flex-row">
+              <PlayButton.Secondary
+                title="cancel"
+                onClick={() => setConfirmLogoutAll(false)}
+                className="w-full"
+              />
+              <PlayButton.Primary
+                title="confirm-logout-all-sessions"
+                onClick={async () => {
+                  if (await revokeAll()) {
+                    setConnectedUser(undefined);
+                    setConfirmLogoutAll(false);
+                    goSignIn();
+                  }
+                }}
+                disabled={isRevokingAll}
+                className="w-full from-rose-600 to-rose-700 shadow-rose-600/30 hover:shadow-rose-600/40"
               />
             </div>
           </div>

@@ -37,7 +37,7 @@ api.interceptors.response.use(
       const isAuthApiRequest = url.includes("/auth");
 
       if (!isAuthPath && !isAuthApiRequest) {
-        window.location.href = `/${currentLocale}/auth?mode=signin`;
+        window.location.href = `/${currentLocale}/auth?mode=signin&sessionExpired=1`;
       }
     }
 

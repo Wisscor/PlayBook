@@ -192,11 +192,11 @@ export interface ChatConversation {
 
 export type Session = {
   id: string;
-  device: string;
-  device_type?: "desktop" | "mobile" | "tablet";
-  ip?: string;
-  location?: string;
+  expires_at: string;
   created_at: string;
-  last_active_at: string;
+  ip_address: string | null;
+  platform: string | null;
+  browser: string | null;
+  user_agent: string | null;
   is_current: boolean;
 };

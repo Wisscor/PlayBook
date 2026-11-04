@@ -1,86 +1,96 @@
 import { Session } from "@/types/api";
 import { useCallback, useEffect, useState } from "react";
+import { api } from "./api";
 
-//TODO: delete this mock data once the API is ready
-const ago = (minutes: number) =>
-  new Date(Date.now() - minutes * 60_000).toISOString();
-
-const MOCK_SESSIONS: Session[] = [
-  {
-    id: "s1",
-    device: "Chrome on Linux",
-    device_type: "desktop",
-    ip: "192.168.1.24",
-    location: "Casablanca, MA",
-    created_at: ago(60 * 24 * 3),
-    last_active_at: ago(0),
-    is_current: true,
-  },
-  {
-    id: "s2",
-    device: "Safari on iPhone",
-    device_type: "mobile",
-    ip: "41.248.12.9",
-    location: "Rabat, MA",
-    created_at: ago(60 * 24 * 10),
-    last_active_at: ago(42),
-    is_current: false,
-  },
-  {
-    id: "s3",
-    device: "Firefox on Windows",
-    device_type: "desktop",
-    ip: "105.157.3.77",
-    location: "Paris, FR",
-    created_at: ago(60 * 24 * 30),
-    last_active_at: ago(60 * 26),
-    is_current: false,
-  },
-];
+const getSessions = async () => {
+  const response = await api.get<Session[]>("/auth/sessions");
+  return response.data;
+};
 
 export const useSession = (enabled: boolean) => {
   const [sessions, setSessions] = useState<Session[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasLoaded, setHasLoaded] = useState(false);
   const [error, setError] = useState<string | undefined>(undefined);
   const [revokingId, setRevokingId] = useState<string | undefined>(undefined);
+  const [isRevokingAll, setIsRevokingAll] = useState(false);
 
-  const load = useCallback(() => {
+  const load = useCallback(async () => {
     setIsLoading(true);
     setError(undefined);
 
-    // TODO: integrate get call with backend once the API is ready
-
-    return window.setTimeout(() => {
-      setSessions(MOCK_SESSIONS);
+    try {
+      setSessions(await getSessions());
+    } catch {
+      setError("unable-to-load-sessions");
+    } finally {
       setIsLoading(false);
-    }, 500);
+      setHasLoaded(true);
+    }
   }, []);
 
   useEffect(() => {
     if (!enabled) return;
-    const timer = load();
-    return () => window.clearTimeout(timer);
-  }, [enabled, load]);
+    let active = true;
+    getSessions()
+      .then((data) => {
+        if (active) setSessions(data);
+      })
+      .catch(() => {
+        if (active) setError("unable-to-load-sessions");
+      })
+      .finally(() => {
+        if (active) {
+          setIsLoading(false);
+          setHasLoaded(true);
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, [enabled]);
 
-  const revoke = (id: string, onDone?: () => void) => {
+  const revoke = async (id: string) => {
     setRevokingId(id);
     setError(undefined);
 
-    // TODO: integrate revoke call with backend once the API is ready
-
-    window.setTimeout(() => {
-      setSessions((prev) => prev.filter((s) => s.id !== id));
+    try {
+      await api.delete(`/auth/sessions/${id}`).then(() => {
+        setSessions((current) =>
+          current.filter((session) => session.id !== id),
+        );
+      });
+    } catch {
+      setError("unable-to-logout-session");
+    } finally {
       setRevokingId(undefined);
-      onDone?.();
-    }, 600);
+    }
+  };
+
+  const revokeAll = async () => {
+    setIsRevokingAll(true);
+    setError(undefined);
+
+    try {
+      await api.delete("/auth/sessions");
+      setSessions([]);
+      return true;
+    } catch {
+      setError("unable-to-logout-all-sessions");
+      return false;
+    } finally {
+      setIsRevokingAll(false);
+    }
   };
 
   return {
     sessions,
-    isLoading,
+    isLoading: isLoading || (enabled && !hasLoaded),
     error,
     revokingId,
+    isRevokingAll,
     reload: load,
     revoke,
+    revokeAll,
   };
 };
