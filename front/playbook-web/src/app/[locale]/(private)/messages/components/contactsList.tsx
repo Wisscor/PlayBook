@@ -103,7 +103,7 @@ export const ContactsList: React.FC<{
                   >
                     {contact.avatarUrl ? (
                       <img
-                        src={`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}/${contact.avatarUrl}`}
+                        src={`${process.env.NEXT_PUBLIC_API_URL}/${contact.avatarUrl}`}
                         alt=""
                         className="h-full w-full rounded-full object-cover"
                       />

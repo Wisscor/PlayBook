@@ -59,7 +59,7 @@ export const PlayerRequest: React.FC<{
           <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-linear-to-tr from-extra to-primary text-sm font-bold text-white shadow-md sm:h-11 sm:w-11">
             {request.sender.avatar ? (
               <img
-                src={`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}/${request.sender.avatar}`}
+                src={`${process.env.NEXT_PUBLIC_API_URL}/${request.sender.avatar}`}
                 alt={`${request.sender.firstname} avatar`}
                 className="h-full w-full rounded-full object-cover"
               />

@@ -294,6 +294,6 @@
   "unable-to-logout-session": "Impossible de déconnecter cette session",
   "unable-to-logout-all-sessions": "Impossible de déconnecter toutes les sessions",
   "retry": "Réessayer",
-    "SESSION_NOT_FOUND": "Session non trouvée."
-
+  "SESSION_NOT_FOUND": "Session non trouvée.",
+  "error-loading-users": "Impossible de charger les utilisateurs"
 }

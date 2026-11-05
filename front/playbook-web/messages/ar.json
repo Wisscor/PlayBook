@@ -294,6 +294,6 @@
   "unable-to-logout-session": "تعذر تسجيل الخروج من هذه الجلسة",
   "unable-to-logout-all-sessions": "تعذر تسجيل الخروج من جميع الجلسات",
   "retry": "حاول مرة أخرى",
-    "SESSION_NOT_FOUND": "الجلسة غير موجودة."
-
+  "SESSION_NOT_FOUND": "الجلسة غير موجودة.",
+  "error-loading-users": "تعذر تحميل المستخدمين"
 }

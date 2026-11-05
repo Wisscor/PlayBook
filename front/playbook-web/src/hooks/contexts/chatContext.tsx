@@ -43,8 +43,8 @@ type ChatContextValue = {
 const ChatContext = createContext<ChatContextValue | undefined>(undefined);
 
 function getWebSocketUrl() {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
-  return `${apiUrl.replace(/^http/, "ws")}/ws`;
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+  return `${apiUrl?.replace(/^http/, "ws")}/ws`;
 }
 
 export function ChatProvider({

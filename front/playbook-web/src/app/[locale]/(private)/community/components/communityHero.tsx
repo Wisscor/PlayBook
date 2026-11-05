@@ -84,7 +84,7 @@ const ProfileChip: React.FC<{ user?: User }> = ({ user }) => {
         <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-full bg-linear-to-tr from-extra to-primary text-sm font-extrabold text-white">
           {user.avatar ? (
             <img
-              src={`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}/${user.avatar}`}
+              src={`${process.env.NEXT_PUBLIC_API_URL}/${user.avatar}`}
               alt="Avatar"
               className="h-full w-full rounded-full object-cover"
             />

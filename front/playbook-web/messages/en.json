@@ -294,5 +294,6 @@
   "unable-to-logout-session": "Unable to log out of this session",
   "unable-to-logout-all-sessions": "Unable to log out of all sessions",
   "retry": "Try again",
-  "SESSION_NOT_FOUND": "Session not found."
+  "SESSION_NOT_FOUND": "Session not found.",
+  "error-loading-users": "Unable to load users"
 }

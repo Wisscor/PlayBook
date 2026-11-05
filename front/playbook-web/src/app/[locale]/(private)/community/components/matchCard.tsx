@@ -67,7 +67,7 @@ export const MatchCard: React.FC<{
           <div className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-linear-to-tr from-extra to-primary text-[10px] font-bold text-white ring-2 ring-white/10">
             {match.owner.avatar ? (
               <img
-                src={`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}/${match.owner.avatar}`}
+                src={`${process.env.NEXT_PUBLIC_API_URL}/${match.owner.avatar}`}
                 alt=""
                 className="h-full w-full rounded-full object-cover"
               />

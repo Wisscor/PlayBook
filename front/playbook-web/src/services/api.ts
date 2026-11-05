@@ -5,7 +5,7 @@ const SUPPORTED_LOCALES = new Set(["en", "fr", "ar"]);
 const DEFAULT_LOCALE = "en";
 
 export const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000",
+  baseURL: process.env.NEXT_PUBLIC_API_URL,
   withCredentials: true,
   headers: {
     "Content-Type": "application/json",

@@ -99,7 +99,7 @@ const UserProfilePage = () => {
                 <div className="flex h-36 w-36 items-center justify-center overflow-hidden rounded-full bg-neutral-950 p-1.5 sm:h-44 sm:w-44">
                   {user.avatar ? (
                     <img
-                      src={`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}/${user.avatar}`}
+                      src={`${process.env.NEXT_PUBLIC_API_URL}/${user.avatar}`}
                       alt="Avatar"
                       className="h-full w-full rounded-full object-cover transition-transform duration-500 hover:scale-110"
                     />

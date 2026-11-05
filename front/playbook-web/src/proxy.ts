@@ -39,6 +39,12 @@ export function proxy(request: NextRequest) {
   const isExpiredSessionRedirect =
     request.nextUrl.searchParams.get("sessionExpired") === "1";
 
+  if (isGuestOnlyRoute && sessionToken && isExpiredSessionRedirect) {
+    const response = NextResponse.next();
+    response.cookies.delete("session_id");
+    return response;
+  }
+
   if (isGuestOnlyRoute && sessionToken && !isExpiredSessionRedirect) {
     return NextResponse.redirect(
       new URL(`/${currentLocale}${ROUTES.HOME}`, request.url),
