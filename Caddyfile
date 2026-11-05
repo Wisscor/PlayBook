@@ -4,6 +4,5 @@ https://localhost {
 
 
 https://localhost:8443 {
-	tls internal
 	reverse_proxy api:8000
 }
