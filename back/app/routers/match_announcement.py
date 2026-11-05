@@ -82,7 +82,6 @@ async def search_announcements(
         joinedload(M.sport),
         selectinload(M.play_requests).joinedload(PlayerRequest.sender),
     )
-    # Filters
     if filters.sport_id:
         stmt = stmt.where(M.sport_id == filters.sport_id)
     if filters.match_status:
@@ -104,7 +103,6 @@ async def search_announcements(
     if filters.end_to:
         stmt = stmt.where(M.end_time <= filters.end_to)
 
-    # Sorting
     sort_column = {
         "start_time": M.start_time,
         "created_at": M.created_at,
@@ -148,7 +146,6 @@ async def update_announcement(
 ):
     """Update an announcement owned by the current user."""
     announcement = await get_announcement_or_raise(db, id)
-    # Authorization is kept separate from announcement loading.
     require_announcement_owner(announcement, me)
 
     data = body.model_dump(exclude_unset=True)

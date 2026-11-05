@@ -58,7 +58,7 @@ curl -fsS 'http://localhost:9200/_cluster/health?pretty'
 Create a log, then check that it reaches Elasticsearch:
 
 ```sh
-curl -fsS 'http://localhost:8000/check-logging'
+curl -fsS 'https://localhost:8443/check-logging'
 curl -fsS 'http://localhost:9200/_cat/indices/app-log-*?v'
 docker compose -f devops/docker-compose.yml logs --tail=50 filebeat logstash
 ```
@@ -84,11 +84,15 @@ DELAY_SECONDS=0.2 ./devops/generate-traffic.sh
 Elasticsearch, Kibana and the API only listen on `127.0.0.1`. Logstash,
 Filebeat and PostgreSQL remain on the private Docker network.
 
+The root Compose setup proxies browser requests to the API through Caddy over
+HTTPS. Trust Caddy's local root certificate as described in the root README
+before using `curl` without a certificate override.
+
 For an externally accessible server, also add:
 
 1. Elasticsearch and Kibana authentication;
 2. a dedicated Logstash user with access restricted to `app-log-*`;
-3. HTTPS/TLS in front of Kibana and the API through a reverse proxy;
+3. HTTPS/TLS in front of Kibana through a reverse proxy;
 4. a firewall that does not expose ports 9200, 5044 and 5432.
 
 Do not enable only `xpack.security.enabled=true` without configuring Kibana,

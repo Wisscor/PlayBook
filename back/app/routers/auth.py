@@ -12,7 +12,6 @@ from ..models import Session, User
 from ..database.database import get_db
 from sqlalchemy.exc import IntegrityError
 from typing import Optional
-from pydantic import EmailStr
 from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime, timedelta, timezone
 from ..schemas.user import UserCreate, UserLogin, UserProfileResponse
@@ -36,20 +35,6 @@ router = APIRouter(
     prefix="/auth",
     tags=["Auuthentication"],
 )
-
-
-async def get_user_by_email(
-    db: AsyncSession, email: EmailStr
-) -> Optional[User]:
-    stmt = select(User).where(User.email == email)
-    return (await db.execute(stmt)).scalar_one_or_none()
-
-
-async def get_user_by_username(
-    db: AsyncSession, username: str
-) -> Optional[User]:
-    stmt = select(User).where(User.username == username)
-    return (await db.execute(stmt)).scalar_one_or_none()
 
 
 @router.post("/signup", response_model=UserProfileResponse)

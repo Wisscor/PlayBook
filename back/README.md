@@ -36,7 +36,6 @@ back/
 │   ├── routers/
 │   └── schemas/
 ├── tests/
-├── docker-compose.yaml
 ├── Dockerfile.api
 ├── Dockerfile.db
 ├── entrypoint.sh
@@ -132,7 +131,7 @@ Execute these CLI calls via [HTTPie](https://httpie.io/) to verify your instance
 
 ### 1. User Registration (`/auth/signup`)
 ```bash
-http -v POST localhost:8000/auth/signup \
+http -v POST https://localhost:8443/auth/signup \
   username=zakaria \
   email=zakaria@example.com \
   password=pass1234
@@ -140,7 +139,7 @@ http -v POST localhost:8000/auth/signup \
 
 ### 2. User Login (`/auth/login`)
 ```bash
-http -v POST localhost:8000/auth/login \
+http -v POST https://localhost:8443/auth/login \
   email=zakaria@example.com \
   password=pass1234
 ```

@@ -2,6 +2,7 @@ import asyncio
 import json
 import time
 
+import structlog
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from pydantic import ValidationError
 
@@ -13,6 +14,7 @@ from .limits import SlidingWindow
 from .ws_auth import authenticate_socket
 
 router = APIRouter()
+logger = structlog.get_logger(__name__)
 
 
 def _origin_is_allowed(origin: str | None) -> bool:
@@ -63,8 +65,14 @@ async def receive_loop(ctx: ConnectionContext) -> None:
             await _reject(ctx.websocket, "conversation_not_found")
         except WebSocketDisconnect:
             raise
-        except Exception:
-            continue
+        except Exception as exc:
+            logger.error(
+                "WebSocket handler failed",
+                error_type=type(exc).__name__,
+                user_id=str(ctx.user.id),
+                frame_type=kind,
+            )
+            await _reject(ctx.websocket, "internal_error")
 
 
 async def _idle_watchdog(ctx: ConnectionContext) -> None:
@@ -106,6 +114,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 "type": frames.READY,
                 "user_id": str(user.id),
                 "username": user.username,
+                "retry_after": registry.timeout_remaining(user.id), #if user timedout ttsift lik ch7al b9al lih bach ysali timeout already handled fi blasa a5ra
             }
         )
         await connection.on_connect(websocket, user, first_socket)

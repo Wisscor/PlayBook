@@ -17,7 +17,7 @@ from app.schemas.match_announcement import (
     MatchAnnouncementUpdate,
 )
 from app.schemas.play_request import PlayerRequestDecision, PlayerRequestFilter
-from app.schemas.post import PostCreate, PostUpdate
+from app.schemas.post import PostCreate
 from app.schemas.sport import SportCreate
 from app.schemas.user import UserCreate, UserLogin, UserUpdate
 
@@ -37,6 +37,8 @@ def test_user_create_and_login_validate_email_and_password_length():
         UserCreate(**{**payload, "email": "invalid"})
     with pytest.raises(ValidationError):
         UserCreate(**{**payload, "password": "short"})
+    with pytest.raises(ValidationError):
+        UserCreate(**{**payload, "username": "@simo simo"})
 
 
 def test_user_update_rejects_invalid_lengths_and_accepts_partial_update():
@@ -45,6 +47,8 @@ def test_user_update_rejects_invalid_lengths_and_accepts_partial_update():
     }
     with pytest.raises(ValidationError):
         UserUpdate(firstname="ab")
+    with pytest.raises(ValidationError):
+        UserUpdate(username="@simo simo")
 
 
 def test_post_and_sport_constraints():

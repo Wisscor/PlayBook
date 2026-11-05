@@ -9,10 +9,6 @@ class PostCreate(BaseModel):
     caption: str = Field(..., min_length=1, max_length=2000)
 
 
-class PostUpdate(BaseModel):
-    caption: Optional[str] = Field(default=None, min_length=1, max_length=2000)
-
-
 class PostResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 

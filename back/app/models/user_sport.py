@@ -21,5 +21,4 @@ class UserSport(Base):
         index=True,
     )
 
-    # Relationships
     sport: Mapped["Sport"] = relationship()

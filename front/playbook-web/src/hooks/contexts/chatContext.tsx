@@ -50,7 +50,7 @@ function getWebSocketUrl() {
 export function ChatProvider({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const { connectedUser, isLoading } = useAuth();
+  const { connectedUser, setConnectedUser } = useAuth();
   const [conversations, setConversations] = useState<ChatConversation[]>([]);
   const [messages, setMessages] = useState<Record<string, RealtimeMessage[]>>(
     {},
@@ -78,7 +78,7 @@ export function ChatProvider({
   }, [connectedUser?.id]);
 
   useEffect(() => {
-    if (isLoading || !connectedUser?.id) return;
+    if (!connectedUser?.id) return;
 
     let disposed = false;
     const timeoutTimer = setInterval(() => {
@@ -248,11 +248,15 @@ export function ChatProvider({
           );
         }
       };
-      socket.onclose = () => {
+      socket.onclose = (event) => {
         socketRef.current = null;
         setConnected(false);
         timeoutDeadlineRef.current = 0;
         setTimeoutRemaining(0);
+        if (event.code === 4001 || event.code === 4003) {
+          if (!disposed) setConnectedUser(undefined);
+          return;
+        }
         if (!disposed) {
           const delay = Math.min(1000 * 2 ** attemptRef.current, 10000);
           attemptRef.current += 1;
@@ -269,7 +273,12 @@ export function ChatProvider({
     const notificationsTimer = setTimeout(() => {
       void api
         .get<{ items: ChatNotification[] }>("/realtime/notifications")
-        .then((response) => setNotifications(response.data.items));
+        .then((response) => {
+          if (!disposed) setNotifications(response.data.items);
+        })
+        .catch(() => {
+          if (!disposed) setNotifications([]);
+        });
     }, 0);
     const heartbeatTimer = setInterval(() => {
       if (socketRef.current?.readyState === WebSocket.OPEN) {
@@ -288,7 +297,7 @@ export function ChatProvider({
       socketRef.current = null;
       setConnected(false);
     };
-  }, [connectedUser?.id, isLoading, loadConversations]);
+  }, [connectedUser?.id, loadConversations, setConnectedUser]);
 
   const sendMessage = useCallback((conversationId: string, body: string) => {
     const socket = socketRef.current;

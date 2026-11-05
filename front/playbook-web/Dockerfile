@@ -5,8 +5,9 @@ WORKDIR /app
 # ---------- deps ----------
 FROM base AS deps
 RUN apk add --no-cache libc6-compat
-COPY package.json package-lock.json ./
-RUN npm ci
+RUN corepack enable
+COPY package.json yarn.lock .yarnrc.yml ./
+RUN yarn install --immutable
 
 # ---------- build ----------
 FROM base AS builder
@@ -14,9 +15,10 @@ FROM base AS builder
 ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV NEXT_TELEMETRY_DISABLED=1
+RUN corepack enable
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-RUN npm run build
+RUN yarn build
 
 # ---------- run ----------
 FROM base AS runner

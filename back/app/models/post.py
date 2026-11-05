@@ -31,5 +31,4 @@ class Post(Base):
         onupdate=lambda: datetime.now(timezone.utc),
     )
 
-    # Relationships
     user: Mapped["User"] = relationship(back_populates="posts")

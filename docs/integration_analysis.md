@@ -48,7 +48,7 @@ export const api = axios.create({
 Without this, the browser will **never** send the `session_id` cookie, and every protected route will return 401.
 
 ### CORS is already aligned
-Backend `cors_origins` includes `http://localhost:3000` and `allow_credentials=True` — matches the Next.js dev port.
+Backend `cors_origins` includes `https://localhost` and `allow_credentials=True` — matches the frontend origin. The API is on HTTPS port 8443.
 
 ---
 
@@ -139,7 +139,7 @@ The Axios instance needs to support `multipart/form-data` for these calls (don't
 
 Static files (avatars, post images) are served at:
 ```
-http://localhost:8000/uploads/<filename>
+https://localhost:8443/uploads/<filename>
 ```
 So a stored URL like `/uploads/abc.jpg` needs the backend base URL prepended.
 
@@ -147,10 +147,11 @@ So a stored URL like `/uploads/abc.jpg` needs the backend base URL prepended.
 
 ## 6. Real-time WebSocket
 
-The backend has a WebSocket at `ws://localhost:8000/ws`.  
+The backend has a WebSocket at `wss://localhost:8443/ws`.
 Authentication uses the same `session_id` cookie (read via `ws_auth.py`).
 
-**Important**: Browsers automatically send cookies on WebSocket connections to the same origin, but since Next.js runs on port 3000 and FastAPI on 8000, this is **cross-origin** — the `session_id` cookie needs `SameSite=None; Secure` in production, or you must pass the session token as a query param for the WS handshake.
+The frontend and API use the same hostname and HTTPS scheme, so the secure
+session cookie is sent with authenticated WebSocket connections.
 
 Current status: the WS connection is in echo mode only — no real business logic yet.
 

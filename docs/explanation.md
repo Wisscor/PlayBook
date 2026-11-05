@@ -15,7 +15,9 @@ PlayBook has two separate applications:
 The frontend displays pages and collects user input. The backend validates the
 input, talks to the database, and returns a response.
 
-They communicate through HTTP requests.
+In the Docker Compose setup, the browser communicates with the API through
+Caddy over HTTPS. Caddy forwards requests to the API over the private Docker
+network.
 
 For example:
 
@@ -69,7 +71,7 @@ Its important code is:
 import axios from "axios";
 
 export const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000",
+  baseURL: process.env.NEXT_PUBLIC_API_URL ?? "https://localhost:8443",
   withCredentials: true,
   headers: {
     "Content-Type": "application/json",
@@ -90,10 +92,11 @@ api.get("/sports");
 Axios sends the request to:
 
 ```text
-http://localhost:8000/sports
+https://localhost:8443/sports
 ```
 
-In production, `NEXT_PUBLIC_API_URL` should contain the real backend URL.
+In production, `NEXT_PUBLIC_API_URL` should contain the HTTPS backend URL. In the local Docker
+setup, this is `https://localhost:8443`.
 
 ### `withCredentials: true`
 
@@ -615,8 +618,8 @@ the backend must allow the frontend origin.
 Typical development addresses are:
 
 ```text
-Frontend: http://localhost:3000
-Backend:  http://localhost:8000
+Frontend: https://localhost
+Backend:  https://localhost:8443
 ```
 
 The backend must allow:

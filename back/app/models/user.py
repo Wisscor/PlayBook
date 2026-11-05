@@ -51,7 +51,6 @@ class User(Base):
         default=lambda: datetime.now(timezone.utc),
     )
 
-    # Relationships
     sessions: Mapped[list["Session"]] = relationship(
         back_populates="user",
         cascade="all, delete-orphan",

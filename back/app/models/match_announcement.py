@@ -60,7 +60,6 @@ class MatchAnnouncement(Base):
         DateTime(timezone=True), default=datetime.now(timezone.utc)
     )
 
-    # Relationships
     owner: Mapped["User"] = relationship(
         foreign_keys=[organizer_id]
     )  # noqa: F821
@@ -70,7 +69,6 @@ class MatchAnnouncement(Base):
         cascade="all, delete-orphan",
     )
 
-    # Constraints
     __table_args__ = (
         CheckConstraint(
             "end_time > start_time", name="ck_announcement_time_range"

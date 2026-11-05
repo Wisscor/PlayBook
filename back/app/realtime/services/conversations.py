@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from sqlalchemy import delete, exists, func, or_, select
+from sqlalchemy import delete, func, or_, select
 from sqlalchemy.orm import aliased
 
 from ...models import Follower

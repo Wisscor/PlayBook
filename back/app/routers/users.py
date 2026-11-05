@@ -12,10 +12,10 @@ from fastapi import (
     Request,
 )
 from sqlalchemy import or_, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 from http import HTTPStatus
-from sqlalchemy.exc import IntegrityError
 
 from fastapi_pagination import Page
 from fastapi_pagination.ext.sqlalchemy import apaginate
@@ -84,11 +84,12 @@ async def update(
     for key, value in update_data.items():
         if value is not None:
             setattr(curr_user, key, value)
+
     try:
         await db.commit()
     except IntegrityError:
         await db.rollback()
-        raise ApiException(code=ErrorCode.USER_UPDATE_FAILED)
+        raise ApiException(code=ErrorCode.RESOURCE_CONFLICT)
     await db.refresh(curr_user)
     return await load_user_profile(db, curr_user, curr_user)
 
@@ -109,7 +110,6 @@ async def upload_avatar(
     old_avatar = curr_user.avatar
     filepath = None
 
-    # Store the file before committing its path to the user record.
     try:
         new_avatar, filepath = await store_avatar(file, UPLOAD_DIR)
         curr_user.avatar = new_avatar
@@ -119,7 +119,6 @@ async def upload_avatar(
         remove_avatar(filepath)
         raise
 
-    # Delete only files inside `uploads` directory.
     if old_avatar and old_avatar.startswith("uploads/"):
         remove_avatar(old_avatar)
 

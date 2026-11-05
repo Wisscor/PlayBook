@@ -24,7 +24,7 @@ from ..models import (
     Post,
     Follower,
 )
-from app.schemas.post import PostCreate, PostUpdate, PostResponse
+from app.schemas.post import PostCreate, PostResponse
 from app.schemas.user import UserSummaryResponse
 from app.core.deps import get_curr_user
 from app.core.limiter import limiter
@@ -76,8 +76,6 @@ async def create_post(
             target_id=post.id,
         )
 
-    # Re-queries post with relationships
-    # selectinload() == SELECT ... WHERE parent_id IN (...)
     stmt = (
         select(Post).where(Post.id == post.id).options(selectinload(Post.user))
     )
@@ -163,41 +161,6 @@ async def get_post(
     post = await db.scalar(stmt)
     if not post:
         raise ApiException(code=ErrorCode.POST_NOT_FOUND)
-
-    enriched = await enrich_posts([post], curr_user, db)
-    return enriched[0]
-
-
-@router.patch(
-    "/posts/{post_id}",
-    status_code=status.HTTP_200_OK,
-    response_model=PostResponse,
-)
-@limiter.limit("30/minute")
-async def update_post(
-    post_id: uuid.UUID,
-    data: PostUpdate,
-    request: Request,
-    curr_user: User = Depends(get_curr_user),
-    db: AsyncSession = Depends(get_db),
-):
-    """Update a post owned by the current user."""
-    stmt = (
-        select(Post).where(Post.id == post_id).options(selectinload(Post.user))
-    )
-    post = await db.scalar(stmt)
-    if not post:
-        raise ApiException(code=ErrorCode.POST_NOT_FOUND)
-
-    if post.user_id != curr_user.id:
-        raise ApiException(code=ErrorCode.PERMISSION_DENIED)
-
-    update_dict = data.model_dump(exclude_unset=True)
-    for key, value in update_dict.items():
-        setattr(post, key, value)
-
-    await db.commit()
-    await db.refresh(post)
 
     enriched = await enrich_posts([post], curr_user, db)
     return enriched[0]

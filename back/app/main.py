@@ -37,7 +37,6 @@ logger = structlog.get_logger()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     try:
-        # Create database tables if they don't exist, then seed required data.
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
         async for db in get_db():
@@ -71,12 +70,10 @@ app = FastAPI(
     debug=settings.debug,
 )
 register_exception_handlers(app)
-# Stores the limiter in the app's state for global access
 app.state.limiter = limiter
 
 UPLOAD_DIR = Path("uploads")
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
-# Mount the uploads directory to serve static files
 app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
 
@@ -86,8 +83,8 @@ async def structlog_middleware(request: Request, call_next):
 
     structlog.contextvars.bind_contextvars(
         service=settings.app_name,
-        method=request.method,  # !!!!!!
-        path=request.url.path,  # !!!!!!
+        method=request.method,
+        path=request.url.path,
     )
 
     start_time = time.perf_counter()
@@ -104,7 +101,6 @@ async def structlog_middleware(request: Request, call_next):
     except Exception as exc:
         duration_ms = round((time.perf_counter() - start_time) * 1000, 1)
 
-        # ERROR LOG (Includes error_type)
         logger.error(
             "HTTP request failed",
             status_code=500,
@@ -150,7 +146,6 @@ add_pagination(app)
 
 
 @app.get("/health", status_code=200)
-@limiter.limit("5/minute")
 async def health_check(request: Request):
     """
     Health check endpoint to verify the application's status.
