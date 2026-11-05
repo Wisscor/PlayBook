@@ -37,7 +37,7 @@ status:
 
 urls:
 	@printf '\n%s\n' 'PlayBook is available at:'
-	@printf '  %-18s %s\n' 'Frontend:'      'https://localhost/en'
+	@printf '  %-18s %s\n' 'Frontend:'      'https://localhost:3443/en'
 	@printf '  %-18s %s\n' 'API:'           'https://localhost:8443'
 	@printf '  %-18s %s\n' 'API docs:'      'https://localhost:8443/docs'
 	@printf '\n'*

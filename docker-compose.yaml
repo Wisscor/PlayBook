@@ -25,8 +25,8 @@ services:
       - uploads_data:/back-end/uploads
     environment:
       DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL in .env}
-      CORS_ORIGINS: ${CORS_ORIGINS:-["https://localhost"]}
-      SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-true}
+      CORS_ORIGINS: ${CORS_ORIGINS:?Set CORS_ORIGINS in .env}
+      SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:?Set SESSION_COOKIE_SECURE in .env}
       SESSION_COOKIE_SAME_SITE: ${SESSION_COOKIE_SAME_SITE}
     depends_on:
       postgres:
@@ -41,9 +41,8 @@ services:
   caddy:
     image: caddy:2-alpine
     ports:
-      - "127.0.0.1:80:80"
-      - "127.0.0.1:443:443"
-      - "127.0.0.1:8443:8443"
+      - "127.0.0.1:3443:3000"
+      - "127.0.0.1:8443:8000"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
@@ -59,9 +58,9 @@ services:
       context: ./front/playbook-web
       dockerfile: Dockerfile
       args:
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://localhost:8443}
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:?Set NEXT_PUBLIC_API_URL in .env}
     environment:
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://localhost:8443}
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:?Set NEXT_PUBLIC_API_URL in .env}
     depends_on:
       api:
         condition: service_healthy
