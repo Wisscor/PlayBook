@@ -293,5 +293,7 @@
   "unable-to-load-sessions": "تعذر تحميل جلساتك",
   "unable-to-logout-session": "تعذر تسجيل الخروج من هذه الجلسة",
   "unable-to-logout-all-sessions": "تعذر تسجيل الخروج من جميع الجلسات",
-  "retry": "حاول مرة أخرى"
+  "retry": "حاول مرة أخرى",
+    "SESSION_NOT_FOUND": "الجلسة غير موجودة."
+
 }

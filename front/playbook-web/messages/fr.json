@@ -293,5 +293,7 @@
   "unable-to-load-sessions": "Impossible de charger vos sessions",
   "unable-to-logout-session": "Impossible de déconnecter cette session",
   "unable-to-logout-all-sessions": "Impossible de déconnecter toutes les sessions",
-  "retry": "Réessayer"
+  "retry": "Réessayer",
+    "SESSION_NOT_FOUND": "Session non trouvée."
+
 }

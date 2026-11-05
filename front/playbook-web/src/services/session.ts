@@ -1,11 +1,7 @@
-import { Session } from "@/types/api";
+import { ApiError, Session } from "@/types/api";
 import { useCallback, useEffect, useState } from "react";
 import { api } from "./api";
 
-const getSessions = async () => {
-  const response = await api.get<Session[]>("/auth/sessions");
-  return response.data;
-};
 
 export const useSession = (enabled: boolean) => {
   const [sessions, setSessions] = useState<Session[]>([]);
@@ -19,25 +15,26 @@ export const useSession = (enabled: boolean) => {
     setIsLoading(true);
     setError(undefined);
 
-    try {
-      setSessions(await getSessions());
-    } catch {
-      setError("unable-to-load-sessions");
-    } finally {
+    await api.get<Session[]>("/auth/sessions").then((res) => {
+      if (res.status == 200) {
+        setSessions(res.data)
+      }
+    }).catch((error: ApiError) => {
+      setError(error.errorCode ?? "unable-to-load-sessions");
+    }).finally(() => {
       setIsLoading(false);
       setHasLoaded(true);
-    }
+    })
   }, []);
 
   useEffect(() => {
     if (!enabled) return;
     let active = true;
-    getSessions()
-      .then((data) => {
-        if (active) setSessions(data);
-      })
-      .catch(() => {
-        if (active) setError("unable-to-load-sessions");
+    void api.get<Session[]>("/auth/sessions").then((data) => {
+      if (active) setSessions(data.data);
+    })
+      .catch((error: ApiError) => {
+        if (active) setError(error.errorCode ?? "unable-to-load-sessions");
       })
       .finally(() => {
         if (active) {
@@ -54,17 +51,17 @@ export const useSession = (enabled: boolean) => {
     setRevokingId(id);
     setError(undefined);
 
-    try {
-      await api.delete(`/auth/sessions/${id}`).then(() => {
-        setSessions((current) =>
-          current.filter((session) => session.id !== id),
-        );
-      });
-    } catch {
-      setError("unable-to-logout-session");
-    } finally {
+    await api.delete(`/auth/sessions/${id}`).then(() => {
+      setSessions((current) =>
+        current.filter((session) => session.id !== id),
+      );
+    }).catch((error: ApiError) => {
+      setError(error.errorCode ?? "unable-to-logout-session");
+    }).finally(() => {
       setRevokingId(undefined);
-    }
+    });
+
+
   };
 
   const revokeAll = async () => {
