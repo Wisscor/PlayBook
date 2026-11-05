@@ -45,7 +45,6 @@ class MatchAnnouncementUpdate(BaseModel):
 
     @model_validator(mode="after")
     def validate_update(self):
-        # Check if at least one field is explicitly set for update
         if not self.model_fields_set:
             raise ValueError("at least one field is required")
 

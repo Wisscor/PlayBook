@@ -18,7 +18,6 @@ from app.core.deps import get_curr_user
 from app.database.database import get_db
 from app.models.match_announcement import (
     MatchAnnouncement,
-    MatchAnnouncementStatus,
 )
 from app.models.play_request import PlayerRequest, PlayerRequestStatusEnum
 from app.models.user import User

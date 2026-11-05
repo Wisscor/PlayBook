@@ -1,6 +1,6 @@
 import uuid
 from pathlib import Path
-from typing import Optional, List
+from typing import Optional
 from fastapi import (
     APIRouter,
     Depends,

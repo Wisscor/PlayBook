@@ -1,5 +1,4 @@
 import uuid
-from typing import Optional, List
 from fastapi import (
     APIRouter,
     BackgroundTasks,
@@ -9,9 +8,7 @@ from fastapi import (
     Request,
 )
 from sqlalchemy import select
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
-from http import HTTPStatus
 from fastapi_pagination import Page
 from fastapi_pagination.ext.sqlalchemy import apaginate
 

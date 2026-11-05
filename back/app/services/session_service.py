@@ -1,6 +1,5 @@
 from datetime import datetime, timedelta, timezone
 from uuid import UUID, uuid4
-from typing import Optional
 
 from fastapi import Request
 from sqlalchemy.ext.asyncio import AsyncSession

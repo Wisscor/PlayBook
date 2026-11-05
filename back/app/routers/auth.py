@@ -13,7 +13,7 @@ from ..database.database import get_db
 from sqlalchemy.exc import IntegrityError
 from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from ..schemas.user import UserCreate, UserLogin, UserProfileResponse
 from ..schemas.session import SessionResponse
 from ..core.security import hash_password, verify_password
@@ -233,7 +233,6 @@ async def logout(
             code=ErrorCode.AUTHENTICATION_REQUIRED,
             field="session_id",
         )
-    # Delete the session from the database
     await db.delete(session)
     await db.commit()
     await registry.close_user(session.user_id, session_id=session.id)

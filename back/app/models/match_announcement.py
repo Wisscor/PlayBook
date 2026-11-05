@@ -77,6 +77,5 @@ class MatchAnnouncement(Base):
             "remaining_player_slots >= 0",
             name="ck_announcement_needed_players_non_negative",
         ),
-        # Search by sport and time window
         Index("ix_announcement_sport_start", "sport_id", "start_time"),
     )

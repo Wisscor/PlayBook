@@ -1,6 +1,5 @@
 import uuid
-from typing import Optional, List
-from datetime import datetime
+from typing import Optional
 from fastapi import (
     APIRouter,
     BackgroundTasks,
@@ -13,7 +12,6 @@ from fastapi import (
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
-from http import HTTPStatus
 
 from fastapi_pagination import Page
 from fastapi_pagination.ext.sqlalchemy import apaginate
@@ -25,7 +23,6 @@ from ..models import (
     Follower,
 )
 from app.schemas.post import PostCreate, PostResponse
-from app.schemas.user import UserSummaryResponse
 from app.core.deps import get_curr_user
 from app.core.limiter import limiter
 from app.realtime.notify import emit_notifications

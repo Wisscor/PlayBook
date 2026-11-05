@@ -18,7 +18,7 @@ from app.database.database import get_db
 from app.models.sport import Sport
 from app.models.user import User
 from app.models.user_sport import UserSport
-from app.schemas.sport import SportCreate, SportResponse
+from app.schemas.sport import SportResponse
 from app.core.limiter import limiter
 from app.core.exceptions import ApiException
 from app.core.error_codes import ErrorCode
