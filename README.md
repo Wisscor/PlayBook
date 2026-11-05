@@ -19,10 +19,26 @@
 - [Description](#description)
 - [Features](#features)
 - [Instructions](#instructions)
+  - [Requirements](#requirements)
+  - [Install and run](#install-and-run)
 - [Resources](#resources)
 - [Configuration](#configuration)
 - [Development commands](#development-commands)
 - [Project structure](#project-structure)
+- [Team Information](#team-information)
+- [Project Management](#project-management)
+- [Technical Stack](#technical-stack)
+  - [Frontend](#frontend)
+  - [Backend](#backend)
+  - [Database](#database)
+  - [Additional technologies](#additional-technologies)
+  - [Justification for major technical choices](#justification-for-major-technical-choices)
+- [Database Schema](#database-schema)
+- [Features List](#features-list)
+- [Modules](#modules)
+  - [Module summary](#module-summary)
+  - [Total points achieved](#total-points-achieved)
+  - [Notes on the selected modules](#notes-on-the-selected-modules)
 
 ## Description
 
@@ -160,7 +176,6 @@ For local development without a containerized API, start PostgreSQL with `docker
 
 ### Backend
 - **FastAPI** — Chosen for its high performance, automatic OpenAPI documentation, and clean Python-based API development.
-- **Python** — Used for backend logic, validation, service orchestration, and WebSocket handling.
 - **SQLAlchemy** — Provides ORM-based database access and easier schema management for application models.
 - **Pydantic** — Validates request and response schemas and helps keep backend contracts consistent.
 - **WebSockets** — Implemented for live messaging, presence, notifications, and read receipts in real time.
@@ -168,6 +183,7 @@ For local development without a containerized API, start PostgreSQL with `docker
 ### Database
 - **PostgreSQL** — Selected for reliability, relational modeling, transactional consistency, and support for structured app data.
 - **Why this choice**: the project requires user data, social relationships, match announcements, posts, and realtime-related state to be stored consistently and queried efficiently.
+
 
 ### Additional technologies
 - **Docker & Docker Compose** — Simplify local development and ensure the app runs consistently across environments.
@@ -182,6 +198,9 @@ For local development without a containerized API, start PostgreSQL with `docker
 - **Docker Compose** was used to standardize the environment and reduce setup issues for backend, frontend, database, and proxy services.
 - **WebSockets** were included to support live user interactions such as messaging, notifications, and presence updates that a normal REST-only design would not handle efficiently.
 
+## Database Schema
+
+[![Database schema](docs/diagram.jpg)](https://lucid.app/lucidspark/ac32ef46-637c-48e6-a741-365b5170ab9a/edit?invitationId=inv_1912247b-3c80-4990-b56c-b6e6f153a189&page=0_0#)
 
 ## Features List
 
@@ -194,9 +213,9 @@ For local development without a containerized API, start PostgreSQL with `docker
 | Match announcement creation | wazadou, zouazrou, mbrouk | Players can create match announcements with sport information, date, location, and participant requirements. |
 | Match browsing and filtering | wazadou | Users can view available matches, search by criteria, and choose games they want to join. |
 | Play request flow | zouazrou, wazadou | Players can request to join a match, and organizers can review and accept or reject requests. |
-| Realtime messaging | melayyad, zouazrou | Users can exchange direct chat messages in real time within conversations and receive live updates. |
-| Read receipts and message status | melayyad, zouazrou | Participants can mark messages as read and see whether the other user has read their content. |
-| Presence and online status | melayyad, zouazrou | The app tracks whether contacts are online and updates presence in real time. |
+| Realtime messaging | melayyad | Users can exchange direct chat messages in real time within conversations and receive live updates. |
+| Read receipts and message status | melayyad | Participants can mark messages as read and see whether the other user has read their content. |
+| Presence and online status | melayyad | The app tracks whether contacts are online and updates presence in real time. |
 | Notifications system | melayyad, zouazrou, mbrouk | Users receive live notifications for follow actions, post updates, match changes, and request outcomes. |
 | Community and discovery pages | wazadou, mbrouk | Users can explore people, posts, and match opportunities through dedicated community views. |
 | Multilingual support | wazadou | The interface supports English, French, and Arabic, including localized content and layout adjustments. |
