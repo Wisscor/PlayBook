@@ -130,3 +130,110 @@ For local development without a containerized API, start PostgreSQL with `docker
 ├── docker-compose.yaml   # PostgreSQL, API, frontend, and Caddy services
 └── Makefile              # Common development commands
 ```
+
+## Team Information
+
+- **melayyad** — PO, Developer
+  - Defines the product vision, priorities, and user requirements; helps validate the feature set and ensures the project matches the target user needs.
+- **mbrouk** — Tech Lead, Developer
+  - Leads the technical direction, architecture decisions, and code quality; coordinates implementation and helps guide the team through technical challenges.
+- **wazadou** — PM, Developer
+  - Manages planning, coordination, and delivery milestones; tracks progress, organizes tasks, and supports smooth execution across the team.
+- **zouazrou** — Developer
+  - Contributes to implementation across the application, supports feature development, and helps maintain the project’s codebase and functionality.
+
+## Project Management
+
+- **How the team organized the work**: 
+	- Meetings were organized by the Scrum Master / PM, wazadou focused on the front-end UI, zouazrou worked on the core backend API endpoints and database schema, melayyad handled realtime features and WebSocket implementation, and mbrouk managed the front-end and back-end integration.
+- **Tools used for project management**: GitHub.
+- **Communication channels used**: Discord, Google Meet.
+
+## Technical Stack
+
+### Frontend
+- **Next.js** — Used for the app shell, routing, and server/client rendering in a modern React environment.
+- **React** — Provides a component-based UI architecture for building reusable screens and interactive flows.
+- **TypeScript** — Improves maintainability, type safety, and developer productivity during frontend integration.
+- **Tailwind CSS** — Used for rapid styling, consistent design patterns, and responsive layout management.
+- **Axios** — Handles HTTP requests to the backend and manages authenticated API calls with cookies.
+
+### Backend
+- **FastAPI** — Chosen for its high performance, automatic OpenAPI documentation, and clean Python-based API development.
+- **Python** — Used for backend logic, validation, service orchestration, and WebSocket handling.
+- **SQLAlchemy** — Provides ORM-based database access and easier schema management for application models.
+- **Pydantic** — Validates request and response schemas and helps keep backend contracts consistent.
+- **WebSockets** — Implemented for live messaging, presence, notifications, and read receipts in real time.
+
+### Database
+- **PostgreSQL** — Selected for reliability, relational modeling, transactional consistency, and support for structured app data.
+- **Why this choice**: the project requires user data, social relationships, match announcements, posts, and realtime-related state to be stored consistently and queried efficiently.
+
+### Additional technologies
+- **Docker & Docker Compose** — Simplify local development and ensure the app runs consistently across environments.
+- **Caddy** — Acts as a reverse proxy and TLS terminator for local HTTPS setup.
+- **PostgreSQL + SQLAlchemy** — Combined to produce a robust relational data layer with Python-friendly development workflows.
+- **WebSocket + background notification flow** — Used to support live communication without constant polling.
+
+### Justification for major technical choices
+- **Next.js + React** were chosen to build a responsive, modern frontend with reusable components and strong ecosystem support.
+- **FastAPI** was selected because it fits the project’s need for a fast API layer with clear validation, typed schemas, and good developer ergonomics.
+- **PostgreSQL** was preferred over NoSQL alternatives because the application relies on relational data, joins, and consistent transactions.
+- **Docker Compose** was used to standardize the environment and reduce setup issues for backend, frontend, database, and proxy services.
+- **WebSockets** were included to support live user interactions such as messaging, notifications, and presence updates that a normal REST-only design would not handle efficiently.
+
+
+## Features List
+
+| Feature | Team member(s) | Brief description |
+| --- | --- | --- |
+| User authentication and session management | zouazrou, mbrouk | Secure sign up, sign in, logout, and session-based access control for protected routes and API requests. |
+| User profile management | wazadou, mbrouk | Users can view and edit their profile information, manage avatars, and maintain account details. |
+| Social feed and posts | wazadou, mbrouk, zouazrou | Users can create posts, publish media, view the feed, and browse community activity. |
+| Follow / unfollow system | zouazrou, mbrouk | Users can discover other players and follow or unfollow them to build a social network. |
+| Match announcement creation | wazadou, zouazrou, mbrouk | Players can create match announcements with sport information, date, location, and participant requirements. |
+| Match browsing and filtering | wazadou | Users can view available matches, search by criteria, and choose games they want to join. |
+| Play request flow | zouazrou, wazadou | Players can request to join a match, and organizers can review and accept or reject requests. |
+| Realtime messaging | melayyad, zouazrou | Users can exchange direct chat messages in real time within conversations and receive live updates. |
+| Read receipts and message status | melayyad, zouazrou | Participants can mark messages as read and see whether the other user has read their content. |
+| Presence and online status | melayyad, zouazrou | The app tracks whether contacts are online and updates presence in real time. |
+| Notifications system | melayyad, zouazrou, mbrouk | Users receive live notifications for follow actions, post updates, match changes, and request outcomes. |
+| Community and discovery pages | wazadou, mbrouk | Users can explore people, posts, and match opportunities through dedicated community views. |
+| Multilingual support | wazadou | The interface supports English, French, and Arabic, including localized content and layout adjustments. |
+| Responsive UI and navigation | wazadou, mbrouk | The interface is designed for desktop and mobile use with clear navigation, headers, and action flows. |
+
+
+
+
+## Modules
+
+The following module selection reflects the actual work completed in the project and the required grading criteria used in the 42 evaluation.
+
+- Major module = 2 points
+- Minor module = 1 point
+
+### Module summary
+
+| Requirement | Type | Points | Status | Justification | Implementation | Team member(s) |
+| --- | --- | ---: | --- | --- | --- | --- |
+| Use a framework for both the frontend and backend | Major | 2 | Implemented | Modern full-stack architecture is required for a scalable web application. | Next.js/React on the frontend and FastAPI on the backend. | mbrouk, wazadou, zouazrou |
+| Real-time features using WebSockets | Major | 2 | Implemented | The product requires live messaging, presence, and notification updates. | WebSocket server, connection registry, message delivery, and realtime event broadcasting. | melayyad, zouazrou |
+| Allow users to interact with other users (chat, profile, friends) | Major | 2 | Implemented | Social interaction is a core requirement of the app. | User profiles, follow/friends-style social connections, and live messaging support. | wazadou, zouazrou, mbrouk |
+| Standard user management and authentication | Major | 2 | Implemented | Secure access control is essential for every user-facing feature. | Sign-up, login, logout, session cookies, protected routes, and profile management. | mbrouk, zouazrou, wazadou |
+| Custom module: session management in the user profile menu | Major | 2 | Implemented | Session management is a substantial product feature because it improves security and user control inside the authenticated experience. | Logout flow integrated into the profile menu, session-aware UI behavior, protected route consistency, and safe redirect handling after sign-out. | mbrouk, wazadou |
+| Public API with documentation, rate limiting, and key-based access | Major | 2 | Implemented | This is a major backend requirement was part of the final scope implemented. | Included in the current project implementation. | zouazrou melayyad |
+| Use an ORM for the database | Minor | 1 | Implemented | ORM simplifies schema management and data access. | SQLAlchemy models and database abstraction for the backend. | zouazrou |
+| Complete notification system | Minor | 1 | Implemented | Notifications are needed for social and match events. | Event-driven notifications for follows, posts, match updates, and requests. | melayyad, zouazrou, mbrouk |
+| Custom design system with reusable UI components | Minor | 1 | Implemented | A consistent visual system improves usability and code reuse. | Reusable Next.js components, shared styles, color palette, and icon-driven UI patterns. | wazadou, mbrouk |
+| Advanced search with filters, sorting, and pagination | Minor | 1 | Implemented | Search functionality is required for match discovery and community browsing. | Search and filter logic in discovery pages and paginated results. | wazadou, mbrouk |
+| Multiple languages support (i18n) | Minor | 1 | Implemented | The app supports a multilingual audience. | English, French, and Arabic translations with a language switcher. | wazadou, mbrouk |
+| RTL support | Minor | 1 | Implemented | Arabic support requires mirrored layout behavior. | RTL-aware layout adjustments and language-specific UI direction handling. | wazadou, mbrouk |
+| Support for additional browsers | Minor | 1 | Partially implemented | The app targets modern browser compatibility, especially Chromium and Firefox-based environments. | Frontend compatibility checks and cross-browser UI adjustments. | wazadou, mbrouk |
+
+### Total points achieved
+- Major modules implemented: 6 × 2 = 12 points
+- Minor modules implemented: 7 × 1 = 7 points
+- Total: 19 points
+
+### Notes on the selected modules
+The team focused on the modules that were central to the main product value: full-stack architecture, real-time communication, user interaction, authentication, notifications, and multilingual UX. These were the most important pieces for delivering a working sports social network experience, while the public API module and browser-compatibility expansion were not part of the final implementation scope.
