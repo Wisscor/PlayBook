@@ -1,7 +1,7 @@
 COMPOSE = docker compose
 APP = $(COMPOSE) -f docker-compose.yaml
 
-.PHONY: help up down clean restart status urls app-up app-down app-logs
+.PHONY: help up down clean fclean restart status urls app-up app-down app-logs
 
 help:
 	@printf '%s\n' \
@@ -40,7 +40,7 @@ urls:
 	@printf '  %-18s %s\n' 'Frontend:'      'https://localhost:3443/en'
 	@printf '  %-18s %s\n' 'API:'           'https://localhost:8443'
 	@printf '  %-18s %s\n' 'API docs:'      'https://localhost:8443/docs'
-	@printf '\n'*
+	@printf '\n'
 
 fclean:
 	@printf '\n%s\n' 'Cleaning up...'

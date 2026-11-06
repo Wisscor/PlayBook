@@ -136,10 +136,13 @@ For local development without a containerized API, start PostgreSQL with `docker
 ├── back/                 # FastAPI application and database models
 │   └── app/
 │       ├── core/         # Settings, security, limits, and error handling
+│       ├── database/     # Database configuration, sessions, and seed data
+│       ├── main.py        # FastAPI application entry point
 │       ├── models/       # SQLAlchemy application models
 │       ├── realtime/     # WebSocket protocol and realtime services
 │       ├── routers/      # REST route modules
-│       └── schemas/      # Pydantic request and response schemas
+│       ├── schemas/      # Pydantic request and response schemas
+│       └── services/     # Application business logic and service functions
 ├── front/playbook-web/   # Next.js application
 ├── docs/                 # Architecture notes and diagrams
 ├── Caddyfile             # Local HTTPS reverse-proxy routes
