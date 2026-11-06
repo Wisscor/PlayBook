@@ -18,6 +18,9 @@ export const MatchCard: React.FC<{
   const pending = requests.some(
     (r) => r.announcement_id === match.id && r.status === "pending",
   );
+  const declined = requests.some(
+    (r) => r.announcement_id === match.id && r.status === "declined",
+  );
 
   const ownerName = `${match.owner.firstname} ${match.owner.lastname}`;
   const isLive = match.match_status === "live";
@@ -124,7 +127,7 @@ export const MatchCard: React.FC<{
           ]}
         />
 
-        {!isOwner && alreadyJoined === false && pending === false && (
+        {(!isOwner && alreadyJoined === false && pending === false && !declined) && (
           <PlayButton.Primary
             disabled={isJoining}
             onClick={() => {
@@ -157,6 +160,18 @@ export const MatchCard: React.FC<{
                 text: "pending",
                 className:
                   "rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-[11px] font-semibold text-amber-300",
+              },
+            ]}
+          />
+        )}
+
+        {declined && (
+          <PlayText.Span
+            texts={[
+              {
+                text: "declined",
+                className:
+                  "rounded-full border border-rose-500/30 bg-rose-500/10 px-3 py-1 text-[11px] font-semibold text-rose-300",
               },
             ]}
           />
