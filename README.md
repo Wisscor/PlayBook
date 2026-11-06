@@ -309,16 +309,13 @@ The team focused on the modules that were central to the main product value: ful
 - Designed the PostgreSQL database schema and the SQLAlchemy models.
 - Implemented the core REST endpoints: authentication and sessions, profiles, posts, follow/unfollow, match announcements, and play requests.
 - Built the Pydantic request/response schemas and the error handling in `core/`.
-- Contributed to the notification system and the realtime back end.
 
 **Challenges**
 1. **Secure session-based authentication.** Passwords had to be stored safely and sessions had to be revocable.
    *Solution:* Passwords are hashed before storage. Sessions are stored on the server, the browser only holds a random session ID in an `HttpOnly` cookie, and protected routes check the session through a FastAPI dependency. Logging out or revoking a session deletes it server-side.
 2. **Lazy loading with async SQLAlchemy.** Accessing relationships (author of a post, match participants) raised errors outside the async context.
    *Solution:* We load the needed relationships explicitly in the queries (`selectinload` / `joinedload`) and return Pydantic schemas instead of raw ORM objects.
-3. **Consistency in the play request flow.** A player could send the same request twice, and an organizer could accept more players than the match needed.
-   *Solution:* A unique constraint prevents duplicate requests, and accepting a request checks the remaining slots inside one database transaction.
-4. **Consistent validation and error responses.** Invalid payloads produced unclear errors that the front end could not handle.
+3. **Consistent validation and error responses.** Invalid payloads produced unclear errors that the front end could not handle.
    *Solution:* Every endpoint uses Pydantic schemas, and shared exception handlers return one JSON error format with clear status codes.
 
 ### melayyad — Realtime features and WebSockets (PO, Developer)
