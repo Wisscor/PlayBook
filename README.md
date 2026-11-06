@@ -259,3 +259,81 @@ The following module selection reflects the actual work completed in the project
 
 ### Notes on the selected modules
 The team focused on the modules that were central to the main product value: full-stack architecture, real-time communication, user interaction, authentication, notifications, and multilingual UX. These were the most important pieces for delivering a working sports social network experience, while the public API module and browser-compatibility expansion were not part of the final implementation scope.
+
+
+## Individual Contributions
+
+### wazadou — Front-end UI/UX (PM, Developer)
+
+**Contributions**
+- Designed and built the user interface of the Next.js app: layouts, navigation, headers, and action flows.
+- Built the custom design system: shared color palette, Tailwind styles, and reusable components.
+- Implemented profile pages, the social feed UI, match announcement forms, and community/discovery pages.
+- Built match browsing with search, filters, sorting, and pagination.
+- Implemented multilingual support (English, French, Arabic) with next-intl, including RTL layout for Arabic.
+- Organized meetings, planning, and task tracking as PM.
+
+**Challenges**
+1. **Keeping the UI consistent across many pages.** Each page started with its own styling, so colors and spacing drifted apart.
+   *Solution:* We defined one shared palette in the Tailwind config and a set of reusable components (buttons, cards, modals, forms), then rebuilt every page on top of them.
+2. **RTL layout for Arabic.** Switching to Arabic left icons, margins, and menus on the wrong side.
+   *Solution:* The `dir` attribute is set from the active locale, and we replaced left/right utilities with logical ones (`ms-*`, `me-*`, `start`, `end`) so the layout mirrors automatically.
+3. **Responsive layouts for feed, matches, and chat.** Multi-column pages broke on small screens.
+   *Solution:* We designed mobile-first with flex and grid. On mobile, side panels collapse into separate views, and navigation moves to a compact menu.
+4. **Keeping search filters and pagination usable.** Filters were lost on refresh or when using the back button.
+   *Solution:* Filters, sorting, and the current page are stored in the URL query parameters, so results can be shared, refreshed, and navigated with the browser history.
+
+### mbrouk — Front-end/back-end integration (Tech Lead, Developer)
+
+**Contributions**
+- Connected the Next.js front end to the FastAPI back end with Axios and cookie-based sessions.
+- Integrated authentication, protected routes, and the session management custom module in the profile menu.
+- Integrated the WebSocket client for chat, presence, and notifications.
+- Supported the feed, profiles, matches, discovery, i18n, and responsive UI with API integration.
+- Led technical direction and architecture decisions.
+
+**Challenges**
+1. **Session cookies not sent with API calls.** Requests reached the API without the session cookie, so the user looked logged out.
+   *Solution:* We created one shared Axios instance with `withCredentials: true`. An interceptor catches 401 responses (expired session) and redirects to the sign-in page.
+2. **CORS and cookies across origins.** The front end (`:3443`) and the API (`:8443`) are different origins, so browsers blocked requests or rejected the cookie.
+   *Solution:* The API allows only the origins in `CORS_ORIGINS` with credentials enabled, the session cookie uses `Secure` and the right `SameSite` setting, and Caddy serves both over local HTTPS.
+3. **Keeping realtime events in sync with REST data.** WebSocket events and REST responses sometimes disagreed (duplicate messages, wrong unread counts).
+   *Solution:* Both sources update one client-side state, messages are deduplicated by ID, and after a reconnect the client fetches missed data over REST.
+4. **Safe sign-out and protected routes.** After logging out, cached pages could still be shown, and redirect parameters could send users anywhere.
+   *Solution:* Logout clears the session on the server and the client state, protected routes check the session before rendering, and redirects after sign-in/sign-out only accept internal paths.
+
+### zouazrou — Core back-end API and database (Developer)
+
+**Contributions**
+- Designed the PostgreSQL database schema and the SQLAlchemy models.
+- Implemented the core REST endpoints: authentication and sessions, profiles, posts, follow/unfollow, match announcements, and play requests.
+- Built the Pydantic request/response schemas and the error handling in `core/`.
+- Contributed to the notification system and the realtime back end.
+
+**Challenges**
+1. **Secure session-based authentication.** Passwords had to be stored safely and sessions had to be revocable.
+   *Solution:* Passwords are hashed before storage. Sessions are stored on the server, the browser only holds a random session ID in an `HttpOnly` cookie, and protected routes check the session through a FastAPI dependency. Logging out or revoking a session deletes it server-side.
+2. **Lazy loading with async SQLAlchemy.** Accessing relationships (author of a post, match participants) raised errors outside the async context.
+   *Solution:* We load the needed relationships explicitly in the queries (`selectinload` / `joinedload`) and return Pydantic schemas instead of raw ORM objects.
+3. **Consistency in the play request flow.** A player could send the same request twice, and an organizer could accept more players than the match needed.
+   *Solution:* A unique constraint prevents duplicate requests, and accepting a request checks the remaining slots inside one database transaction.
+4. **Consistent validation and error responses.** Invalid payloads produced unclear errors that the front end could not handle.
+   *Solution:* Every endpoint uses Pydantic schemas, and shared exception handlers return one JSON error format with clear status codes.
+
+### melayyad — Realtime features and WebSockets (PO, Developer)
+
+**Contributions**
+- Built the WebSocket server, the connection registry, and the realtime protocol in `realtime/`.
+- Implemented realtime messaging, read receipts, presence/online status, and offline message delivery.
+- Implemented live notification delivery with zouazrou and mbrouk.
+- Defined the product vision and user requirements as PO.
+
+**Challenges**
+1. **Authenticating WebSocket connections.** The server had to know which user opened each socket.
+   *Solution:* The browser sends the session cookie during the WebSocket handshake. The server checks that session before accepting the connection and closes it with a clear code if it is invalid.
+2. **One user with several tabs or devices.** Messages reached only one tab, and closing a tab disconnected the user everywhere.
+   *Solution:* The connection registry maps each user to a set of sockets. Events go to all of them, and only the closed socket is removed.
+3. **Offline message delivery.** Messages and notifications sent while a user was offline were lost.
+   *Solution:* Every message and notification is saved in the database first, then pushed live if the user is connected. Unread items are delivered when the user comes back online.
+4. **Accurate presence and read receipts.** Users stayed "online" after closing the app, and read status was not updated for the sender.
+   *Solution:* Disconnects (normal or failed heartbeat) are handled in one place, and a user goes offline only when their last socket closes. When a message is read, a read event is saved and sent to the sender in real time.
