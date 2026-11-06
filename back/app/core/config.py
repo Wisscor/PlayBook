@@ -19,15 +19,12 @@ class Settings(BaseSettings):
 
     session_cookie_name: str = "session_id"
     session_expire_days: int = 7
-    session_cookie_secure: bool = False  # set True in production (HTTPS)
+    session_cookie_secure: bool = False
     session_cookie_http_only: bool = True
     session_cookie_same_site: Literal["lax", "strict", "none"] = "lax"
 
     cors_origins: list[str] = [
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
+        "http://localhost:3443",
     ]
 
 
