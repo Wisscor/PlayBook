@@ -250,7 +250,7 @@ The following module selection reflects the actual work completed in the project
 | Advanced search with filters, sorting, and pagination | Minor | 1 | Implemented | Search functionality is required for match discovery and community browsing. | Search and filter logic in discovery pages and paginated results. | wazadou, mbrouk |
 | Multiple languages support (i18n) | Minor | 1 | Implemented | The app supports a multilingual audience. | English, French, and Arabic translations with a language switcher. | wazadou, mbrouk |
 | RTL support | Minor | 1 | Implemented | Arabic support requires mirrored layout behavior. | RTL-aware layout adjustments and language-specific UI direction handling. | wazadou, mbrouk |
-| Support for additional browsers | Minor | 1 | Partially implemented | The app targets modern browser compatibility, especially Chromium and Firefox-based environments. | Frontend compatibility checks and cross-browser UI adjustments. | wazadou, mbrouk |
+| Support for additional browsers | Minor | 1 | Implemented | The app targets modern browser compatibility, especially Chromium and Firefox-based environments. | Frontend compatibility checks and cross-browser UI adjustments. | wazadou, mbrouk |
 
 ### Total points achieved
 - Major modules implemented: 6 × 2 = 12 points
