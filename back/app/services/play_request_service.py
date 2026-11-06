@@ -67,12 +67,10 @@ async def create_play_request_service(
     )
     db.add(play_request)
     try:
-        # Flush first so the request id is available before commit expires state.
         await db.flush()
         request_id = play_request.id
         await db.commit()
     except IntegrityError:
-        # The unique constraint is the final guard against concurrent duplicates.
         await db.rollback()
         raise ApiException(code=ErrorCode.REQUEST_ALREADY_SENT)
 
@@ -93,7 +91,6 @@ async def decide_play_request_service(
     organizer_id: uuid.UUID,
 ) -> PlayRequestNotification:
     """Validate and apply an organizer's decision on a play request."""
-    # Lock both rows so two decisions cannot consume the same slot.
     play_request = await db.scalar(
         select(PlayerRequest)
         .where(PlayerRequest.id == request_id)

@@ -31,10 +31,7 @@ async def receive_loop(ctx: ConnectionContext) -> None:
 
         now = time.monotonic()
         ctx.last_seen = now
-        if (
-            ctx.inbound_frames.hit(now)
-            > frames.MAX_INBOUND_FRAMES_PER_WINDOW
-        ):
+        if ctx.inbound_frames.hit(now) > frames.MAX_INBOUND_FRAMES_PER_WINDOW:
             await ctx.websocket.close(
                 code=frames.CLOSE_RATE_LIMIT,
                 reason="frame rate limit exceeded",
@@ -114,7 +111,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 "type": frames.READY,
                 "user_id": str(user.id),
                 "username": user.username,
-                "retry_after": registry.timeout_remaining(user.id), #if user timedout ttsift lik ch7al b9al lih bach ysali timeout already handled fi blasa a5ra
+                "retry_after": registry.timeout_remaining(user.id),
             }
         )
         await connection.on_connect(websocket, user, first_socket)

@@ -323,7 +323,7 @@ The team focused on the modules that were central to the main product value: ful
 **Contributions**
 - Built the WebSocket server, the connection registry, and the realtime protocol in `realtime/`.
 - Implemented realtime messaging, read receipts, presence/online status, and offline message delivery.
-- Implemented live notification delivery with zouazrou and mbrouk.
+- Implemented live notification delivery with mbrouk.
 - Defined the product vision and user requirements as PO.
 
 **Challenges**

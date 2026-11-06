@@ -58,8 +58,8 @@ async def create_announcement(
         raise ApiException(code=ErrorCode.SPORT_NOT_FOUND)
     announcement = MatchAnnouncement(organizer_id=me.id, **body.model_dump())
     db.add(announcement)
-    await db.flush()  # assigns the id
-    announcement_id = announcement.id  # read it now: commit expires the object
+    await db.flush()
+    announcement_id = announcement.id
     await db.commit()
     return announcement_to_response(
         await get_announcement_or_raise(db, announcement_id)
@@ -151,8 +151,6 @@ async def update_announcement(
     if any(value is None for value in data.values()):
         raise ApiException(code=ErrorCode.VALIDATION_ERROR)
 
-    # end_time > start_time must hold on the resulting values, even when
-    # only one of the two is sent.
     start = data.get("start_time", announcement.start_time)
     end = data.get("end_time", announcement.end_time)
     if end <= start:
@@ -203,7 +201,6 @@ async def update_announcement(
             target_id=announcement.id,
             match_time=announcement.start_time,
         )
-    # Reload relationships after committing the update.
     return announcement_to_response(await get_announcement_or_raise(db, id))
 
 

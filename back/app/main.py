@@ -105,8 +105,8 @@ async def structlog_middleware(request: Request, call_next):
             "HTTP request failed",
             status_code=500,
             duration_ms=duration_ms,
-            error_type=type(exc).__name__,  # Explicit error_type
-            exc_info=True,  # (Optional) includes stack trace
+            error_type=type(exc).__name__,
+            exc_info=True,
         )
         raise exc
 
