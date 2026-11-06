@@ -39,6 +39,7 @@
   - [Module summary](#module-summary)
   - [Total points achieved](#total-points-achieved)
   - [Notes on the selected modules](#notes-on-the-selected-modules)
+- [Individual Contributions](#individual-contributions)
 
 ## Description
 
